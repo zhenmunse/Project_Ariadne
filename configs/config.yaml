@@ -1,0 +1,30 @@
+# Project Ariadne v0.2 - Global Configuration
+
+seed: 42
+
+# ---------- Paths ----------
+data:
+  raw_log: "data/raw/interactions.csv"
+  item2node: "data/raw/item2node.csv"
+  dag_edges: "data/raw/dag_edges.csv"
+  processed_dir: "data/processed"
+
+# ---------- Mastery Proxy ----------
+mastery:
+  n_consecutive: 3        # N consecutive sessions above threshold => mastery
+  threshold: 0.8
+
+# ---------- Oracle ----------
+oracle:
+  hidden_dim: 64
+  dropout: 0.3
+  mc_samples: 20          # MC Dropout forward passes
+  lr: 0.001
+  epochs: 50
+  batch_size: 128
+  model_path: "experiments/oracle.pt"
+
+# ---------- Planner / Cost ----------
+planner:
+  t_penalty: 300          # seconds; extra penalty on failure
+  lambda_risk: 0.5        # uncertainty weight
