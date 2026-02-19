@@ -28,3 +28,10 @@ oracle:
 planner:
   t_penalty: 300          # seconds; extra penalty on failure
   lambda_risk: 0.5        # uncertainty weight
+
+# ---------- Experiments ----------
+experiments:
+  num_targets: 10          # number of target nodes to sample
+  min_depth: 1             # minimum topological depth for target selection
+  subgraph_size: 50        # desired subgraph node count
+  results_dir: "results"

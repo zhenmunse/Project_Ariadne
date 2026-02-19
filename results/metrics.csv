@@ -1,0 +1,13 @@
+target_node,strategy_name,expected_total_cost,path_length,bottleneck_node_id,bottleneck_p
+1,Ariadne-Full,240.7963,2,1,0.743066
+1,Ariadne-Neutral,249.8247,2,1,0.771298
+1,Myopic,240.6329,2,1,0.734165
+1,No-Prior,207.5,2,1,0.833333
+2,Ariadne-Full,308.998,2,2,0.48603
+2,Ariadne-Neutral,317.1091,2,2,0.479505
+2,Myopic,381.3525,3,2,0.716127
+2,No-Prior,307.5,2,2,0.5
+3,Ariadne-Full,505.1193,4,2,0.739458
+3,Ariadne-Neutral,475.8593,4,2,0.748745
+3,Myopic,478.6241,4,2,0.738703
+3,No-Prior,702.5,4,3,0.25
