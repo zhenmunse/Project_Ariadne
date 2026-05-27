@@ -1,0 +1,1557 @@
+{
+  "name": "ECS32A-DAG-required-full-v1",
+  "description": "Full mandatory ECS 32A concept DAG using Unit 1-8 plus Short Topic 1-4; Unit 9/10 optional OOP/Algorithms removed.",
+  "node_count": 61,
+  "edge_count": 134,
+  "roots": [
+    0
+  ],
+  "source_blocks": [
+    "Unit1",
+    "Unit2",
+    "Unit3",
+    "Unit4",
+    "Unit5",
+    "Unit6",
+    "Unit7",
+    "Unit8",
+    "ShortTopic1",
+    "ShortTopic2",
+    "ShortTopic3",
+    "ShortTopic4"
+  ],
+  "nodes": [
+    {
+      "node_id": 0,
+      "concept_name": "computer_model_python_runtime",
+      "teaching_order": 1,
+      "source_block": "Unit1",
+      "week_introduced": 1,
+      "bloom_level": 1,
+      "prerequisites": [],
+      "supports": [
+        1
+      ]
+    },
+    {
+      "node_id": 1,
+      "concept_name": "development_environment_execution",
+      "teaching_order": 2,
+      "source_block": "Unit1",
+      "week_introduced": 1,
+      "bloom_level": 1,
+      "prerequisites": [
+        0
+      ],
+      "supports": [
+        2
+      ]
+    },
+    {
+      "node_id": 2,
+      "concept_name": "code_syntax_statements",
+      "teaching_order": 3,
+      "source_block": "Unit2",
+      "week_introduced": 1,
+      "bloom_level": 1,
+      "prerequisites": [
+        1
+      ],
+      "supports": [
+        3,
+        4,
+        5,
+        6,
+        9,
+        11,
+        26,
+        29,
+        51
+      ]
+    },
+    {
+      "node_id": 3,
+      "concept_name": "string_literals_and_print",
+      "teaching_order": 5,
+      "source_block": "Unit2",
+      "week_introduced": 1,
+      "bloom_level": 1,
+      "prerequisites": [
+        2
+      ],
+      "supports": [
+        7,
+        21,
+        40,
+        43
+      ]
+    },
+    {
+      "node_id": 4,
+      "concept_name": "primitive_values_and_types",
+      "teaching_order": 6,
+      "source_block": "Unit2",
+      "week_introduced": 1,
+      "bloom_level": 1,
+      "prerequisites": [
+        2
+      ],
+      "supports": [
+        5,
+        8,
+        10,
+        12,
+        40,
+        55
+      ]
+    },
+    {
+      "node_id": 5,
+      "concept_name": "expressions_and_operator_precedence",
+      "teaching_order": 7,
+      "source_block": "Unit2",
+      "week_introduced": 1,
+      "bloom_level": 2,
+      "prerequisites": [
+        2,
+        4
+      ],
+      "supports": [
+        6,
+        10,
+        12,
+        21,
+        31
+      ]
+    },
+    {
+      "node_id": 6,
+      "concept_name": "variables_assignment_and_naming",
+      "teaching_order": 8,
+      "source_block": "Unit2",
+      "week_introduced": 1,
+      "bloom_level": 2,
+      "prerequisites": [
+        2,
+        5
+      ],
+      "supports": [
+        7,
+        17,
+        24,
+        51,
+        52,
+        55
+      ]
+    },
+    {
+      "node_id": 7,
+      "concept_name": "basic_input_output",
+      "teaching_order": 9,
+      "source_block": "Unit2",
+      "week_introduced": 1,
+      "bloom_level": 2,
+      "prerequisites": [
+        3,
+        6,
+        11
+      ],
+      "supports": [
+        8,
+        23
+      ]
+    },
+    {
+      "node_id": 8,
+      "concept_name": "type_conversion",
+      "teaching_order": 10,
+      "source_block": "Unit2",
+      "week_introduced": 1,
+      "bloom_level": 2,
+      "prerequisites": [
+        4,
+        7,
+        11
+      ],
+      "supports": [
+        10,
+        28,
+        38
+      ]
+    },
+    {
+      "node_id": 9,
+      "concept_name": "program_structure_comments_style",
+      "teaching_order": 11,
+      "source_block": "Unit2",
+      "week_introduced": 1,
+      "bloom_level": 2,
+      "prerequisites": [
+        2
+      ],
+      "supports": []
+    },
+    {
+      "node_id": 10,
+      "concept_name": "advanced_operators_and_string_ops",
+      "teaching_order": 12,
+      "source_block": "Unit2",
+      "week_introduced": 1,
+      "bloom_level": 2,
+      "prerequisites": [
+        4,
+        5,
+        8
+      ],
+      "supports": [
+        12
+      ]
+    },
+    {
+      "node_id": 11,
+      "concept_name": "builtin_function_calls",
+      "teaching_order": 4,
+      "source_block": "Unit2",
+      "week_introduced": 1,
+      "bloom_level": 2,
+      "prerequisites": [
+        2
+      ],
+      "supports": [
+        7,
+        8,
+        26,
+        33,
+        42,
+        43,
+        47,
+        52
+      ]
+    },
+    {
+      "node_id": 12,
+      "concept_name": "boolean_values_and_comparisons",
+      "teaching_order": 13,
+      "source_block": "Unit3",
+      "week_introduced": 2,
+      "bloom_level": 2,
+      "prerequisites": [
+        4,
+        5,
+        10
+      ],
+      "supports": [
+        13,
+        15,
+        41
+      ]
+    },
+    {
+      "node_id": 13,
+      "concept_name": "if_else_conditional_blocks",
+      "teaching_order": 14,
+      "source_block": "Unit3",
+      "week_introduced": 2,
+      "bloom_level": 3,
+      "prerequisites": [
+        12
+      ],
+      "supports": [
+        14,
+        17,
+        23,
+        28,
+        37,
+        51,
+        56
+      ]
+    },
+    {
+      "node_id": 14,
+      "concept_name": "elif_and_nested_conditionals",
+      "teaching_order": 15,
+      "source_block": "Unit3",
+      "week_introduced": 3,
+      "bloom_level": 3,
+      "prerequisites": [
+        13
+      ],
+      "supports": [
+        16,
+        28
+      ]
+    },
+    {
+      "node_id": 15,
+      "concept_name": "boolean_logic_and_short_circuit",
+      "teaching_order": 16,
+      "source_block": "Unit3",
+      "week_introduced": 3,
+      "bloom_level": 3,
+      "prerequisites": [
+        12
+      ],
+      "supports": [
+        16,
+        17,
+        19,
+        23,
+        36
+      ]
+    },
+    {
+      "node_id": 16,
+      "concept_name": "guardian_pattern_and_demorgan",
+      "teaching_order": 17,
+      "source_block": "Unit3",
+      "week_introduced": 3,
+      "bloom_level": 4,
+      "prerequisites": [
+        14,
+        15
+      ],
+      "supports": [
+        23,
+        25
+      ]
+    },
+    {
+      "node_id": 17,
+      "concept_name": "while_loop_basics",
+      "teaching_order": 18,
+      "source_block": "Unit4",
+      "week_introduced": 4,
+      "bloom_level": 3,
+      "prerequisites": [
+        6,
+        13,
+        15
+      ],
+      "supports": [
+        18,
+        19,
+        20,
+        23,
+        24,
+        32,
+        44
+      ]
+    },
+    {
+      "node_id": 18,
+      "concept_name": "loop_update_iteration_variables",
+      "teaching_order": 19,
+      "source_block": "Unit4",
+      "week_introduced": 4,
+      "bloom_level": 3,
+      "prerequisites": [
+        17
+      ],
+      "supports": [
+        20
+      ]
+    },
+    {
+      "node_id": 19,
+      "concept_name": "break_continue_loop_control",
+      "teaching_order": 20,
+      "source_block": "Unit4",
+      "week_introduced": 4,
+      "bloom_level": 3,
+      "prerequisites": [
+        15,
+        17
+      ],
+      "supports": [
+        20,
+        23,
+        38,
+        56
+      ]
+    },
+    {
+      "node_id": 20,
+      "concept_name": "definite_indefinite_loops",
+      "teaching_order": 21,
+      "source_block": "Unit4",
+      "week_introduced": 4,
+      "bloom_level": 3,
+      "prerequisites": [
+        17,
+        18,
+        19
+      ],
+      "supports": [
+        23
+      ]
+    },
+    {
+      "node_id": 21,
+      "concept_name": "formatted_output_tsv",
+      "teaching_order": 22,
+      "source_block": "Unit4",
+      "week_introduced": 4,
+      "bloom_level": 2,
+      "prerequisites": [
+        3,
+        5
+      ],
+      "supports": [
+        22,
+        45
+      ]
+    },
+    {
+      "node_id": 22,
+      "concept_name": "spreadsheet_plotting_output",
+      "teaching_order": 23,
+      "source_block": "Unit4",
+      "week_introduced": 4,
+      "bloom_level": 2,
+      "prerequisites": [
+        21
+      ],
+      "supports": []
+    },
+    {
+      "node_id": 23,
+      "concept_name": "robust_input_loop_patterns",
+      "teaching_order": 24,
+      "source_block": "Unit4",
+      "week_introduced": 4,
+      "bloom_level": 3,
+      "prerequisites": [
+        7,
+        13,
+        15,
+        16,
+        17,
+        19,
+        20
+      ],
+      "supports": [
+        38
+      ]
+    },
+    {
+      "node_id": 24,
+      "concept_name": "accumulation_count_sum_patterns",
+      "teaching_order": 25,
+      "source_block": "Unit4",
+      "week_introduced": 4,
+      "bloom_level": 3,
+      "prerequisites": [
+        6,
+        17
+      ],
+      "supports": [
+        25,
+        35,
+        49
+      ]
+    },
+    {
+      "node_id": 25,
+      "concept_name": "min_max_none_sentinel_patterns",
+      "teaching_order": 26,
+      "source_block": "Unit4",
+      "week_introduced": 4,
+      "bloom_level": 4,
+      "prerequisites": [
+        16,
+        24
+      ],
+      "supports": []
+    },
+    {
+      "node_id": 26,
+      "concept_name": "random_module_import",
+      "teaching_order": 27,
+      "source_block": "ShortTopic1",
+      "week_introduced": 4,
+      "bloom_level": 2,
+      "prerequisites": [
+        2,
+        11
+      ],
+      "supports": [
+        27,
+        54
+      ]
+    },
+    {
+      "node_id": 27,
+      "concept_name": "random_number_generation_functions",
+      "teaching_order": 28,
+      "source_block": "ShortTopic1",
+      "week_introduced": 4,
+      "bloom_level": 2,
+      "prerequisites": [
+        26
+      ],
+      "supports": [
+        28
+      ]
+    },
+    {
+      "node_id": 28,
+      "concept_name": "randomized_game_programs",
+      "teaching_order": 29,
+      "source_block": "ShortTopic1",
+      "week_introduced": 4,
+      "bloom_level": 3,
+      "prerequisites": [
+        8,
+        13,
+        14,
+        27
+      ],
+      "supports": []
+    },
+    {
+      "node_id": 29,
+      "concept_name": "error_categories_syntax_runtime_semantic",
+      "teaching_order": 30,
+      "source_block": "ShortTopic2",
+      "week_introduced": 4,
+      "bloom_level": 2,
+      "prerequisites": [
+        2
+      ],
+      "supports": [
+        30,
+        31,
+        37
+      ]
+    },
+    {
+      "node_id": 30,
+      "concept_name": "traceback_interpretation",
+      "teaching_order": 31,
+      "source_block": "ShortTopic2",
+      "week_introduced": 4,
+      "bloom_level": 3,
+      "prerequisites": [
+        29
+      ],
+      "supports": []
+    },
+    {
+      "node_id": 31,
+      "concept_name": "semantic_error_reasoning",
+      "teaching_order": 32,
+      "source_block": "ShortTopic2",
+      "week_introduced": 4,
+      "bloom_level": 4,
+      "prerequisites": [
+        5,
+        29
+      ],
+      "supports": []
+    },
+    {
+      "node_id": 32,
+      "concept_name": "for_loop_basics",
+      "teaching_order": 33,
+      "source_block": "ShortTopic3",
+      "week_introduced": 4,
+      "bloom_level": 3,
+      "prerequisites": [
+        17
+      ],
+      "supports": [
+        33,
+        34,
+        35,
+        36,
+        44,
+        56
+      ]
+    },
+    {
+      "node_id": 33,
+      "concept_name": "range_function_and_counted_iteration",
+      "teaching_order": 34,
+      "source_block": "ShortTopic3",
+      "week_introduced": 4,
+      "bloom_level": 3,
+      "prerequisites": [
+        11,
+        32
+      ],
+      "supports": []
+    },
+    {
+      "node_id": 34,
+      "concept_name": "sequence_iteration_with_for",
+      "teaching_order": 35,
+      "source_block": "ShortTopic3",
+      "week_introduced": 4,
+      "bloom_level": 3,
+      "prerequisites": [
+        32
+      ],
+      "supports": []
+    },
+    {
+      "node_id": 35,
+      "concept_name": "for_loop_accumulation_patterns",
+      "teaching_order": 36,
+      "source_block": "ShortTopic3",
+      "week_introduced": 4,
+      "bloom_level": 3,
+      "prerequisites": [
+        24,
+        32
+      ],
+      "supports": [
+        49
+      ]
+    },
+    {
+      "node_id": 36,
+      "concept_name": "nested_for_loops",
+      "teaching_order": 37,
+      "source_block": "ShortTopic3",
+      "week_introduced": 4,
+      "bloom_level": 4,
+      "prerequisites": [
+        15,
+        32
+      ],
+      "supports": []
+    },
+    {
+      "node_id": 37,
+      "concept_name": "try_except_exception_handling",
+      "teaching_order": 38,
+      "source_block": "ShortTopic4",
+      "week_introduced": 4,
+      "bloom_level": 3,
+      "prerequisites": [
+        13,
+        29
+      ],
+      "supports": [
+        38,
+        39
+      ]
+    },
+    {
+      "node_id": 38,
+      "concept_name": "robust_input_with_try_except",
+      "teaching_order": 39,
+      "source_block": "ShortTopic4",
+      "week_introduced": 4,
+      "bloom_level": 4,
+      "prerequisites": [
+        8,
+        19,
+        23,
+        37
+      ],
+      "supports": [
+        60
+      ]
+    },
+    {
+      "node_id": 39,
+      "concept_name": "exception_handling_runtime_failure_cases",
+      "teaching_order": 40,
+      "source_block": "ShortTopic4",
+      "week_introduced": 4,
+      "bloom_level": 4,
+      "prerequisites": [
+        37
+      ],
+      "supports": [
+        43
+      ]
+    },
+    {
+      "node_id": 40,
+      "concept_name": "strings_indexing_slicing",
+      "teaching_order": 41,
+      "source_block": "Unit5",
+      "week_introduced": 5,
+      "bloom_level": 2,
+      "prerequisites": [
+        3,
+        4
+      ],
+      "supports": [
+        41,
+        42,
+        44,
+        46,
+        48
+      ]
+    },
+    {
+      "node_id": 41,
+      "concept_name": "string_immutability_comparison_in",
+      "teaching_order": 42,
+      "source_block": "Unit5",
+      "week_introduced": 5,
+      "bloom_level": 3,
+      "prerequisites": [
+        12,
+        40
+      ],
+      "supports": [
+        42
+      ]
+    },
+    {
+      "node_id": 42,
+      "concept_name": "string_methods_parsing_validation",
+      "teaching_order": 43,
+      "source_block": "Unit5",
+      "week_introduced": 5,
+      "bloom_level": 3,
+      "prerequisites": [
+        11,
+        40,
+        41
+      ],
+      "supports": [
+        45,
+        57
+      ]
+    },
+    {
+      "node_id": 43,
+      "concept_name": "file_handles_write_close",
+      "teaching_order": 44,
+      "source_block": "Unit5",
+      "week_introduced": 5,
+      "bloom_level": 3,
+      "prerequisites": [
+        3,
+        11,
+        39
+      ],
+      "supports": [
+        44
+      ]
+    },
+    {
+      "node_id": 44,
+      "concept_name": "file_reading_line_iteration",
+      "teaching_order": 45,
+      "source_block": "Unit5",
+      "week_introduced": 5,
+      "bloom_level": 3,
+      "prerequisites": [
+        17,
+        32,
+        40,
+        43
+      ],
+      "supports": [
+        45,
+        57
+      ]
+    },
+    {
+      "node_id": 45,
+      "concept_name": "csv_tsv_data_processing",
+      "teaching_order": 46,
+      "source_block": "Unit5",
+      "week_introduced": 5,
+      "bloom_level": 4,
+      "prerequisites": [
+        21,
+        42,
+        44
+      ],
+      "supports": [
+        60
+      ]
+    },
+    {
+      "node_id": 46,
+      "concept_name": "lists_basics_indexing_mutability",
+      "teaching_order": 47,
+      "source_block": "Unit6",
+      "week_introduced": 6,
+      "bloom_level": 2,
+      "prerequisites": [
+        40
+      ],
+      "supports": [
+        47,
+        48,
+        50,
+        55,
+        58
+      ]
+    },
+    {
+      "node_id": 47,
+      "concept_name": "list_methods_append_pop_sort",
+      "teaching_order": 48,
+      "source_block": "Unit6",
+      "week_introduced": 6,
+      "bloom_level": 3,
+      "prerequisites": [
+        11,
+        46
+      ],
+      "supports": [
+        48,
+        49
+      ]
+    },
+    {
+      "node_id": 48,
+      "concept_name": "sequence_polymorphism_common_ops",
+      "teaching_order": 49,
+      "source_block": "Unit6",
+      "week_introduced": 6,
+      "bloom_level": 3,
+      "prerequisites": [
+        40,
+        46,
+        47
+      ],
+      "supports": []
+    },
+    {
+      "node_id": 49,
+      "concept_name": "statistics_with_lists_median",
+      "teaching_order": 50,
+      "source_block": "Unit6",
+      "week_introduced": 6,
+      "bloom_level": 4,
+      "prerequisites": [
+        24,
+        35,
+        47
+      ],
+      "supports": []
+    },
+    {
+      "node_id": 50,
+      "concept_name": "nested_lists_multidimensional",
+      "teaching_order": 51,
+      "source_block": "Unit6",
+      "week_introduced": 6,
+      "bloom_level": 4,
+      "prerequisites": [
+        46
+      ],
+      "supports": [
+        59
+      ]
+    },
+    {
+      "node_id": 51,
+      "concept_name": "functions_definition_call_flow",
+      "teaching_order": 52,
+      "source_block": "Unit7",
+      "week_introduced": 7,
+      "bloom_level": 3,
+      "prerequisites": [
+        2,
+        6,
+        13
+      ],
+      "supports": [
+        52
+      ]
+    },
+    {
+      "node_id": 52,
+      "concept_name": "parameters_return_values_side_effects",
+      "teaching_order": 53,
+      "source_block": "Unit7",
+      "week_introduced": 7,
+      "bloom_level": 3,
+      "prerequisites": [
+        6,
+        11,
+        51
+      ],
+      "supports": [
+        53,
+        57,
+        58,
+        59
+      ]
+    },
+    {
+      "node_id": 53,
+      "concept_name": "scope_main_and_decomposition",
+      "teaching_order": 54,
+      "source_block": "Unit7",
+      "week_introduced": 7,
+      "bloom_level": 4,
+      "prerequisites": [
+        52
+      ],
+      "supports": [
+        54,
+        60
+      ]
+    },
+    {
+      "node_id": 54,
+      "concept_name": "modules_import_validation",
+      "teaching_order": 55,
+      "source_block": "Unit7",
+      "week_introduced": 7,
+      "bloom_level": 4,
+      "prerequisites": [
+        26,
+        53
+      ],
+      "supports": []
+    },
+    {
+      "node_id": 55,
+      "concept_name": "dictionaries_basics_key_value_lookup",
+      "teaching_order": 56,
+      "source_block": "Unit8",
+      "week_introduced": 8,
+      "bloom_level": 2,
+      "prerequisites": [
+        4,
+        6,
+        46
+      ],
+      "supports": [
+        56,
+        59
+      ]
+    },
+    {
+      "node_id": 56,
+      "concept_name": "dictionary_iteration_query_patterns",
+      "teaching_order": 57,
+      "source_block": "Unit8",
+      "week_introduced": 8,
+      "bloom_level": 3,
+      "prerequisites": [
+        13,
+        19,
+        32,
+        55
+      ],
+      "supports": [
+        57
+      ]
+    },
+    {
+      "node_id": 57,
+      "concept_name": "dictionaries_counting_join_filter",
+      "teaching_order": 58,
+      "source_block": "Unit8",
+      "week_introduced": 8,
+      "bloom_level": 4,
+      "prerequisites": [
+        42,
+        44,
+        52,
+        56
+      ],
+      "supports": [
+        60
+      ]
+    },
+    {
+      "node_id": 58,
+      "concept_name": "tuples_tuple_assignment",
+      "teaching_order": 59,
+      "source_block": "Unit8",
+      "week_introduced": 8,
+      "bloom_level": 3,
+      "prerequisites": [
+        46,
+        52
+      ],
+      "supports": [
+        59
+      ]
+    },
+    {
+      "node_id": 59,
+      "concept_name": "nested_data_structures_integration",
+      "teaching_order": 60,
+      "source_block": "Unit8",
+      "week_introduced": 8,
+      "bloom_level": 4,
+      "prerequisites": [
+        50,
+        52,
+        55,
+        58
+      ],
+      "supports": [
+        60
+      ]
+    },
+    {
+      "node_id": 60,
+      "concept_name": "data_processing_project_decomposition",
+      "teaching_order": 61,
+      "source_block": "Unit8",
+      "week_introduced": 8,
+      "bloom_level": 5,
+      "prerequisites": [
+        38,
+        45,
+        53,
+        57,
+        59
+      ],
+      "supports": []
+    }
+  ],
+  "edges": [
+    {
+      "src": 0,
+      "dst": 1
+    },
+    {
+      "src": 1,
+      "dst": 2
+    },
+    {
+      "src": 2,
+      "dst": 3
+    },
+    {
+      "src": 2,
+      "dst": 4
+    },
+    {
+      "src": 2,
+      "dst": 5
+    },
+    {
+      "src": 2,
+      "dst": 6
+    },
+    {
+      "src": 2,
+      "dst": 9
+    },
+    {
+      "src": 2,
+      "dst": 11
+    },
+    {
+      "src": 2,
+      "dst": 26
+    },
+    {
+      "src": 2,
+      "dst": 29
+    },
+    {
+      "src": 2,
+      "dst": 51
+    },
+    {
+      "src": 3,
+      "dst": 7
+    },
+    {
+      "src": 3,
+      "dst": 21
+    },
+    {
+      "src": 3,
+      "dst": 40
+    },
+    {
+      "src": 3,
+      "dst": 43
+    },
+    {
+      "src": 4,
+      "dst": 5
+    },
+    {
+      "src": 4,
+      "dst": 8
+    },
+    {
+      "src": 4,
+      "dst": 10
+    },
+    {
+      "src": 4,
+      "dst": 12
+    },
+    {
+      "src": 4,
+      "dst": 40
+    },
+    {
+      "src": 4,
+      "dst": 55
+    },
+    {
+      "src": 5,
+      "dst": 6
+    },
+    {
+      "src": 5,
+      "dst": 10
+    },
+    {
+      "src": 5,
+      "dst": 12
+    },
+    {
+      "src": 5,
+      "dst": 21
+    },
+    {
+      "src": 5,
+      "dst": 31
+    },
+    {
+      "src": 6,
+      "dst": 7
+    },
+    {
+      "src": 6,
+      "dst": 17
+    },
+    {
+      "src": 6,
+      "dst": 24
+    },
+    {
+      "src": 6,
+      "dst": 51
+    },
+    {
+      "src": 6,
+      "dst": 52
+    },
+    {
+      "src": 6,
+      "dst": 55
+    },
+    {
+      "src": 7,
+      "dst": 8
+    },
+    {
+      "src": 7,
+      "dst": 23
+    },
+    {
+      "src": 8,
+      "dst": 10
+    },
+    {
+      "src": 8,
+      "dst": 28
+    },
+    {
+      "src": 8,
+      "dst": 38
+    },
+    {
+      "src": 10,
+      "dst": 12
+    },
+    {
+      "src": 11,
+      "dst": 7
+    },
+    {
+      "src": 11,
+      "dst": 8
+    },
+    {
+      "src": 11,
+      "dst": 26
+    },
+    {
+      "src": 11,
+      "dst": 33
+    },
+    {
+      "src": 11,
+      "dst": 42
+    },
+    {
+      "src": 11,
+      "dst": 43
+    },
+    {
+      "src": 11,
+      "dst": 47
+    },
+    {
+      "src": 11,
+      "dst": 52
+    },
+    {
+      "src": 12,
+      "dst": 13
+    },
+    {
+      "src": 12,
+      "dst": 15
+    },
+    {
+      "src": 12,
+      "dst": 41
+    },
+    {
+      "src": 13,
+      "dst": 14
+    },
+    {
+      "src": 13,
+      "dst": 17
+    },
+    {
+      "src": 13,
+      "dst": 23
+    },
+    {
+      "src": 13,
+      "dst": 28
+    },
+    {
+      "src": 13,
+      "dst": 37
+    },
+    {
+      "src": 13,
+      "dst": 51
+    },
+    {
+      "src": 13,
+      "dst": 56
+    },
+    {
+      "src": 14,
+      "dst": 16
+    },
+    {
+      "src": 14,
+      "dst": 28
+    },
+    {
+      "src": 15,
+      "dst": 16
+    },
+    {
+      "src": 15,
+      "dst": 17
+    },
+    {
+      "src": 15,
+      "dst": 19
+    },
+    {
+      "src": 15,
+      "dst": 23
+    },
+    {
+      "src": 15,
+      "dst": 36
+    },
+    {
+      "src": 16,
+      "dst": 23
+    },
+    {
+      "src": 16,
+      "dst": 25
+    },
+    {
+      "src": 17,
+      "dst": 18
+    },
+    {
+      "src": 17,
+      "dst": 19
+    },
+    {
+      "src": 17,
+      "dst": 20
+    },
+    {
+      "src": 17,
+      "dst": 23
+    },
+    {
+      "src": 17,
+      "dst": 24
+    },
+    {
+      "src": 17,
+      "dst": 32
+    },
+    {
+      "src": 17,
+      "dst": 44
+    },
+    {
+      "src": 18,
+      "dst": 20
+    },
+    {
+      "src": 19,
+      "dst": 20
+    },
+    {
+      "src": 19,
+      "dst": 23
+    },
+    {
+      "src": 19,
+      "dst": 38
+    },
+    {
+      "src": 19,
+      "dst": 56
+    },
+    {
+      "src": 20,
+      "dst": 23
+    },
+    {
+      "src": 21,
+      "dst": 22
+    },
+    {
+      "src": 21,
+      "dst": 45
+    },
+    {
+      "src": 23,
+      "dst": 38
+    },
+    {
+      "src": 24,
+      "dst": 25
+    },
+    {
+      "src": 24,
+      "dst": 35
+    },
+    {
+      "src": 24,
+      "dst": 49
+    },
+    {
+      "src": 26,
+      "dst": 27
+    },
+    {
+      "src": 26,
+      "dst": 54
+    },
+    {
+      "src": 27,
+      "dst": 28
+    },
+    {
+      "src": 29,
+      "dst": 30
+    },
+    {
+      "src": 29,
+      "dst": 31
+    },
+    {
+      "src": 29,
+      "dst": 37
+    },
+    {
+      "src": 32,
+      "dst": 33
+    },
+    {
+      "src": 32,
+      "dst": 34
+    },
+    {
+      "src": 32,
+      "dst": 35
+    },
+    {
+      "src": 32,
+      "dst": 36
+    },
+    {
+      "src": 32,
+      "dst": 44
+    },
+    {
+      "src": 32,
+      "dst": 56
+    },
+    {
+      "src": 35,
+      "dst": 49
+    },
+    {
+      "src": 37,
+      "dst": 38
+    },
+    {
+      "src": 37,
+      "dst": 39
+    },
+    {
+      "src": 38,
+      "dst": 60
+    },
+    {
+      "src": 39,
+      "dst": 43
+    },
+    {
+      "src": 40,
+      "dst": 41
+    },
+    {
+      "src": 40,
+      "dst": 42
+    },
+    {
+      "src": 40,
+      "dst": 44
+    },
+    {
+      "src": 40,
+      "dst": 46
+    },
+    {
+      "src": 40,
+      "dst": 48
+    },
+    {
+      "src": 41,
+      "dst": 42
+    },
+    {
+      "src": 42,
+      "dst": 45
+    },
+    {
+      "src": 42,
+      "dst": 57
+    },
+    {
+      "src": 43,
+      "dst": 44
+    },
+    {
+      "src": 44,
+      "dst": 45
+    },
+    {
+      "src": 44,
+      "dst": 57
+    },
+    {
+      "src": 45,
+      "dst": 60
+    },
+    {
+      "src": 46,
+      "dst": 47
+    },
+    {
+      "src": 46,
+      "dst": 48
+    },
+    {
+      "src": 46,
+      "dst": 50
+    },
+    {
+      "src": 46,
+      "dst": 55
+    },
+    {
+      "src": 46,
+      "dst": 58
+    },
+    {
+      "src": 47,
+      "dst": 48
+    },
+    {
+      "src": 47,
+      "dst": 49
+    },
+    {
+      "src": 50,
+      "dst": 59
+    },
+    {
+      "src": 51,
+      "dst": 52
+    },
+    {
+      "src": 52,
+      "dst": 53
+    },
+    {
+      "src": 52,
+      "dst": 57
+    },
+    {
+      "src": 52,
+      "dst": 58
+    },
+    {
+      "src": 52,
+      "dst": 59
+    },
+    {
+      "src": 53,
+      "dst": 54
+    },
+    {
+      "src": 53,
+      "dst": 60
+    },
+    {
+      "src": 55,
+      "dst": 56
+    },
+    {
+      "src": 55,
+      "dst": 59
+    },
+    {
+      "src": 56,
+      "dst": 57
+    },
+    {
+      "src": 57,
+      "dst": 60
+    },
+    {
+      "src": 58,
+      "dst": 59
+    },
+    {
+      "src": 59,
+      "dst": 60
+    }
+  ],
+  "sanity_checks": {
+    "is_dag": true,
+    "roots": [
+      0
+    ],
+    "all_non_roots_reachable_from_root": true,
+    "teaching_order_backward_edges": []
+  }
+}

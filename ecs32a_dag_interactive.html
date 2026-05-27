@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ECS 32A Concept DAG</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700&display=swap');
+
+* { margin:0; padding:0; box-sizing:border-box; }
+body { 
+  background: #0d1117; color: #c9d1d9; 
+  font-family: 'DM Sans', sans-serif; 
+  overflow: hidden; height: 100vh;
+}
+
+#toolbar {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 10;
+  background: rgba(13,17,23,0.92); backdrop-filter: blur(12px);
+  border-bottom: 1px solid #21262d;
+  padding: 10px 20px; display: flex; align-items: center; gap: 16px;
+  flex-wrap: wrap;
+}
+
+#toolbar h1 {
+  font-family: 'JetBrains Mono', monospace; font-size: 14px;
+  font-weight: 600; color: #e6edf3; letter-spacing: -0.02em;
+  white-space: nowrap;
+}
+
+#toolbar .stats {
+  font-family: 'JetBrains Mono', monospace; font-size: 11px;
+  color: #7d8590; white-space: nowrap;
+}
+
+.btn-group { display: flex; gap: 4px; }
+.btn {
+  font-family: 'JetBrains Mono', monospace; font-size: 11px;
+  padding: 4px 10px; border-radius: 6px; cursor: pointer;
+  border: 1px solid #30363d; background: #161b22; color: #c9d1d9;
+  transition: all 0.15s;
+}
+.btn:hover { background: #21262d; border-color: #484f58; }
+.btn.active { background: #1f6feb; border-color: #1f6feb; color: #fff; }
+
+#legend {
+  position: fixed; bottom: 12px; left: 12px; z-index: 10;
+  background: rgba(22,27,34,0.95); backdrop-filter: blur(8px);
+  border: 1px solid #21262d; border-radius: 8px; padding: 10px 14px;
+  font-size: 11px;
+}
+#legend .title { 
+  font-family: 'JetBrains Mono', monospace; font-size: 10px;
+  color: #7d8590; text-transform: uppercase; letter-spacing: 0.06em;
+  margin-bottom: 6px;
+}
+.legend-item { display: flex; align-items: center; gap: 6px; margin: 3px 0; }
+.legend-dot { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+
+#tooltip {
+  position: fixed; pointer-events: none; z-index: 20;
+  background: rgba(22,27,34,0.97); backdrop-filter: blur(12px);
+  border: 1px solid #30363d; border-radius: 8px; padding: 12px 16px;
+  font-size: 12px; max-width: 320px; display: none;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+}
+#tooltip .tt-name { 
+  font-family: 'JetBrains Mono', monospace; font-weight: 600;
+  color: #e6edf3; font-size: 13px; margin-bottom: 4px;
+}
+#tooltip .tt-meta { color: #7d8590; font-size: 11px; margin-bottom: 6px; }
+#tooltip .tt-section { margin-top: 6px; }
+#tooltip .tt-label { 
+  font-family: 'JetBrains Mono', monospace; font-size: 10px; 
+  color: #7d8590; text-transform: uppercase; letter-spacing: 0.05em;
+}
+#tooltip .tt-list { color: #c9d1d9; font-size: 11px; margin-top: 2px; }
+
+svg { width: 100vw; height: 100vh; }
+
+.edge { fill: none; stroke-width: 1; }
+.edge.essential { stroke: #30363d; }
+.edge.transitive { stroke: #21262d; stroke-dasharray: 4,3; }
+
+.node-group { cursor: pointer; }
+.node-rect { rx: 4; ry: 4; stroke-width: 1.5; stroke: transparent; }
+.node-label {
+  font-family: 'JetBrains Mono', monospace; font-size: 9px;
+  fill: #fff; text-anchor: middle; dominant-baseline: central;
+  pointer-events: none;
+}
+.node-id {
+  font-family: 'JetBrains Mono', monospace; font-size: 7px;
+  fill: rgba(255,255,255,0.6); text-anchor: middle;
+  pointer-events: none;
+}
+
+/* Hover states */
+.node-group.dimmed .node-rect { opacity: 0.15; }
+.node-group.dimmed .node-label, .node-group.dimmed .node-id { opacity: 0.1; }
+.edge.dimmed { opacity: 0.04; }
+
+.node-group.highlighted .node-rect { stroke: #e6edf3; stroke-width: 2; }
+.node-group.ancestor .node-rect { stroke: #f0883e; stroke-width: 2; }
+.node-group.descendant .node-rect { stroke: #3fb950; stroke-width: 2; }
+
+.edge.highlighted-ancestor { stroke: #f0883e !important; stroke-width: 2; opacity: 1 !important; }
+.edge.highlighted-descendant { stroke: #3fb950 !important; stroke-width: 2; opacity: 1 !important; }
+
+#search-box {
+  font-family: 'JetBrains Mono', monospace; font-size: 11px;
+  padding: 4px 10px; border-radius: 6px;
+  border: 1px solid #30363d; background: #0d1117; color: #c9d1d9;
+  width: 180px; outline: none;
+}
+#search-box:focus { border-color: #1f6feb; }
+#search-box::placeholder { color: #484f58; }
+</style>
+</head>
+<body>
+
+<div id="toolbar">
+  <h1>ECS 32A Concept DAG</h1>
+  <span class="stats">61 nodes · 134 edges</span>
+  <div class="btn-group">
+    <button class="btn active" id="btn-all">All edges</button>
+    <button class="btn" id="btn-essential">Essential only (95)</button>
+  </div>
+  <input type="text" id="search-box" placeholder="Search concepts...">
+  <div class="btn-group">
+    <button class="btn" id="btn-reset">Reset view</button>
+  </div>
+</div>
+
+<div id="legend">
+  <div class="title">Source Blocks</div>
+  <div id="legend-items"></div>
+</div>
+
+<div id="tooltip">
+  <div class="tt-name"></div>
+  <div class="tt-meta"></div>
+  <div class="tt-section tt-prereqs"><div class="tt-label">Prerequisites</div><div class="tt-list"></div></div>
+  <div class="tt-section tt-supports"><div class="tt-label">Supports</div><div class="tt-list"></div></div>
+</div>
+
+<svg id="canvas"></svg>
+
+<script>
+const DATA = {"nodes": [{"id": 0, "name": "computer model python runtime", "block": "Unit1", "week": 1, "bloom": 1, "teaching_order": 1, "layer": 0, "in_degree": 0, "out_degree": 1}, {"id": 1, "name": "development environment execution", "block": "Unit1", "week": 1, "bloom": 1, "teaching_order": 2, "layer": 1, "in_degree": 1, "out_degree": 1}, {"id": 2, "name": "code syntax statements", "block": "Unit2", "week": 1, "bloom": 1, "teaching_order": 3, "layer": 2, "in_degree": 1, "out_degree": 9}, {"id": 3, "name": "string literals and print", "block": "Unit2", "week": 1, "bloom": 1, "teaching_order": 5, "layer": 3, "in_degree": 1, "out_degree": 4}, {"id": 4, "name": "primitive values and types", "block": "Unit2", "week": 1, "bloom": 1, "teaching_order": 6, "layer": 3, "in_degree": 1, "out_degree": 6}, {"id": 5, "name": "expressions and operator precedence", "block": "Unit2", "week": 1, "bloom": 2, "teaching_order": 7, "layer": 4, "in_degree": 2, "out_degree": 5}, {"id": 6, "name": "variables assignment and naming", "block": "Unit2", "week": 1, "bloom": 2, "teaching_order": 8, "layer": 5, "in_degree": 2, "out_degree": 6}, {"id": 7, "name": "basic input output", "block": "Unit2", "week": 1, "bloom": 2, "teaching_order": 9, "layer": 6, "in_degree": 3, "out_degree": 2}, {"id": 8, "name": "type conversion", "block": "Unit2", "week": 1, "bloom": 2, "teaching_order": 10, "layer": 7, "in_degree": 3, "out_degree": 3}, {"id": 9, "name": "program structure comments style", "block": "Unit2", "week": 1, "bloom": 2, "teaching_order": 11, "layer": 3, "in_degree": 1, "out_degree": 0}, {"id": 10, "name": "advanced operators and string ops", "block": "Unit2", "week": 1, "bloom": 2, "teaching_order": 12, "layer": 8, "in_degree": 3, "out_degree": 1}, {"id": 11, "name": "builtin function calls", "block": "Unit2", "week": 1, "bloom": 2, "teaching_order": 4, "layer": 3, "in_degree": 1, "out_degree": 8}, {"id": 12, "name": "boolean values and comparisons", "block": "Unit3", "week": 2, "bloom": 2, "teaching_order": 13, "layer": 9, "in_degree": 3, "out_degree": 3}, {"id": 13, "name": "if else conditional blocks", "block": "Unit3", "week": 2, "bloom": 3, "teaching_order": 14, "layer": 10, "in_degree": 1, "out_degree": 7}, {"id": 14, "name": "elif and nested conditionals", "block": "Unit3", "week": 3, "bloom": 3, "teaching_order": 15, "layer": 11, "in_degree": 1, "out_degree": 2}, {"id": 15, "name": "boolean logic and short circuit", "block": "Unit3", "week": 3, "bloom": 3, "teaching_order": 16, "layer": 10, "in_degree": 1, "out_degree": 5}, {"id": 16, "name": "guardian pattern and demorgan", "block": "Unit3", "week": 3, "bloom": 4, "teaching_order": 17, "layer": 12, "in_degree": 2, "out_degree": 2}, {"id": 17, "name": "while loop basics", "block": "Unit4", "week": 4, "bloom": 3, "teaching_order": 18, "layer": 11, "in_degree": 3, "out_degree": 7}, {"id": 18, "name": "loop update iteration variables", "block": "Unit4", "week": 4, "bloom": 3, "teaching_order": 19, "layer": 12, "in_degree": 1, "out_degree": 1}, {"id": 19, "name": "break continue loop control", "block": "Unit4", "week": 4, "bloom": 3, "teaching_order": 20, "layer": 12, "in_degree": 2, "out_degree": 4}, {"id": 20, "name": "definite indefinite loops", "block": "Unit4", "week": 4, "bloom": 3, "teaching_order": 21, "layer": 13, "in_degree": 3, "out_degree": 1}, {"id": 21, "name": "formatted output tsv", "block": "Unit4", "week": 4, "bloom": 2, "teaching_order": 22, "layer": 5, "in_degree": 2, "out_degree": 2}, {"id": 22, "name": "spreadsheet plotting output", "block": "Unit4", "week": 4, "bloom": 2, "teaching_order": 23, "layer": 6, "in_degree": 1, "out_degree": 0}, {"id": 23, "name": "robust input loop patterns", "block": "Unit4", "week": 4, "bloom": 3, "teaching_order": 24, "layer": 14, "in_degree": 7, "out_degree": 1}, {"id": 24, "name": "accumulation count sum patterns", "block": "Unit4", "week": 4, "bloom": 3, "teaching_order": 25, "layer": 12, "in_degree": 2, "out_degree": 3}, {"id": 25, "name": "min max none sentinel patterns", "block": "Unit4", "week": 4, "bloom": 4, "teaching_order": 26, "layer": 13, "in_degree": 2, "out_degree": 0}, {"id": 26, "name": "random module import", "block": "ShortTopic1", "week": 4, "bloom": 2, "teaching_order": 27, "layer": 4, "in_degree": 2, "out_degree": 2}, {"id": 27, "name": "random number generation functions", "block": "ShortTopic1", "week": 4, "bloom": 2, "teaching_order": 28, "layer": 5, "in_degree": 1, "out_degree": 1}, {"id": 28, "name": "randomized game programs", "block": "ShortTopic1", "week": 4, "bloom": 3, "teaching_order": 29, "layer": 12, "in_degree": 4, "out_degree": 0}, {"id": 29, "name": "error categories syntax runtime semantic", "block": "ShortTopic2", "week": 4, "bloom": 2, "teaching_order": 30, "layer": 3, "in_degree": 1, "out_degree": 3}, {"id": 30, "name": "traceback interpretation", "block": "ShortTopic2", "week": 4, "bloom": 3, "teaching_order": 31, "layer": 4, "in_degree": 1, "out_degree": 0}, {"id": 31, "name": "semantic error reasoning", "block": "ShortTopic2", "week": 4, "bloom": 4, "teaching_order": 32, "layer": 5, "in_degree": 2, "out_degree": 0}, {"id": 32, "name": "for loop basics", "block": "ShortTopic3", "week": 4, "bloom": 3, "teaching_order": 33, "layer": 12, "in_degree": 1, "out_degree": 6}, {"id": 33, "name": "range function and counted iteration", "block": "ShortTopic3", "week": 4, "bloom": 3, "teaching_order": 34, "layer": 13, "in_degree": 2, "out_degree": 0}, {"id": 34, "name": "sequence iteration with for", "block": "ShortTopic3", "week": 4, "bloom": 3, "teaching_order": 35, "layer": 13, "in_degree": 1, "out_degree": 0}, {"id": 35, "name": "for loop accumulation patterns", "block": "ShortTopic3", "week": 4, "bloom": 3, "teaching_order": 36, "layer": 13, "in_degree": 2, "out_degree": 1}, {"id": 36, "name": "nested for loops", "block": "ShortTopic3", "week": 4, "bloom": 4, "teaching_order": 37, "layer": 13, "in_degree": 2, "out_degree": 0}, {"id": 37, "name": "try except exception handling", "block": "ShortTopic4", "week": 4, "bloom": 3, "teaching_order": 38, "layer": 11, "in_degree": 2, "out_degree": 2}, {"id": 38, "name": "robust input with try except", "block": "ShortTopic4", "week": 4, "bloom": 4, "teaching_order": 39, "layer": 15, "in_degree": 4, "out_degree": 1}, {"id": 39, "name": "exception handling runtime failure cases", "block": "ShortTopic4", "week": 4, "bloom": 4, "teaching_order": 40, "layer": 12, "in_degree": 1, "out_degree": 1}, {"id": 40, "name": "strings indexing slicing", "block": "Unit5", "week": 5, "bloom": 2, "teaching_order": 41, "layer": 4, "in_degree": 2, "out_degree": 5}, {"id": 41, "name": "string immutability comparison in", "block": "Unit5", "week": 5, "bloom": 3, "teaching_order": 42, "layer": 10, "in_degree": 2, "out_degree": 1}, {"id": 42, "name": "string methods parsing validation", "block": "Unit5", "week": 5, "bloom": 3, "teaching_order": 43, "layer": 11, "in_degree": 3, "out_degree": 2}, {"id": 43, "name": "file handles write close", "block": "Unit5", "week": 5, "bloom": 3, "teaching_order": 44, "layer": 13, "in_degree": 3, "out_degree": 1}, {"id": 44, "name": "file reading line iteration", "block": "Unit5", "week": 5, "bloom": 3, "teaching_order": 45, "layer": 14, "in_degree": 4, "out_degree": 2}, {"id": 45, "name": "csv tsv data processing", "block": "Unit5", "week": 5, "bloom": 4, "teaching_order": 46, "layer": 15, "in_degree": 3, "out_degree": 1}, {"id": 46, "name": "lists basics indexing mutability", "block": "Unit6", "week": 6, "bloom": 2, "teaching_order": 47, "layer": 5, "in_degree": 1, "out_degree": 5}, {"id": 47, "name": "list methods append pop sort", "block": "Unit6", "week": 6, "bloom": 3, "teaching_order": 48, "layer": 6, "in_degree": 2, "out_degree": 2}, {"id": 48, "name": "sequence polymorphism common ops", "block": "Unit6", "week": 6, "bloom": 3, "teaching_order": 49, "layer": 7, "in_degree": 3, "out_degree": 0}, {"id": 49, "name": "statistics with lists median", "block": "Unit6", "week": 6, "bloom": 4, "teaching_order": 50, "layer": 14, "in_degree": 3, "out_degree": 0}, {"id": 50, "name": "nested lists multidimensional", "block": "Unit6", "week": 6, "bloom": 4, "teaching_order": 51, "layer": 6, "in_degree": 1, "out_degree": 1}, {"id": 51, "name": "functions definition call flow", "block": "Unit7", "week": 7, "bloom": 3, "teaching_order": 52, "layer": 11, "in_degree": 3, "out_degree": 1}, {"id": 52, "name": "parameters return values side effects", "block": "Unit7", "week": 7, "bloom": 3, "teaching_order": 53, "layer": 12, "in_degree": 3, "out_degree": 4}, {"id": 53, "name": "scope main and decomposition", "block": "Unit7", "week": 7, "bloom": 4, "teaching_order": 54, "layer": 13, "in_degree": 1, "out_degree": 2}, {"id": 54, "name": "modules import validation", "block": "Unit7", "week": 7, "bloom": 4, "teaching_order": 55, "layer": 14, "in_degree": 2, "out_degree": 0}, {"id": 55, "name": "dictionaries basics key value lookup", "block": "Unit8", "week": 8, "bloom": 2, "teaching_order": 56, "layer": 6, "in_degree": 3, "out_degree": 2}, {"id": 56, "name": "dictionary iteration query patterns", "block": "Unit8", "week": 8, "bloom": 3, "teaching_order": 57, "layer": 13, "in_degree": 4, "out_degree": 1}, {"id": 57, "name": "dictionaries counting join filter", "block": "Unit8", "week": 8, "bloom": 4, "teaching_order": 58, "layer": 15, "in_degree": 4, "out_degree": 1}, {"id": 58, "name": "tuples tuple assignment", "block": "Unit8", "week": 8, "bloom": 3, "teaching_order": 59, "layer": 13, "in_degree": 2, "out_degree": 1}, {"id": 59, "name": "nested data structures integration", "block": "Unit8", "week": 8, "bloom": 4, "teaching_order": 60, "layer": 14, "in_degree": 4, "out_degree": 1}, {"id": 60, "name": "data processing project decomposition", "block": "Unit8", "week": 8, "bloom": 5, "teaching_order": 61, "layer": 16, "in_degree": 5, "out_degree": 0}], "edges": [{"source": 0, "target": 1, "essential": true}, {"source": 1, "target": 2, "essential": true}, {"source": 2, "target": 3, "essential": true}, {"source": 2, "target": 4, "essential": true}, {"source": 2, "target": 5, "essential": false}, {"source": 2, "target": 6, "essential": false}, {"source": 2, "target": 9, "essential": true}, {"source": 2, "target": 11, "essential": true}, {"source": 2, "target": 26, "essential": false}, {"source": 2, "target": 29, "essential": true}, {"source": 2, "target": 51, "essential": false}, {"source": 3, "target": 7, "essential": true}, {"source": 3, "target": 21, "essential": true}, {"source": 3, "target": 40, "essential": true}, {"source": 3, "target": 43, "essential": false}, {"source": 4, "target": 5, "essential": true}, {"source": 4, "target": 8, "essential": false}, {"source": 4, "target": 10, "essential": false}, {"source": 4, "target": 12, "essential": false}, {"source": 4, "target": 40, "essential": true}, {"source": 4, "target": 55, "essential": false}, {"source": 5, "target": 6, "essential": true}, {"source": 5, "target": 10, "essential": false}, {"source": 5, "target": 12, "essential": false}, {"source": 5, "target": 21, "essential": true}, {"source": 5, "target": 31, "essential": true}, {"source": 6, "target": 7, "essential": true}, {"source": 6, "target": 17, "essential": false}, {"source": 6, "target": 24, "essential": false}, {"source": 6, "target": 51, "essential": false}, {"source": 6, "target": 52, "essential": false}, {"source": 6, "target": 55, "essential": true}, {"source": 7, "target": 8, "essential": true}, {"source": 7, "target": 23, "essential": false}, {"source": 8, "target": 10, "essential": true}, {"source": 8, "target": 28, "essential": false}, {"source": 8, "target": 38, "essential": false}, {"source": 10, "target": 12, "essential": true}, {"source": 11, "target": 7, "essential": true}, {"source": 11, "target": 8, "essential": false}, {"source": 11, "target": 26, "essential": true}, {"source": 11, "target": 33, "essential": false}, {"source": 11, "target": 42, "essential": false}, {"source": 11, "target": 43, "essential": false}, {"source": 11, "target": 47, "essential": true}, {"source": 11, "target": 52, "essential": false}, {"source": 12, "target": 13, "essential": true}, {"source": 12, "target": 15, "essential": true}, {"source": 12, "target": 41, "essential": true}, {"source": 13, "target": 14, "essential": true}, {"source": 13, "target": 17, "essential": true}, {"source": 13, "target": 23, "essential": false}, {"source": 13, "target": 28, "essential": false}, {"source": 13, "target": 37, "essential": true}, {"source": 13, "target": 51, "essential": true}, {"source": 13, "target": 56, "essential": false}, {"source": 14, "target": 16, "essential": true}, {"source": 14, "target": 28, "essential": true}, {"source": 15, "target": 16, "essential": true}, {"source": 15, "target": 17, "essential": true}, {"source": 15, "target": 19, "essential": false}, {"source": 15, "target": 23, "essential": false}, {"source": 15, "target": 36, "essential": false}, {"source": 16, "target": 23, "essential": true}, {"source": 16, "target": 25, "essential": true}, {"source": 17, "target": 18, "essential": true}, {"source": 17, "target": 19, "essential": true}, {"source": 17, "target": 20, "essential": false}, {"source": 17, "target": 23, "essential": false}, {"source": 17, "target": 24, "essential": true}, {"source": 17, "target": 32, "essential": true}, {"source": 17, "target": 44, "essential": false}, {"source": 18, "target": 20, "essential": true}, {"source": 19, "target": 20, "essential": true}, {"source": 19, "target": 23, "essential": false}, {"source": 19, "target": 38, "essential": false}, {"source": 19, "target": 56, "essential": true}, {"source": 20, "target": 23, "essential": true}, {"source": 21, "target": 22, "essential": true}, {"source": 21, "target": 45, "essential": true}, {"source": 23, "target": 38, "essential": true}, {"source": 24, "target": 25, "essential": true}, {"source": 24, "target": 35, "essential": true}, {"source": 24, "target": 49, "essential": false}, {"source": 26, "target": 27, "essential": true}, {"source": 26, "target": 54, "essential": true}, {"source": 27, "target": 28, "essential": true}, {"source": 29, "target": 30, "essential": true}, {"source": 29, "target": 31, "essential": true}, {"source": 29, "target": 37, "essential": true}, {"source": 32, "target": 33, "essential": true}, {"source": 32, "target": 34, "essential": true}, {"source": 32, "target": 35, "essential": true}, {"source": 32, "target": 36, "essential": true}, {"source": 32, "target": 44, "essential": true}, {"source": 32, "target": 56, "essential": true}, {"source": 35, "target": 49, "essential": true}, {"source": 37, "target": 38, "essential": true}, {"source": 37, "target": 39, "essential": true}, {"source": 38, "target": 60, "essential": true}, {"source": 39, "target": 43, "essential": true}, {"source": 40, "target": 41, "essential": true}, {"source": 40, "target": 42, "essential": false}, {"source": 40, "target": 44, "essential": true}, {"source": 40, "target": 46, "essential": true}, {"source": 40, "target": 48, "essential": false}, {"source": 41, "target": 42, "essential": true}, {"source": 42, "target": 45, "essential": true}, {"source": 42, "target": 57, "essential": true}, {"source": 43, "target": 44, "essential": true}, {"source": 44, "target": 45, "essential": true}, {"source": 44, "target": 57, "essential": true}, {"source": 45, "target": 60, "essential": true}, {"source": 46, "target": 47, "essential": true}, {"source": 46, "target": 48, "essential": false}, {"source": 46, "target": 50, "essential": true}, {"source": 46, "target": 55, "essential": true}, {"source": 46, "target": 58, "essential": true}, {"source": 47, "target": 48, "essential": true}, {"source": 47, "target": 49, "essential": true}, {"source": 50, "target": 59, "essential": true}, {"source": 51, "target": 52, "essential": true}, {"source": 52, "target": 53, "essential": true}, {"source": 52, "target": 57, "essential": true}, {"source": 52, "target": 58, "essential": true}, {"source": 52, "target": 59, "essential": false}, {"source": 53, "target": 54, "essential": true}, {"source": 53, "target": 60, "essential": true}, {"source": 55, "target": 56, "essential": true}, {"source": 55, "target": 59, "essential": true}, {"source": 56, "target": 57, "essential": true}, {"source": 57, "target": 60, "essential": true}, {"source": 58, "target": 59, "essential": true}, {"source": 59, "target": 60, "essential": true}]};
+
+const BLOCK_COLORS = {
+  Unit1:       '#3B82F6', Unit2:       '#06B6D4', Unit3:       '#F59E0B',
+  Unit4:       '#EF4444', ShortTopic1: '#A855F7', ShortTopic2: '#EC4899',
+  ShortTopic3: '#22C55E', ShortTopic4: '#D97706', Unit5:       '#60A5FA',
+  Unit6:       '#34D399', Unit7:       '#FB7185', Unit8:       '#818CF8'
+};
+
+const BLOCK_ORDER = ['Unit1','Unit2','Unit3','Unit4','ShortTopic1','ShortTopic2',
+  'ShortTopic3','ShortTopic4','Unit5','Unit6','Unit7','Unit8'];
+
+// Build adjacency
+const nodeMap = {};
+DATA.nodes.forEach(n => { nodeMap[n.id] = n; });
+const children = {}, parents = {};
+DATA.nodes.forEach(n => { children[n.id] = []; parents[n.id] = []; });
+DATA.edges.forEach(e => { children[e.source].push(e.target); parents[e.target].push(e.source); });
+
+// Layout: hierarchical by layer, spread horizontally within each layer
+const layers = {};
+DATA.nodes.forEach(n => {
+  if (!layers[n.layer]) layers[n.layer] = [];
+  layers[n.layer].push(n);
+});
+
+const NODE_W = 130, NODE_H = 28, PAD_X = 16, PAD_Y = 70;
+const maxLayer = Math.max(...Object.keys(layers).map(Number));
+const maxWidth = Math.max(...Object.values(layers).map(l => l.length));
+
+// Sort within each layer by teaching_order for consistency
+Object.values(layers).forEach(l => l.sort((a,b) => a.teaching_order - b.teaching_order));
+
+// Position
+DATA.nodes.forEach(n => {
+  const layerNodes = layers[n.layer];
+  const idx = layerNodes.indexOf(n);
+  const count = layerNodes.length;
+  const totalW = count * (NODE_W + PAD_X);
+  n.x = (idx - (count-1)/2) * (NODE_W + PAD_X);
+  n.y = n.layer * (NODE_H + PAD_Y);
+});
+
+// SVG setup
+const svg = d3.select('#canvas');
+const g = svg.append('g');
+
+// Zoom
+const zoom = d3.zoom()
+  .scaleExtent([0.15, 3])
+  .on('zoom', e => g.attr('transform', e.transform));
+svg.call(zoom);
+
+// Initial transform: center the graph
+function fitView() {
+  const xs = DATA.nodes.map(n => n.x), ys = DATA.nodes.map(n => n.y);
+  const minX = Math.min(...xs) - NODE_W, maxX = Math.max(...xs) + NODE_W;
+  const minY = Math.min(...ys) - NODE_H, maxY = Math.max(...ys) + NODE_H;
+  const w = window.innerWidth, h = window.innerHeight - 50;
+  const gw = maxX - minX, gh = maxY - minY;
+  const scale = Math.min(w / gw, h / gh) * 0.9;
+  const tx = w/2 - (minX + maxX)/2 * scale;
+  const ty = h/2 - (minY + maxY)/2 * scale + 25;
+  svg.call(zoom.transform, d3.zoomIdentity.translate(tx, ty).scale(scale));
+}
+
+// Arrow marker
+svg.append('defs').append('marker')
+  .attr('id', 'arrow').attr('viewBox', '0 0 10 6')
+  .attr('refX', 10).attr('refY', 3)
+  .attr('markerWidth', 8).attr('markerHeight', 6)
+  .attr('orient', 'auto')
+  .append('path').attr('d', 'M0,0 L10,3 L0,6 Z').attr('fill', '#30363d');
+
+svg.select('defs').append('marker')
+  .attr('id', 'arrow-ancestor').attr('viewBox', '0 0 10 6')
+  .attr('refX', 10).attr('refY', 3)
+  .attr('markerWidth', 8).attr('markerHeight', 6)
+  .attr('orient', 'auto')
+  .append('path').attr('d', 'M0,0 L10,3 L0,6 Z').attr('fill', '#f0883e');
+
+svg.select('defs').append('marker')
+  .attr('id', 'arrow-descendant').attr('viewBox', '0 0 10 6')
+  .attr('refX', 10).attr('refY', 3)
+  .attr('markerWidth', 8).attr('markerHeight', 6)
+  .attr('orient', 'auto')
+  .append('path').attr('d', 'M0,0 L10,3 L0,6 Z').attr('fill', '#3fb950');
+
+// Draw edges
+const edgeGroup = g.append('g').attr('class', 'edges');
+const edgeEls = edgeGroup.selectAll('.edge')
+  .data(DATA.edges)
+  .enter().append('path')
+  .attr('class', d => 'edge ' + (d.essential ? 'essential' : 'transitive'))
+  .attr('d', d => {
+    const s = nodeMap[d.source], t = nodeMap[d.target];
+    const sy = s.y + NODE_H/2, ty = t.y - NODE_H/2;
+    const mx = (s.x + t.x) / 2, my = (sy + ty) / 2;
+    return `M${s.x},${sy} C${s.x},${my} ${t.x},${my} ${t.x},${ty}`;
+  })
+  .attr('marker-end', 'url(#arrow)');
+
+// Draw nodes
+const nodeGroup = g.append('g').attr('class', 'nodes');
+const nodeEls = nodeGroup.selectAll('.node-group')
+  .data(DATA.nodes)
+  .enter().append('g')
+  .attr('class', 'node-group')
+  .attr('transform', d => `translate(${d.x - NODE_W/2}, ${d.y - NODE_H/2})`);
+
+nodeEls.append('rect')
+  .attr('class', 'node-rect')
+  .attr('width', NODE_W).attr('height', NODE_H)
+  .attr('fill', d => BLOCK_COLORS[d.block] || '#555');
+
+nodeEls.append('text')
+  .attr('class', 'node-label')
+  .attr('x', NODE_W/2).attr('y', NODE_H/2)
+  .text(d => {
+    const name = d.name;
+    const maxLen = 18;
+    return name.length > maxLen ? name.slice(0, maxLen-1) + '…' : name;
+  });
+
+nodeEls.append('text')
+  .attr('class', 'node-id')
+  .attr('x', NODE_W/2).attr('y', -4)
+  .text(d => d.id);
+
+// Hover interactions
+function getAncestors(id) {
+  const set = new Set();
+  const queue = [id];
+  while (queue.length) {
+    const n = queue.pop();
+    parents[n].forEach(p => { if (!set.has(p)) { set.add(p); queue.push(p); } });
+  }
+  return set;
+}
+function getDescendants(id) {
+  const set = new Set();
+  const queue = [id];
+  while (queue.length) {
+    const n = queue.pop();
+    children[n].forEach(c => { if (!set.has(c)) { set.add(c); queue.push(c); } });
+  }
+  return set;
+}
+
+const tooltip = d3.select('#tooltip');
+
+nodeEls.on('mouseenter', function(event, d) {
+  const anc = getAncestors(d.id);
+  const desc = getDescendants(d.id);
+  const related = new Set([d.id, ...anc, ...desc]);
+
+  nodeEls.classed('dimmed', n => !related.has(n.id))
+    .classed('highlighted', n => n.id === d.id)
+    .classed('ancestor', n => anc.has(n.id))
+    .classed('descendant', n => desc.has(n.id));
+
+  edgeEls.classed('dimmed', e => !related.has(e.source) || !related.has(e.target))
+    .classed('highlighted-ancestor', e => anc.has(e.source) && (anc.has(e.target) || e.target === d.id))
+    .classed('highlighted-descendant', e => (desc.has(e.target)) && (desc.has(e.source) || e.source === d.id))
+    .attr('marker-end', e => {
+      if (anc.has(e.source) && (anc.has(e.target) || e.target === d.id)) return 'url(#arrow-ancestor)';
+      if ((desc.has(e.target)) && (desc.has(e.source) || e.source === d.id)) return 'url(#arrow-descendant)';
+      return 'url(#arrow)';
+    });
+
+  // Tooltip
+  const prereqNames = parents[d.id].map(p => `${p}: ${nodeMap[p].name}`).join(', ') || 'none (root)';
+  const supportNames = children[d.id].map(c => `${c}: ${nodeMap[c].name}`).join(', ') || 'none (leaf)';
+
+  tooltip.select('.tt-name').text(`${d.id}: ${d.name}`);
+  tooltip.select('.tt-meta').text(`${d.block} · Week ${d.week} · Bloom ${d.bloom} · Order ${d.teaching_order}`);
+  tooltip.select('.tt-prereqs .tt-list').text(prereqNames);
+  tooltip.select('.tt-supports .tt-list').text(supportNames);
+  tooltip.style('display', 'block');
+})
+.on('mousemove', function(event) {
+  const x = event.clientX, y = event.clientY;
+  const ttW = 320, margin = 16;
+  const left = x + ttW + margin > window.innerWidth ? x - ttW - margin : x + margin;
+  const top = Math.min(y + margin, window.innerHeight - 200);
+  tooltip.style('left', left + 'px').style('top', top + 'px');
+})
+.on('mouseleave', function() {
+  nodeEls.classed('dimmed highlighted ancestor descendant', false);
+  edgeEls.classed('dimmed highlighted-ancestor highlighted-descendant', false)
+    .attr('marker-end', 'url(#arrow)');
+  tooltip.style('display', 'none');
+});
+
+// Edge toggle
+let showAll = true;
+d3.select('#btn-all').on('click', () => {
+  showAll = true;
+  edgeEls.style('display', null);
+  d3.select('#btn-all').classed('active', true);
+  d3.select('#btn-essential').classed('active', false);
+});
+d3.select('#btn-essential').on('click', () => {
+  showAll = false;
+  edgeEls.style('display', d => d.essential ? null : 'none');
+  d3.select('#btn-all').classed('active', false);
+  d3.select('#btn-essential').classed('active', true);
+});
+
+// Search
+d3.select('#search-box').on('input', function() {
+  const q = this.value.toLowerCase().trim();
+  if (!q) {
+    nodeEls.classed('dimmed', false);
+    edgeEls.classed('dimmed', false);
+    return;
+  }
+  const matches = new Set();
+  DATA.nodes.forEach(n => {
+    if (n.name.includes(q) || String(n.id) === q || n.block.toLowerCase().includes(q)) {
+      matches.add(n.id);
+    }
+  });
+  nodeEls.classed('dimmed', n => !matches.has(n.id));
+  edgeEls.classed('dimmed', e => !matches.has(e.source) && !matches.has(e.target));
+});
+
+// Reset
+d3.select('#btn-reset').on('click', fitView);
+
+// Legend
+const legendDiv = d3.select('#legend-items');
+BLOCK_ORDER.forEach(b => {
+  const count = DATA.nodes.filter(n => n.block === b).length;
+  const item = legendDiv.append('div').attr('class', 'legend-item');
+  item.append('div').attr('class', 'legend-dot').style('background', BLOCK_COLORS[b]);
+  item.append('span').text(`${b} (${count})`);
+});
+
+// Init
+fitView();
+</script>
+</body>
+</html>
