@@ -1,8 +1,10 @@
 # Project Ariadne
 
+[English](README.md) | [中文](README_zh.md) | [ONBOARDING](ONBOARDING.md)
+
 Project Ariadne 是一个面向先修知识图谱的自适应学习路径规划研究原型。本仓库把数据预处理、带单调性约束的神经网络成功率 Oracle，以及基于 DAG 的动态规划 Planner 组合在一起，用于研究如何为学习者选择概念学习路径。
 
-本仓库目前是 private repo，主要供内部科研使用。这份 README 面向 Research Assistant，帮助你理解代码结构、复现实验流程，并在不破坏现有模块边界的情况下扩展实现。
+本仓库目前是 private repo，主要供内部科研使用。这份 README 面向 Research Assistant，帮助你理解代码结构、复现实验流程，并在不破坏现有模块边界的情况下扩展实现。新加入的 RA 请先阅读 [ONBOARDING.md](ONBOARDING.md)，其中包含岗位任务、deadline、协作规范和第一周 deliverables。
 
 ## 研究目标
 
@@ -18,11 +20,10 @@ Project Ariadne 是一个面向先修知识图谱的自适应学习路径规划�
 
 ## 仓库结构
 
-这里仅说明代码仓库中应共享和跟踪的内容。`local/` 目录被刻意排除，因为它用于私人草稿、本地笔记或机器相关文件。
-
 ```text
 Project_Ariadne/
 ├── .gitignore
+├── ONBOARDING.md
 ├── configs/
 │   └── config.yaml
 ├── data/
@@ -41,6 +42,7 @@ Project_Ariadne/
 │   ├── 5_Half_Life_Regression_Spaced_Repitition.pdf
 │   ├── 6_SSP.pdf
 │   ├── 7_LAOstar.pdf
+│   ├── Introduction.md
 │   ├── ecs32a_dag_full.pdf
 │   └── papers.md
 ├── experiments/
@@ -63,12 +65,15 @@ Project_Ariadne/
 │   ├── data_engine/
 │   ├── oracle_core/
 │   └── planner_engine/
-├── Introduction.md
 ├── LICENSE
 ├── README.md
-├── ecs32a_dag_interactive.html
+├── README_zh.md
 └── requirements.txt
 ```
+
+## Onboarding
+
+[ONBOARDING.md](ONBOARDING.md) 是给 RA 看的 onboarding guide。它包含项目概览、环境配置、阅读顺序、沟通规则，以及 Data & Pipeline、ML Experiments、Planning & Theory、Literature/Writing 等岗位的具体 deliverables。
 
 ## 核心模块
 
@@ -163,11 +168,9 @@ python experiments/04_run_experiments.py
 
 ## 文档资料
 
-`documents/` 包含参考论文，主题包括 Bayesian Knowledge Tracing、Deep Knowledge Tracing、POMDP、instructional sequencing 中的 reinforcement learning、stochastic shortest path planning、LAO* 和 spaced repetition。根目录下的 `Introduction.md` 和 `ecs32a_dag_interactive.html` 提供额外的项目与 DAG 背景。
+`documents/` 包含参考论文，主题包括 Bayesian Knowledge Tracing、Deep Knowledge Tracing、POMDP、instructional sequencing 中的 reinforcement learning、stochastic shortest path planning、LAO* 和 spaced repetition。`documents/Introduction.md` 提供额外的项目动机和研究背景。
 
-这些资料提供实现背后的研究背景，帮助 RA 把代码决策和相关文献联系起来。
-
-## 给 Research Assistant 的开发注意事项
+## 开发注意事项
 
 - 不要把 `local/` 纳入 README 文档或共享仓库假设。
 - 保持 `data_engine`、`oracle_core` 和 `planner_engine` 三个模块的职责边界。

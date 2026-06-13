@@ -1,8 +1,10 @@
 # Project Ariadne
 
+[English](README.md) | [中文](README_zh.md) | [ONBOARDING](ONBOARDING.md)
+
 Project Ariadne is a research prototype for adaptive instructional sequencing over a prerequisite knowledge graph. The repository combines data preprocessing, a monotonic neural success-probability oracle, and a dynamic-programming planner for selecting learning paths on a DAG.
 
-This repository is currently private and intended for internal research use. The README is written for research assistants who need to understand the code layout, reproduce the experimental pipeline, and safely extend the implementation.
+This repository is currently private and intended for internal research use. The README is written for research assistants who need to understand the code layout, reproduce the experimental pipeline, and safely extend the implementation. New research assistants should start with [ONBOARDING.md](ONBOARDING.md) for role-specific tasks, deadlines, collaboration norms, and first-week deliverables.
 
 ## Research Goal
 
@@ -18,11 +20,10 @@ The current prototype focuses on:
 
 ## Repository Structure
 
-Only files tracked in the code repository are documented here. The `local/` directory is intentionally excluded because it is for private scratch work, local notes, or machine-specific artifacts.
-
 ```text
 Project_Ariadne/
 ├── .gitignore
+├── ONBOARDING.md
 ├── configs/
 │   └── config.yaml
 ├── data/
@@ -41,6 +42,7 @@ Project_Ariadne/
 │   ├── 5_Half_Life_Regression_Spaced_Repitition.pdf
 │   ├── 6_SSP.pdf
 │   ├── 7_LAOstar.pdf
+│   ├── Introduction.md
 │   ├── ecs32a_dag_full.pdf
 │   └── papers.md
 ├── experiments/
@@ -63,12 +65,15 @@ Project_Ariadne/
 │   ├── data_engine/
 │   ├── oracle_core/
 │   └── planner_engine/
-├── Introduction.md
 ├── LICENSE
 ├── README.md
-├── ecs32a_dag_interactive.html
+├── README_zh.md
 └── requirements.txt
 ```
+
+## Onboarding
+
+[ONBOARDING.md](ONBOARDING.md) is the RA-facing onboarding guide. It contains the project overview, environment setup, reading order, communication expectations, and position-specific deliverables for Data & Pipeline, ML Experiments, Planning & Theory, and Literature/Writing roles.
 
 ## Core Modules
 
@@ -163,11 +168,9 @@ Treat generated results as experiment artifacts, not as immutable source data. I
 
 ## Documents
 
-`documents/` contains reference papers related to Bayesian Knowledge Tracing, Deep Knowledge Tracing, POMDPs, reinforcement learning for instructional sequencing, stochastic shortest path planning, LAO*, and spaced repetition. The root-level `Introduction.md` and `ecs32a_dag_interactive.html` provide additional project and DAG context.
+`documents/` contains reference papers related to Bayesian Knowledge Tracing, Deep Knowledge Tracing, POMDPs, reinforcement learning for instructional sequencing, stochastic shortest path planning, LAO*, and spaced repetition. `documents/Introduction.md` provides additional project motivation and research context.
 
-These documents provide research context for the implementation and should help RAs connect code decisions to the broader literature.
-
-## Development Notes for Research Assistants
+## Development Notes
 
 - Keep `local/` out of README documentation and shared repo assumptions.
 - Preserve the separation between `data_engine`, `oracle_core`, and `planner_engine`.
