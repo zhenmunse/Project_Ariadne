@@ -90,7 +90,6 @@ Keep it concise (1–2 pages). Use your own words — this is for your understan
 ### Task 2: Read the Ariadne SSP formulation (P1)
 
 After finishing the LAO\* summary, read:
-- `AGENT.md` — project context and formulation summary
 - `Introduction.md` — project motivation
 - The convergence proof document (will be shared separately)
 
