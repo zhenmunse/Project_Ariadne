@@ -110,7 +110,10 @@ def _aggregate_sessions(df: pd.DataFrame) -> pd.DataFrame:
             })
 
     for row in df.itertuples(index=False):
-        uid = int(getattr(row, "user_id"))
+        # Real PrairieLearn exports can use anonymized string IDs such as
+        # "student_0030df3636f5". The user_id is only used for grouping, so it
+        # should not be forced to int.
+        uid = getattr(row, "user_id")
         nid = int(getattr(row, "node_id"))
         correct = int(getattr(row, "is_correct"))
         ts = getattr(row, "timestamp")
