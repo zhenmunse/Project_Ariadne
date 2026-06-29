@@ -12,8 +12,9 @@ DEFAULT_MAPPING_PATH = Path("data/ecs32a_concepts_required_full_v1.csv")
 DEFAULT_OUTPUT_PATH = Path("data/processed/cleaned_interactions.csv")
 OUTPUT_COLUMNS = ["user_id", "item_id", "is_correct", "timestamp"]
 
-# Treat these text values as missing. "nah" is included for unfinished
-# browser/page-close/autosave-style records that should not become attempts.
+# Treat these text values as missing.
+# "nah" is a defensive choice for possible exports; it was not observed as a
+# literal value in the current ECS32A CSV, where unfinished rows are blank/NaN.
 MISSING_STRINGS = {"", "nan", "none", "null", "nah"}
 
 
@@ -217,6 +218,10 @@ def drop_missing_is_correct(df):
         # Only drop rows that look unfinished in both correctness and score.
         unfinished_mask = is_correct_missing & score_missing
     else:
+        print(
+            "No score column found; falling back to dropping rows where "
+            "is_correct alone is missing."
+        )
         unfinished_mask = is_correct_missing
 
     dropped = df[unfinished_mask].copy()
@@ -432,6 +437,10 @@ def clean_interactions(raw_df, valid_question_ids):
 
     df, stats["orphan_rows_dropped"] = filter_orphans(df, valid_question_ids)
     stats["after_orphan_filtering"] = len(df)
+
+    # Remove internal helper columns before final schema selection. OUTPUT_COLUMNS
+    # already prevents leakage, but this keeps future edits safer.
+    df = df.drop(columns=["_original_row_order"], errors="ignore")
 
     # Rename to the exact schema expected by the next preprocessing step.
     cleaned_df = df.rename(
