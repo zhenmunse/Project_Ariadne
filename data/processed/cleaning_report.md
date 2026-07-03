@@ -326,6 +326,8 @@ Rows are counted by `assessment_title` from the PrairieLearn raw export. `droppe
 
 This section summarizes repeated completed submissions by `user_id,item_id`. `completed_submissions` is counted after unfinished no-score rows are removed, and repeat-attempt intervals use consecutive submission timestamps for the same student and question.
 
+`final_is_correct` is only the correctness of the last completed submission; `correct_submissions` and `accuracy` summarize all completed submissions for that student-question pair.
+
 Intervals longer than `60` minutes, zero-length gaps, and negative gaps are excluded from interval quantiles because they are likely idle/cross-session artifacts rather than active work time.
 
 Retry threshold counts and interval distribution:
@@ -339,24 +341,24 @@ Retry threshold counts and interval distribution:
 
 Highest-attempt student-question pairs:
 
-| user_id | item_id | assessment_title | completed_submissions | unique_variants | valid_repeat_intervals | observed_span_minutes | median_repeat_minutes | final_is_correct |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| student_46bc1baac69b | 9603771 | Practice Quiz 2 | 131 | 131 | 129 | 4132.35 | 0.20 | 1 |
-| student_6f09d945079b | 9609158 | Practice Quiz 3 | 125 | 125 | 118 | 53467.95 | 0.12 | 1 |
-| student_6a92dc266e6d | 9603770 | Practice Quiz 2 | 119 | 119 | 118 | 34.33 | 0.15 | 1 |
-| student_68eafa590972 | 9609158 | Practice Quiz 3 | 117 | 117 | 113 | 2867.88 | 0.07 | 1 |
-| student_64e95a72cc12 | 9609158 | Practice Quiz 3 | 110 | 110 | 106 | 22536.85 | 0.08 | 1 |
-| student_781f16d8918b | 9609158 | Practice Quiz 3 | 84 | 84 | 81 | 713.32 | 0.10 | 1 |
-| student_a5f8ca05b3ef | 9609158 | Practice Quiz 3 | 78 | 78 | 75 | 999.93 | 0.18 | 1 |
-| student_ee4863d5d0a8 | 9609158 | Practice Quiz 3 | 77 | 77 | 75 | 20174.47 | 0.08 | 1 |
-| student_0dc5dd3bb9b6 | 9603770 | Practice Quiz 2 | 72 | 72 | 68 | 2913.93 | 0.23 | 0 |
-| student_91a49255ef40 | 9609158 | Practice Quiz 3 | 67 | 67 | 65 | 64076.45 | 0.10 | 1 |
+| user_id | item_id | assessment_title | completed_submissions | correct_submissions | accuracy | unique_variants | valid_repeat_intervals | observed_span_minutes | median_repeat_minutes | final_is_correct |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| student_46bc1baac69b | 9603771 | Practice Quiz 2 | 131 | 84 | 64.12% | 131 | 129 | 4132.35 | 0.20 | 1 |
+| student_6f09d945079b | 9609158 | Practice Quiz 3 | 125 | 107 | 85.60% | 125 | 118 | 53467.95 | 0.12 | 1 |
+| student_6a92dc266e6d | 9603770 | Practice Quiz 2 | 119 | 94 | 78.99% | 119 | 118 | 34.33 | 0.15 | 1 |
+| student_68eafa590972 | 9609158 | Practice Quiz 3 | 117 | 112 | 95.73% | 117 | 113 | 2867.88 | 0.07 | 1 |
+| student_64e95a72cc12 | 9609158 | Practice Quiz 3 | 110 | 85 | 77.27% | 110 | 106 | 22536.85 | 0.08 | 1 |
+| student_781f16d8918b | 9609158 | Practice Quiz 3 | 84 | 66 | 78.57% | 84 | 81 | 713.32 | 0.10 | 1 |
+| student_a5f8ca05b3ef | 9609158 | Practice Quiz 3 | 78 | 62 | 79.49% | 78 | 75 | 999.93 | 0.18 | 1 |
+| student_ee4863d5d0a8 | 9609158 | Practice Quiz 3 | 77 | 53 | 68.83% | 77 | 75 | 20174.47 | 0.08 | 1 |
+| student_0dc5dd3bb9b6 | 9603770 | Practice Quiz 2 | 72 | 35 | 48.61% | 72 | 68 | 2913.93 | 0.23 | 0 |
+| student_91a49255ef40 | 9609158 | Practice Quiz 3 | 67 | 47 | 70.15% | 67 | 65 | 64076.45 | 0.10 | 1 |
 
 The specifically flagged 119-attempt case is:
 
-| user_id | item_id | assessment_title | completed_submissions | unique_variants | valid_repeat_intervals | observed_span_minutes | median_repeat_minutes | final_is_correct |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| student_6a92dc266e6d | 9603770 | Practice Quiz 2 | 119 | 119 | 118 | 34.33 | 0.15 | 1 |
+| user_id | item_id | assessment_title | completed_submissions | correct_submissions | accuracy | unique_variants | valid_repeat_intervals | observed_span_minutes | median_repeat_minutes | final_is_correct |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| student_6a92dc266e6d | 9603770 | Practice Quiz 2 | 119 | 94 | 78.99% | 119 | 118 | 34.33 | 0.15 | 1 |
 
 Recommendation: do not filter these rows out of `cleaned_interactions.csv`. Keep them in the cleaned data and handle them in preprocessing/modeling with explicit sensitivity checks, attempt caps, weighting, or diagnostic flags. The high counts are partly explained by PrairieLearn variants and short repeated-submit intervals, so dropping them during cleaning would remove real behavior before the modeling assumptions are finalized.
 

@@ -287,6 +287,7 @@ def student_question_summary(attempts, template):
         agg_spec["unique_variants"] = ("variant_id", "nunique")
 
     base = attempts.groupby(["student_id", "question_id"]).agg(**agg_spec).reset_index()
+    base["accuracy"] = base["correct_submissions"] / base["completed_submissions"]
     base["observed_span_minutes"] = (
         base["last_completed_dt"] - base["first_completed_dt"]
     ).dt.total_seconds() / 60.0
@@ -358,7 +359,7 @@ def retry_threshold_stats(student_question, attempts, thresholds):
 def format_value(value, column):
     if pd.isna(value):
         return "NA"
-    if column.endswith("_rate"):
+    if column.endswith("_rate") or column == "accuracy":
         return f"{value:.2%}"
     if "minutes" in column:
         return f"{value:.2f}"
@@ -367,6 +368,7 @@ def format_value(value, column):
         "dropped_rows",
         "cleaned_rows",
         "completed_submissions",
+        "correct_submissions",
         "valid_repeat_intervals",
         "unique_variants",
         "same_variant_extra_submissions",
@@ -484,6 +486,10 @@ def build_high_retry_section(student_question, threshold_stats, max_gap_minutes)
         "no-score rows are removed, and repeat-attempt intervals use consecutive "
         "submission timestamps for the same student and question.",
         "",
+        "`final_is_correct` is only the correctness of the last completed submission; "
+        "`correct_submissions` and `accuracy` summarize all completed submissions "
+        "for that student-question pair.",
+        "",
         f"Intervals longer than `{max_gap_minutes:.0f}` minutes, zero-length gaps, "
         "and negative gaps are excluded from interval quantiles because they are "
         "likely idle/cross-session artifacts rather than active work time.",
@@ -511,6 +517,8 @@ def build_high_retry_section(student_question, threshold_stats, max_gap_minutes)
                 "item_id",
                 "assessment_title",
                 "completed_submissions",
+                "correct_submissions",
+                "accuracy",
                 "unique_variants",
                 "valid_repeat_intervals",
                 "observed_span_minutes",
@@ -534,6 +542,8 @@ def build_high_retry_section(student_question, threshold_stats, max_gap_minutes)
                         "item_id",
                         "assessment_title",
                         "completed_submissions",
+                        "correct_submissions",
+                        "accuracy",
                         "unique_variants",
                         "valid_repeat_intervals",
                         "observed_span_minutes",
