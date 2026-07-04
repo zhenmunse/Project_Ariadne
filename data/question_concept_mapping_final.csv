@@ -1,0 +1,145 @@
+item_id,question_name,uuid,concept_id,concept_name
+9596870,pq1/q1,dd8e2056-3f38-4e1c-8182-c07490af5b2d,6,variables assignment and naming
+9596871,pq1/q2,6e9a1eb7-d06d-47b5-9696-02638dbba868,4,primitive values and types
+9596872,pq1/q3,2fa53c2d-e7e8-4a84-9bd8-ce23b650c613,6,variables assignment and naming
+9596875,pq1/q4,5600c985-2a4d-4a4b-b566-293a1baf616b,10,advanced operators and string ops
+9596876,pq1/q5,071ccbc1-3052-4a17-b972-9f9df3ff99e6,8,type conversion
+9596877,pq1/q6,5032b94e-4d01-40c4-bb42-7fdcc4cec14a,8,type conversion
+9596878,honor_statement,f37d5ffa-af27-433a-9235-b2f8fc576df4,,
+9597466,quiz1/q1,ffb91888-9d83-4fe1-89c5-3f99fcfd4271,6,variables assignment and naming
+9597471,quiz1/q2,87d8a989-5e59-4114-b2cc-502fef68ca78,6,variables assignment and naming
+9597473,quiz1/q3,71b093b6-ff0e-4cf7-9203-c0153fc6a6a4,10,advanced operators and string ops
+9597474,quiz1/q4,ee516b77-8d63-42c7-b4d5-559dd5a832d7,7,basic input output
+9597491,quiz1/q5,237c65ee-f7f9-4464-9fd8-7c340907c394,3,string literals and print
+9597492,quiz1/q6,6c120fa9-5f0e-4acb-bd97-6d6a4b003cc2,8,type conversion
+9597494,quiz1/q7,1ccda28a-4754-40b6-9ec1-1f8860728ef5,8,type conversion
+9597496,quiz-exam_password,b6981e90-a956-4b3d-bd04-2fe66dbb04c3,,
+9598973,quiz2/q1,7f4d877c-d490-40f0-96d5-3e6d2ed6c7e1,12,boolean values and comparisons
+9598974,quiz2/q2,7999bcd0-2e29-40e9-ba99-3141b47dc3e3,15,boolean logic and short circuit
+9598976,quiz2/q3,c958b8ea-4bfb-426e-8e98-0a216d6f8c7d,15,boolean logic and short circuit
+9599002,quiz2/q10,6bebdbb4-8599-4fdf-ad34-2b1109609ba3,14,elif and nested conditionals
+9599014,quiz2/q9.2,da4d94f8-f8b4-4071-a02a-2db5ce752e0b,13,if else conditional blocks
+9603580,pq2/q1,a1c3e5f7-2b4d-4e6f-8a0c-1d3e5f7a9b0d,12,boolean values and comparisons
+9603581,pq2/q11,a5c7e9b1-3d2f-4e6a-0b8c-4f6a8d0e2c5b,14,elif and nested conditionals
+9603582,pq2/q12,b6d8f0a2-4e1c-4a5f-1c9e-5b7d9f1a3c6e,13,if else conditional blocks
+9603583,pq2/q13,c7e9a1b3-5f2d-4a6c-2d0e-6b8f0a2c4e7d,14,elif and nested conditionals
+9603584,pq2/q14,d8f0a2c4-6e1b-4b7d-3f5a-7c9e1b3d5f8a,16,guardian pattern and demorgan
+9603585,pq2/q15,e9a1c3d5-7f0b-4e2a-4c6e-8b0d2f4a6c9e,16,guardian pattern and demorgan
+9603592,pq2/q2,b2d4f6a8-3c5e-4f7a-9b1d-2e4f6a8c0d2e,15,boolean logic and short circuit
+9603593,pq2/q3,c3e5a7b9-4d6f-4a8c-0b2d-3f5a7c9e1b3d,15,boolean logic and short circuit
+9603611,pq2/q8,b0d2e4a6-8c1f-4f3b-5d7e-9a1c3e5b7d0f,13,if else conditional blocks
+9603769,pq2/q10,37f879bb-4c41-4d5b-98b8-f70c5c608cee,13,if else conditional blocks
+9603770,pq2/q16,406bfe0b-da6c-4dbd-97bf-5676e912398c,12,boolean values and comparisons
+9603771,pq2/q4,1dae339a-9898-4245-8562-c0e0d7964a70,12,boolean values and comparisons
+9603772,pq2/q5,ddaba58e-6a73-474f-98c8-f83a4fb1df78,16,guardian pattern and demorgan
+9603773,pq2/q6,1057e53e-f1c6-4ed8-b839-7bb8db849657,12,boolean values and comparisons
+9603774,pq2/q7,710f6096-7711-444f-870f-c5b6d1d9773f,14,elif and nested conditionals
+9603775,pq2/q9,36c704ac-bb4f-4912-9d7e-9805b72a242b,14,elif and nested conditionals
+9604637,quiz2/q4,3f8c4bc3-7497-4d30-8c20-d3296f517d6d,15,boolean logic and short circuit
+9604638,quiz2/q8-sq26,1f1c0371-28c3-4498-afdf-c3d21b6a0daf,14,elif and nested conditionals
+9604642,quiz2/ParsonsProblem-Blocks,23c34da6-4795-4faa-840d-07493448d2ab,14,elif and nested conditionals
+9609148,pq3/q1,7e6e2bc8-57b2-4156-afc9-d0e53f78c360,14,elif and nested conditionals
+9609149,pq3/q10,2c46628d-b06b-4d4f-9ef2-6f8b34e5aa22,29,error categories syntax runtime semantic
+9609150,pq3/q2,bfd26ebb-d12a-4e82-bf06-3e39f89871c8,27,random number generation functions
+9609151,pq3/q3_1,6f159a2f-3b3b-4a34-a022-bcc29d7fbd65,16,guardian pattern and demorgan
+9609152,pq3/q3_2,0a412306-7388-4210-8e94-6371a28659f1,16,guardian pattern and demorgan
+9609153,pq3/q4,65283184-3014-45bc-81e8-2731a7813b15,16,guardian pattern and demorgan
+9609154,pq3/q5,5934d165-4982-445b-8308-68c7b87c1415,27,random number generation functions
+9609155,pq3/q6,43503a79-99e1-4886-a190-1d2fd4a728d2,27,random number generation functions
+9609156,pq3/q7,1cb03a78-840b-4c8a-bf5d-5918e6e1d126,16,guardian pattern and demorgan
+9609157,pq3/q8,4e701c0e-605d-40f0-b8cb-db045ca3c656,29,error categories syntax runtime semantic
+9609158,pq3/q9,e0c3b69d-f141-41bf-bda4-640ff8ac2b02,29,error categories syntax runtime semantic
+9610278,quiz3/q1,90eef7fa-fd11-47b3-bf2e-082cae5aab6f,16,guardian pattern and demorgan
+9610279,quiz3/q2,67811c45-afbf-4c03-bdb8-b8e18b5e0fdc,16,guardian pattern and demorgan
+9610280,quiz3/q3,c18afb33-102e-4325-9661-12cd90d301d5,27,random number generation functions
+9610281,quiz3/q4,3efcc0f0-6657-45f7-88ef-b5f1a4de4cfd,27,random number generation functions
+9610282,quiz3/q5,1dba0937-42d7-4d01-91a2-3a1dbf51c1bd,16,guardian pattern and demorgan
+9610283,quiz3/q6,c0217ca6-7061-4736-bec1-2efd3dca0bef,29,error categories syntax runtime semantic
+9610284,quiz3/q7,feb2b5f1-b9a9-4f97-8206-0e895fc2c07c,29,error categories syntax runtime semantic
+9610285,quiz3/q8,84a42a53-eec1-4663-a84a-05c0d9dc2684,14,elif and nested conditionals
+9612382,pq4/q1,20ed9dec-c19a-4b74-a521-5811aacbd44e,17,while loop basics
+9612383,pq4/q10,815a28ae-d2d6-473b-9c6d-97e2572f5774,17,while loop basics
+9612384,pq4/q11,09798668-bfe1-4322-8b99-c1f651aea767,23,robust input loop patterns
+9612385,pq4/q2,05ede36b-921e-4a71-ba48-1c0dab92aaf8,18,loop update iteration variables
+9612386,pq4/q3,e6d9e5ae-dc81-4ca0-935a-102fb012c1fd,17,while loop basics
+9612387,pq4/q4,77ca13d9-7588-4cc9-b73c-219ad17236fa,20,definite indefinite loops
+9612388,pq4/q5,7a11e7db-0db3-4d60-9f1a-bc826e9e6947,20,definite indefinite loops
+9612389,pq4/q6,3d2bb721-0987-4201-8d65-8e7d7187d3d1,17,while loop basics
+9612390,pq4/q7,1bfedb93-f5c3-42c2-8989-c15467e9f759,18,loop update iteration variables
+9612391,pq4/q8,bc560d69-80a0-4fc1-abfc-aa04565f58b7,36,nested for loops
+9612392,pq4/q9,2031bd8d-4c90-4f90-abe8-df49b9c1dfd6,36,nested for loops
+9614971,quiz4/q1,57d4c9f3-b1b8-4919-8250-f3e41293d918,17,while loop basics
+9614972,quiz4/q2,a91f5fbd-fa91-4810-aff7-e6595e609e73,20,definite indefinite loops
+9614973,quiz4/q3,18b69fd8-2fce-4e9b-9eb9-37d8a6732ed6,20,definite indefinite loops
+9614974,quiz4/q4,d088457a-74c6-4266-987e-3f56a9d34558,20,definite indefinite loops
+9614975,quiz4/q5,0a59b867-8804-424e-8742-79e0dda74ab1,17,while loop basics
+9614976,quiz4/q6,8eb732cd-c5f7-41ab-83f2-109dba211ede,18,loop update iteration variables
+9614977,quiz4/q7,4673d558-0c8c-46d6-9569-c2b17c29bfb9,36,nested for loops
+9614978,quiz4/q8,4da76175-6bd1-408b-8fe3-83da634379e7,19,break continue loop control
+9619578,reviewQuiz1/q1,f30170ec-8ebb-49b1-a2a3-94cd6fa5bb1f,20,definite indefinite loops
+9619579,reviewQuiz1/q2,8ef57b89-c64e-46af-bfc7-b78f9e82107e,20,definite indefinite loops
+9619580,reviewQuiz1/q3,388bf97d-0fbc-4f1a-ac68-2c4dfa7e70f4,17,while loop basics
+9619581,reviewQuiz1/q4,6bf86502-34be-45b0-a27d-4d67d31ee5ab,27,random number generation functions
+9619582,reviewQuiz1/q5,80dcf77a-9a40-4ccd-b8fa-75229f75a1fe,14,elif and nested conditionals
+9619583,reviewQuiz1/q6,62425472-220d-40ef-b605-4e4e1c00839e,38,robust input with try except
+9622018,pq5/q1,43a225e1-d1c7-4236-a4fd-812108f2d0c3,33,range function and counted iteration
+9622019,pq5/q10,b49c6c8d-4a77-4f80-9640-da1f241dfbda,40,strings indexing slicing
+9622020,pq5/q11,661b77ef-f538-47d9-8cd7-cc9e2975b86d,43,file handles write close
+9622021,pq5/q12,e37ce442-0bf8-459b-943d-64099752a6e1,42,string methods parsing validation
+9622022,pq5/q13,87f90d37-6718-44db-9671-569195ab1a79,43,file handles write close
+9622023,pq5/q14,f4004fdd-44a6-4055-8b48-c85cc7c8d1c4,44,file reading line iteration
+9622024,pq5/q15,6c2021e5-ab20-421f-b121-fba73bf3fe7c,44,file reading line iteration
+9622025,pq5/q2,28581411-ee6b-49ee-a78d-5b94f54969fc,33,range function and counted iteration
+9622026,pq5/q3,01bee4ea-44f2-4a4f-94b2-c422cd9856c5,33,range function and counted iteration
+9622027,pq5/q4,4b1beb79-72e5-497b-8152-4d0606b73caa,36,nested for loops
+9622028,pq5/q5,1e957e6a-03fe-461e-9935-f8a1ed51ec1b,47,list methods append pop sort
+9622029,pq5/q6,63c57121-8b53-44d2-8a0c-d4c965bfb43c,42,string methods parsing validation
+9622030,pq5/q7,90ef3b9d-784c-4dce-9a0a-9fe48e0455c5,42,string methods parsing validation
+9622031,pq5/q8,6604052c-1898-4907-b82c-e80acbb1778d,42,string methods parsing validation
+9622032,pq5/q9,f0519652-cd7d-4b6d-896c-de8db8bbb85d,42,string methods parsing validation
+9624427,quiz5/q1,a4e215fc-4f8b-431d-a93d-7d3cccf9d2c0,33,range function and counted iteration
+9624428,quiz5/q2,5e061b63-f0dc-45d0-8c41-1f9149c21b82,36,nested for loops
+9624429,quiz5/q3,f4afe8db-344d-43b4-a696-747b3e277725,41,string immutability comparison in
+9624430,quiz5/q4,15f6d01f-c079-46de-bd6b-12c155f2935b,42,string methods parsing validation
+9624431,quiz5/q5,a52672c4-aa92-4cff-b001-ec3408b2b62f,43,file handles write close
+9624432,quiz5/q6,45fed84f-1386-4a4b-a0c8-010edd412cd0,40,strings indexing slicing
+9624433,quiz5/q7,07f9225b-7c36-4dfb-9781-47ab5b63ddf7,44,file reading line iteration
+9633568,pq6/q1,302cb4a5-c41c-42ad-8b7f-6a68c5e05b01,52,parameters return values side effects
+9633569,pq6/q10,302cb4a5-c41c-42ad-8b7f-6a68c5e05b10,35,for loop accumulation patterns
+9633570,pq6/q11,302cb4a5-c41c-42ad-8b7f-6a68c5e05b11,46,lists basics indexing mutability
+9633571,pq6/q12,302cb4a5-c41c-42ad-8b7f-6a68c5e05b12,55,dictionaries basics key value lookup
+9633572,pq6/q13,302cb4a5-c41c-42ad-8b7f-6a68c5e05b13,56,dictionary iteration query patterns
+9633573,pq6/q2,302cb4a5-c41c-42ad-8b7f-6a68c5e05b02,52,parameters return values side effects
+9633574,pq6/q3,302cb4a5-c41c-42ad-8b7f-6a68c5e05b03,52,parameters return values side effects
+9633575,pq6/q4,302cb4a5-c41c-42ad-8b7f-6a68c5e05b04,52,parameters return values side effects
+9633576,pq6/q5,302cb4a5-c41c-42ad-8b7f-6a68c5e05b05,52,parameters return values side effects
+9633577,pq6/q6,302cb4a5-c41c-42ad-8b7f-6a68c5e05b06,52,parameters return values side effects
+9633578,pq6/q7,302cb4a5-c41c-42ad-8b7f-6a68c5e05b07,52,parameters return values side effects
+9633579,pq6/q8,302cb4a5-c41c-42ad-8b7f-6a68c5e05b08,39,exception handling runtime failure cases
+9633580,pq6/q9,302cb4a5-c41c-42ad-8b7f-6a68c5e05b09,46,lists basics indexing mutability
+9635284,quiz6/q1,ebc36af0-eb89-4380-bd5f-2d1c1924595c,52,parameters return values side effects
+9635285,quiz6/q2,cfbd7b08-61c6-41da-a4cb-3bb172d4c52b,52,parameters return values side effects
+9635286,quiz6/q3,13499200-1b3b-4caa-9812-cec720da2e79,52,parameters return values side effects
+9635287,quiz6/q4,411f7cf7-4f26-48ba-b378-fbb0e3765e00,52,parameters return values side effects
+9635288,quiz6/q5,873739c5-48c2-4e1e-80e7-bbb35e094290,52,parameters return values side effects
+9635289,quiz6/q6,856a2aa1-127c-4ac0-b3cd-8894b478870d,47,list methods append pop sort
+9635290,quiz6/q7,f5df0ad9-394c-4f05-a564-3dee5b297292,56,dictionary iteration query patterns
+9637165,quiz7/q1,20f50cbd-3aaa-4fbb-bb20-54b71dfd67ff,12,boolean values and comparisons
+9637166,quiz7/q10,dd0f1de9-8b3d-4336-b856-df087c633d6c,55,dictionaries basics key value lookup
+9637167,quiz7/q2,1a4efd8f-f955-47a0-96c6-7327ee460e72,16,guardian pattern and demorgan
+9637168,quiz7/q3,dac3aef3-f7a6-4683-afd0-4d0d1327db05,42,string methods parsing validation
+9637169,quiz7/q4,d68d691a-6f10-4acc-8abd-8d725cba616f,36,nested for loops
+9637170,quiz7/q5,a89c84ca-81eb-4467-a3bc-5dec3167e008,17,while loop basics
+9637171,quiz7/q6,a1763725-e066-422e-8340-c195cdebaa4f,52,parameters return values side effects
+9637172,quiz7/q7,777c1a94-8b58-4ff0-a98c-511a7fece026,52,parameters return values side effects
+9637173,quiz7/q8,6c046309-a1e3-4d63-a7a8-b79204965c04,56,dictionary iteration query patterns
+9637174,quiz7/q9,9ac68773-97c7-4b49-824f-f32a57a544fe,57,dictionaries counting join filter
+9643502,reviewQuiz3/q1,373c120e-2a2e-4d50-98e3-d383d3e08562,52,parameters return values side effects
+9643503,reviewQuiz3/q2,1711f53f-3a2e-42bb-b4d8-5f7a6380b538,12,boolean values and comparisons
+9643504,reviewQuiz3/q3,2fa792a1-9d6d-45fe-b221-b7e8cc32177a,36,nested for loops
+9643505,reviewQuiz3/q4,3b1eab03-0836-4a61-8373-708e22a51b27,52,parameters return values side effects
+9643506,reviewQuiz3/q5,63d9c4e3-01ce-490f-8bfb-3be964eb1401,52,parameters return values side effects
+9643507,reviewQuiz3/q6,0b597ba8-598a-4d23-bde1-0cad56070b23,52,parameters return values side effects
+9643508,reviewQuiz3/q7,870e95e7-0295-4ea6-b6d4-5ca59a7b2a0c,38,robust input with try except
+9643509,reviewQuiz3/q8,6e6dc6e1-71c8-4aad-88ba-82e7200fa96d,56,dictionary iteration query patterns
+9643536,quiz-exam_password_variant1,34371d10-19ca-40ca-8d59-c8a632fc2994,,
