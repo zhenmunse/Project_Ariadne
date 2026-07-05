@@ -5,7 +5,6 @@ item_id,question_name,uuid,concept_id,concept_name
 9596875,pq1/q4,5600c985-2a4d-4a4b-b566-293a1baf616b,10,advanced operators and string ops
 9596876,pq1/q5,071ccbc1-3052-4a17-b972-9f9df3ff99e6,8,type conversion
 9596877,pq1/q6,5032b94e-4d01-40c4-bb42-7fdcc4cec14a,8,type conversion
-9596878,honor_statement,f37d5ffa-af27-433a-9235-b2f8fc576df4,,
 9597466,quiz1/q1,ffb91888-9d83-4fe1-89c5-3f99fcfd4271,6,variables assignment and naming
 9597471,quiz1/q2,87d8a989-5e59-4114-b2cc-502fef68ca78,6,variables assignment and naming
 9597473,quiz1/q3,71b093b6-ff0e-4cf7-9203-c0153fc6a6a4,10,advanced operators and string ops
@@ -13,7 +12,6 @@ item_id,question_name,uuid,concept_id,concept_name
 9597491,quiz1/q5,237c65ee-f7f9-4464-9fd8-7c340907c394,3,string literals and print
 9597492,quiz1/q6,6c120fa9-5f0e-4acb-bd97-6d6a4b003cc2,8,type conversion
 9597494,quiz1/q7,1ccda28a-4754-40b6-9ec1-1f8860728ef5,8,type conversion
-9597496,quiz-exam_password,b6981e90-a956-4b3d-bd04-2fe66dbb04c3,,
 9598973,quiz2/q1,7f4d877c-d490-40f0-96d5-3e6d2ed6c7e1,12,boolean values and comparisons
 9598974,quiz2/q2,7999bcd0-2e29-40e9-ba99-3141b47dc3e3,15,boolean logic and short circuit
 9598976,quiz2/q3,c958b8ea-4bfb-426e-8e98-0a216d6f8c7d,15,boolean logic and short circuit
@@ -142,4 +140,3 @@ item_id,question_name,uuid,concept_id,concept_name
 9643507,reviewQuiz3/q6,0b597ba8-598a-4d23-bde1-0cad56070b23,52,parameters return values side effects
 9643508,reviewQuiz3/q7,870e95e7-0295-4ea6-b6d4-5ca59a7b2a0c,38,robust input with try except
 9643509,reviewQuiz3/q8,6e6dc6e1-71c8-4aad-88ba-82e7200fa96d,56,dictionary iteration query patterns
-9643536,quiz-exam_password_variant1,34371d10-19ca-40ca-8d59-c8a632fc2994,,
