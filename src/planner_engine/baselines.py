@@ -1,5 +1,5 @@
 """
-baselines.py  --  Ablation baselines for Project Ariadne v0.2.
+baselines.py  --  Ablation baselines for Project Ariadne.
 
 GreedyPlanner:  one-step-lookahead (myopic) planner.
     Proves that DAGPlanner's long-horizon DP outperforms local greedy.
@@ -9,11 +9,12 @@ FrequencyOracle: naive frequency-based success-probability predictor.
     especially under few-shot / cold-start conditions.
 """
 
+from __future__ import annotations
+
 from collections import defaultdict
-from typing import Dict, List, Set, Tuple
+from typing import Dict, FrozenSet, List, Set, Tuple
 
 import networkx as nx
-import torch
 
 from src.planner_engine.zpd_utils import get_valid_actions
 
@@ -38,7 +39,7 @@ class GreedyPlanner:
         oracle,
         nx_graph: nx.DiGraph,
         config: dict,
-        edge_index: torch.Tensor,
+        edge_index,
         num_nodes: int,
     ):
         assert nx.is_directed_acyclic_graph(nx_graph), \
@@ -49,13 +50,17 @@ class GreedyPlanner:
         self.edge_index = edge_index
         self.num_nodes = num_nodes
 
-        self.t_penalty: float = config["planner"]["t_penalty"]
-        # Greedy supports lambda_risk for fair comparison;
-        # default in ablation is 0 (pure expected-time myopic).
-        self.lambda_risk: float = config["planner"].get("lambda_risk", 0.0)
         self.mc_samples: int = config.get("oracle", {}).get("mc_samples", 20)
+        self.default_base_cost: float = float(
+            config.get("planner", {}).get(
+                "base_cost",
+                config.get("oracle", {}).get("t_base", 60.0),
+            )
+        )
 
     def _state_to_mask(self, state: Set[int]) -> torch.Tensor:
+        import torch
+
         mask = torch.zeros(self.num_nodes)
         for n in state:
             if 0 <= n < self.num_nodes:
@@ -63,7 +68,46 @@ class GreedyPlanner:
         return mask
 
     def _zero_x(self) -> torch.Tensor:
+        import torch
+
         return torch.zeros(self.num_nodes, 2)
+
+    @staticmethod
+    def _as_float(value: object) -> float:
+        if hasattr(value, "item"):
+            return float(value.item())
+        return float(value)  # type: ignore[arg-type]
+
+    def _action_cost(self, action: int, state: Set[int]) -> float:
+        """Return geometric one-step expected cost T_v / p(v, s)."""
+        frozen_state = frozenset(state)
+
+        if hasattr(self.oracle, "success_prob"):
+            p = self._as_float(self.oracle.success_prob(action, frozen_state))
+            if hasattr(self.oracle, "base_cost"):
+                T = self._as_float(self.oracle.base_cost(action))
+            else:
+                T = self.default_base_cost
+        else:
+            import torch
+
+            x = self._zero_x()
+            mask = self._state_to_mask(state)
+            target_t = torch.tensor(action, dtype=torch.long)
+            mean_p, _var_p, t_base = self.oracle.predict_mc(
+                x,
+                self.edge_index,
+                target_t,
+                mask,
+                mc_samples=self.mc_samples,
+            )
+            p = self._as_float(mean_p)
+            T = self._as_float(t_base)
+
+        p = min(max(p, 1e-12), 1.0)
+        if T <= 0.0:
+            T = self.default_base_cost
+        return T / p
 
     def solve(
         self,
@@ -88,20 +132,8 @@ class GreedyPlanner:
             best_action = -1
             best_cost = float("inf")
 
-            x = self._zero_x()
-            mask = self._state_to_mask(state)
-
             for action in actions:
-                target_t = torch.tensor(action, dtype=torch.long)
-                mean_p, var_p, t_base = self.oracle.predict_mc(
-                    x, self.edge_index, target_t, mask,
-                    mc_samples=self.mc_samples,
-                )
-                cost = (
-                    t_base.item()
-                    + (1.0 - mean_p.item()) * self.t_penalty
-                    + self.lambda_risk * var_p.item()
-                )
+                cost = self._action_cost(action, state)
                 # Tie-break: smaller node_id wins
                 if cost < best_cost or (cost == best_cost and action < best_action):
                     best_cost = cost
@@ -122,14 +154,15 @@ class FrequencyOracle:
     """Naive frequency-based oracle (no graph structure, no GNN).
 
     Computes per-node global average label from training data.
-    Ignores prerequisites entirely -- predict_mc returns the same
+    Ignores prerequisites entirely -- success_prob returns the same
     probability regardless of mask.
 
     Cold-start policy: unseen nodes get the global mean label.
     Variance estimate: p_hat * (1 - p_hat)  (Bernoulli variance proxy).
     T_base: fixed constant (default 60.0, configurable).
 
-    Interface matches MonotonicOracle.predict_mc for drop-in use.
+    Interface supports both the current success_prob/base_cost API and the
+    legacy MonotonicOracle.predict_mc API for drop-in use.
     """
 
     def __init__(
@@ -159,6 +192,8 @@ class FrequencyOracle:
         self.global_mean = total_sum / max(total_cnt, 1)
 
         # Per-idx average
+        import torch
+
         self.p_hat = torch.full((num_nodes,), self.global_mean)
         for idx in range(num_nodes):
             if counts[idx] > 0:
@@ -181,6 +216,8 @@ class FrequencyOracle:
             t_base:  scalar tensor  -- fixed constant
         """
         node = target_node.item() if hasattr(target_node, "item") else int(target_node)
+        import torch
+
         p = self.p_hat[node].clone()
         v = p * (1.0 - p)
         tb = self.t_base if t_base < 0 else t_base
@@ -189,3 +226,15 @@ class FrequencyOracle:
             v.unsqueeze(0).squeeze(),
             torch.tensor(tb),
         )
+
+    def success_prob(self, v: int, mastered: FrozenSet[int]) -> float:
+        """Return p(v, s); this baseline ignores the mastered set."""
+        return float(self.p_hat[v].item())
+
+    def base_cost(self, v: int) -> float:
+        """Return the fixed attempt-time cost for concept v."""
+        return float(self.t_base)
+
+    def best_case_success_prob(self, v: int) -> float:
+        """Return the best-case success probability for the heuristic."""
+        return self.success_prob(v, frozenset())
