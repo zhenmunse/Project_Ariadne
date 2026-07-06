@@ -1,5 +1,7 @@
 # Summary Document: Core Principles of the LAO* Algorithm
 
+author: Yichen Chen
+
 ### 1. The Three-Phase Loop: Expand → Test for Convergence → Cost Revision
 
 The LAO* algorithm is an iterative three phase cycle to incrementally build and evaluate the solution until it stabilizes. It starts at **expand phase**. LAO* algorithm identifies a non-terminal "tip node" to represent a specific Python concept where the student has gaps. This node is in the current best partial solution, and we wants to expand it. This introduces its immediate successor states (more detailed foundation questions) into the searched graph. Then, the algorithm comes to **test for convergence phase**: after expansion, the algorithm checks whether the current best solution has reached a state of completion. It verifies if all reachable states under the current policy have been fully expanded and whether the error bounds have fallen below a predefined threshold ($\epsilon$). If yes, the search terminates. Finally, the **Cost Revision** happens. If the solution it found has not converged, the algorithm performs a localized ledger update using dynamic programming (Value Iteration or Policy Iteration). Crucially, instead of updating the entire state space, it only revises the costs and policies for a subset of states ($Z$) that includes the newly expanded node and its ancestors, which will update the estimated remaining cost (time) to complete the learning path.
