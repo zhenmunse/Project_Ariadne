@@ -1,7 +1,16 @@
-torch>=2.0
-torch-geometric>=2.4
+# Project Ariadne runtime dependencies.
+# Recommended Python: 3.10-3.12.
+
+# Core data / graph stack
 networkx>=3.0
-pandas>=2.0
 numpy>=1.24
+pandas>=2.0
 pyyaml>=6.0
 joblib>=1.3
+
+# Plotting / notebook analysis
+matplotlib>=3.7
+
+# Oracle training and inference
+torch>=2.0
+torch-geometric>=2.4

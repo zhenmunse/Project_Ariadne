@@ -9,8 +9,8 @@ import pandas as pd
 This supplemental script covers three handoff/QA deliverables:
 
 1. data/question_concept_mapping_template.csv
-   One row per unique cleaned item_id, with assessment_title filled from the raw
-   PrairieLearn export and concept_id left blank for DAG mapping.
+   One row per teaching-content item_id from the final question-to-concept
+   mapping, with assessment_title filled from the raw PrairieLearn export.
 
 2. data/processed/cleaning_report.md
    Adds per-assessment cleaning statistics.
@@ -22,6 +22,7 @@ This supplemental script covers three handoff/QA deliverables:
 
 DEFAULT_RAW_PATH = Path("data/anonymized_submissions_ECS32A_sq26.csv")
 DEFAULT_CLEANED_PATH = Path("data/processed/cleaned_interactions.csv")
+DEFAULT_FINAL_MAPPING_PATH = Path("data/question_concept_mapping_final.csv")
 DEFAULT_TEMPLATE_PATH = Path("data/question_concept_mapping_template.csv")
 DEFAULT_REPORT_PATH = Path("data/processed/cleaning_report.md")
 
@@ -41,6 +42,7 @@ def parse_args():
     )
     parser.add_argument("--raw-path", default=str(DEFAULT_RAW_PATH))
     parser.add_argument("--cleaned-path", default=str(DEFAULT_CLEANED_PATH))
+    parser.add_argument("--final-mapping-path", default=str(DEFAULT_FINAL_MAPPING_PATH))
     parser.add_argument("--template-path", default=str(DEFAULT_TEMPLATE_PATH))
     parser.add_argument("--report-path", default=str(DEFAULT_REPORT_PATH))
     parser.add_argument(
@@ -104,6 +106,31 @@ def load_cleaned_item_ids(path):
         .drop_duplicates()
     )
     return item_ids.tolist()
+
+
+def load_final_mapping(path):
+    path = Path(path)
+    if not path.exists():
+        return pd.DataFrame(columns=["item_id", "question_label", "concept_id"])
+
+    mapping = standardize_columns(pd.read_csv(path, dtype=str))
+    required = {"item_id", "concept_id", "concept_name"}
+    missing = required - set(mapping.columns)
+    if missing:
+        raise ValueError(
+            f"Final mapping CSV missing required columns: {sorted(missing)}"
+        )
+
+    mapping = mapping[["item_id", "concept_id", "concept_name"]].copy()
+    mapping["item_id"] = mapping["item_id"].astype(str).str.strip()
+    mapping["question_label"] = mapping["concept_name"].fillna("").astype(str).str.strip()
+    mapping["concept_id"] = mapping["concept_id"].fillna("").astype(str).str.strip()
+    mapping = mapping.drop(columns=["concept_name"])
+    return mapping.drop_duplicates(subset=["item_id"], keep="first")
+
+
+def mapped_item_ids(final_mapping):
+    return final_mapping["item_id"].drop_duplicates().tolist()
 
 
 def assessment_column(df):
@@ -215,9 +242,18 @@ def multi_assessment_items(raw, item_ids):
     return pd.DataFrame(rows)
 
 
-def build_question_template(raw, cleaned_item_ids):
+def build_question_template(raw, cleaned_item_ids, final_mapping):
     assess_col = assessment_column(raw)
-    item_id_set = set(cleaned_item_ids)
+    template_item_ids = mapped_item_ids(final_mapping)
+    cleaned_item_id_set = set(cleaned_item_ids)
+    missing_from_cleaned = sorted(set(template_item_ids) - cleaned_item_id_set)
+    if missing_from_cleaned:
+        raise ValueError(
+            "Some final-mapping item_id values are not in cleaned interactions: "
+            + ", ".join(missing_from_cleaned[:20])
+        )
+
+    item_id_set = set(template_item_ids)
     assessment_lookup = (
         raw.loc[raw["question_id"].isin(item_id_set)]
         .groupby("question_id", dropna=False, sort=False)
@@ -226,7 +262,7 @@ def build_question_template(raw, cleaned_item_ids):
         .rename(columns={"question_id": "item_id"})
     )
 
-    template = pd.DataFrame({"item_id": cleaned_item_ids})
+    template = pd.DataFrame({"item_id": template_item_ids})
     template = template.merge(assessment_lookup, on="item_id", how="left")
     missing = template["assessment_title"].isna() | template["assessment_title"].eq("")
     if missing.any():
@@ -236,8 +272,9 @@ def build_question_template(raw, cleaned_item_ids):
             f"{missing_ids}"
         )
 
-    template["question_label"] = ""
-    template["concept_id"] = ""
+    template = template.merge(final_mapping, on="item_id", how="left")
+    template["question_label"] = template["question_label"].fillna("")
+    template["concept_id"] = template["concept_id"].fillna("")
     template["_item_sort"] = pd.to_numeric(template["item_id"], errors="coerce")
     template = template.sort_values(
         ["assessment_title", "_item_sort", "item_id"],
@@ -403,19 +440,27 @@ def markdown_table(df, columns, max_rows=None):
 
 def build_template_report_section(template, raw, cleaned_item_ids):
     conflicts = multi_assessment_items(raw, cleaned_item_ids)
+    filled_labels = int(template["question_label"].astype(str).str.strip().ne("").sum())
+    filled_concepts = int(template["concept_id"].astype(str).str.strip().ne("").sum())
+    excluded_non_teaching = len(cleaned_item_ids) - len(template)
     lines = [
         TEMPLATE_START,
         "",
         "## Question-Concept Mapping Template",
         "",
-        "`data/question_concept_mapping_template.csv` was generated by extracting "
-        "the unique `item_id` values from `data/processed/cleaned_interactions.csv` "
-        "and filling `assessment_title` from the raw PrairieLearn export. "
-        "`question_label` is blank because this export has no human-readable "
-        "question label/title column, and `concept_id` is blank for DAG mapping.",
+        "`data/question_concept_mapping_template.csv` was generated from the "
+        "teaching-content rows in `data/question_concept_mapping_final.csv`, with "
+        "`assessment_title` filled from the raw PrairieLearn export. "
+        "`question_label` is filled from `concept_name`, and `concept_id` is filled "
+        "from the same final mapping. Non-teaching rows are excluded from this "
+        "template and will become missing values if joined from "
+        "`data/processed/cleaned_interactions.csv`.",
         "",
         f"- Unique item_id values written: `{len(template)}`",
         f"- Unique item_id values read from cleaned interactions: `{len(cleaned_item_ids)}`",
+        f"- Non-teaching item_id values excluded: `{excluded_non_teaching}`",
+        f"- Filled question_label values: `{filled_labels}`",
+        f"- Filled concept_id values: `{filled_concepts}`",
         f"- Raw rows scanned: `{len(raw)}`",
         f"- Items appearing in multiple assessments: `{len(conflicts)}`",
     ]
@@ -596,12 +641,13 @@ def main():
     args = parse_args()
     raw = load_raw(args.raw_path)
     cleaned_item_ids = load_cleaned_item_ids(args.cleaned_path)
+    final_mapping = load_final_mapping(args.final_mapping_path)
     unfinished_mask = build_unfinished_mask(raw)
     completed = prepare_completed_attempts(raw, unfinished_mask)
     cleaned_rows = deduplicate_like_cleaning_script(completed)
     attempts = add_attempt_intervals(completed, args.max_gap_minutes)
 
-    template = build_question_template(raw, cleaned_item_ids)
+    template = build_question_template(raw, cleaned_item_ids, final_mapping)
     template_path = Path(args.template_path)
     template_path.parent.mkdir(parents=True, exist_ok=True)
     template.to_csv(template_path, index=False)
