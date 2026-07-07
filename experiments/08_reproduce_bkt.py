@@ -58,6 +58,8 @@ def main() -> None:
             }
         )
 
+    if not predictions:
+        raise ValueError("Test split produced 0 interactions; cannot compute metrics.")
     predictions = pd.concat(predictions, ignore_index=True)
     y_true = predictions["correct"].to_numpy()
     y_prob = predictions["correct_predictions"].to_numpy()
