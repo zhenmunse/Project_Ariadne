@@ -11,6 +11,10 @@ OUTPUT = PYBKT_ROOT / "data" / "output" / "pybkt_interactions.csv"
 
 
 def main() -> None:
+    if not PYBKT_ROOT.exists():
+        raise FileNotFoundError(
+            f"pyBKT repo not found at {PYBKT_ROOT}. Expected a sibling checkout named 'pyBKT'."
+        )
     interactions = pd.read_csv(INTERACTIONS)
     mapping = pd.read_csv(MAPPING, usecols=["item_id", "concept_id"])
 
