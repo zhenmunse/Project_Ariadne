@@ -18,10 +18,17 @@ from pyBKT.models import Model
 
 
 def main() -> None:
+    if not DATA.exists():
+        raise FileNotFoundError(f"Missing {DATA}. Run experiments/07_convert_to_pybkt.py first.")
     data = pd.read_csv(DATA)
+
     users = data["user_id"].drop_duplicates().to_numpy()
+    if len(users) < 2:
+        raise ValueError(f"Need at least 2 users to create a train/test split; found {len(users)}")
     np.random.default_rng(42).shuffle(users)
-    test_users = set(users[: round(len(users) * 0.2)])
+    test_count = int(round(len(users) * 0.2))
+    test_count = min(max(test_count, 1), len(users) - 1)
+    test_users = set(users[:test_count])
     train = data[~data["user_id"].isin(test_users)]
     test = data[data["user_id"].isin(test_users)]
 
