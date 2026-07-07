@@ -12,9 +12,16 @@ PYBKT_ROOT = ROOT.parent / "pyBKT"
 DATA = PYBKT_ROOT / "data" / "output" / "pybkt_interactions.csv"
 METRICS = ROOT / "results" / "bkt_metrics.csv"
 PARAMETERS = ROOT / "results" / "bkt_concept_parameters.csv"
-sys.path.insert(0, str(PYBKT_ROOT / "source-py"))
 
-from pyBKT.models import Model
+source_py = PYBKT_ROOT / "source-py"
+if source_py.exists():
+    sys.path.insert(0, str(source_py))
+try:
+    from pyBKT.models import Model
+except ModuleNotFoundError as exc:
+    raise ModuleNotFoundError(
+        f"pyBKT not found. Expected a sibling checkout at {PYBKT_ROOT} (or install pyBKT into this environment)."
+    ) from exc
 
 
 def main() -> None:
