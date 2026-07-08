@@ -59,7 +59,7 @@ def main() -> None:
                 f.write(",".join(group["item_id"].astype(str)) + "\n")
                 f.write(",".join(group["concept_id"].astype(str)) + "\n")
                 f.write(",".join(group["is_correct"].astype(str)) + "\n")
-                f.write("NA\nNA\n")  # ponytail: required only by pyKT raw split format; final files omit these fields.
+                f.write("NA\nNA\n")  # NOTE: required only by pyKT raw split format; final files omit these fields.
 
         old_cwd = Path.cwd()
         os.chdir(PYKT_ROOT / "examples")
