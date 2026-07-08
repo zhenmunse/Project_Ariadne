@@ -72,7 +72,14 @@ def main() -> None:
     # If you need a clean output directory, remove unwanted files manually.
 
     config = json.loads(CONFIG.read_text(encoding="utf8"))
+    if DATASET not in config:
+        raise KeyError(f"{DATASET} not found in {CONFIG}; add a dataset entry before running this converter.")
     old = config[DATASET]
+
+    backup = CONFIG.parent / f"{CONFIG.name}.bak"
+    if not backup.exists():
+        shutil.copy2(CONFIG, backup)
+
     config[DATASET] = {
         "dpath": "../data/output",
         "num_q": old["num_q"],
