@@ -95,8 +95,10 @@ def main() -> None:
     }
     CONFIG.write_text(json.dumps(config, ensure_ascii=False, indent=4), encoding="utf8")
 
-    assert (OUT / "train_valid_sequences.csv").is_file()
-    assert (OUT / "test_sequences.csv").is_file()
+    if not (OUT / "train_valid_sequences.csv").is_file():
+        raise FileNotFoundError(f"Missing expected output: {OUT / 'train_valid_sequences.csv'}")
+    if not (OUT / "test_sequences.csv").is_file():
+        raise FileNotFoundError(f"Missing expected output: {OUT / 'test_sequences.csv'}")
     print(f"raw_rows={len(interactions)} kept_rows={len(df)} dropped_unmapped={int(unmapped.sum())}")
     print(f"users={df.user_id.nunique()} items={df.item_id.nunique()} concepts={df.concept_id.nunique()}")
     print(f"missing_items={missing_items}")
