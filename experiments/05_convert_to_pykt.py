@@ -68,12 +68,8 @@ def main() -> None:
         finally:
             os.chdir(old_cwd)
 
-    keep = {"train_valid_sequences.csv", "test_sequences.csv"}
-    for path in OUT.iterdir():
-        if path.is_file() and path.name not in keep:
-            path.unlink()
-        elif path.is_dir():
-            shutil.rmtree(path)
+    # NOTE: Avoid deleting other artifacts in ../pykt-toolkit/data/output; it may contain outputs for other datasets.
+    # If you need a clean output directory, remove unwanted files manually.
 
     config = json.loads(CONFIG.read_text(encoding="utf8"))
     old = config[DATASET]
