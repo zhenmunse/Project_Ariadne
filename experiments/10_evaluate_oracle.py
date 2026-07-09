@@ -75,20 +75,26 @@ def main() -> None:
 
     y_prob = torch.cat(probabilities).numpy()
     y_true = torch.cat(labels).numpy()
-    binary = np.isin(y_true, [0.0, 1.0])
-    binary_true = y_true[binary]
-    binary_prob = y_prob[binary]
+    binary_mask = np.isin(y_true, [0.0, 1.0])
+    binary_true = y_true[binary_mask]
+    binary_prob = y_prob[binary_mask]
+
+    auc = np.nan
+    accuracy = np.nan
+    if len(binary_true) and np.unique(binary_true).size == 2:
+        auc = auc_score(binary_true, binary_prob)
+        accuracy = float(np.mean((binary_prob >= 0.5) == (binary_true == 1.0)))
 
     metrics = pd.DataFrame(
         [
             {
                 "samples": len(y_true),
-                "binary_samples": int(binary.sum()),
+                "binary_samples": int(binary_mask.sum()),
                 "mse": np.mean((y_true - y_prob) ** 2),
                 "rmse": np.sqrt(np.mean((y_true - y_prob) ** 2)),
                 "mae": np.mean(np.abs(y_true - y_prob)),
-                "auc": auc_score(binary_true, binary_prob),
-                "accuracy": np.mean((binary_prob >= 0.5) == binary_true),
+                "auc": auc,
+                "accuracy": accuracy,
             }
         ]
     )
