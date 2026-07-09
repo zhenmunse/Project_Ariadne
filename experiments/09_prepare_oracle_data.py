@@ -53,7 +53,7 @@ def main() -> None:
 
     users = sessions["user_id"].drop_duplicates().to_numpy()
     np.random.default_rng(42).shuffle(users)
-    split_size = round(len(users) * 0.1)
+    split_size = int(len(users) * 0.1)
     split_users = {
         "test": set(users[:split_size]),
         "valid": set(users[split_size : 2 * split_size]),
