@@ -5,7 +5,8 @@
 Condition 3 of the planning matrix. The planner uses the frozen per-concept
 parameters archived from the pyBKT reproduction in
 `data/baselines/pybkt/concept_parameters.csv`. It keeps the same DAG, seed,
-targets, and cost model as the two FrequencyOracle conditions.
+targets, and cost model as the two FrequencyOracle conditions. Each target is
+planned on its induced prerequisite closure.
 
 The standalone pyBKT reproduction reported the following dynamic prediction
 metrics:
@@ -52,16 +53,16 @@ The same ten targets were used with seed 42:
 
 | Planning metric | Value |
 |---|---:|
-| Mean expected total cost | 2543.545619 |
-| Mean path length | 27.1 |
-| Mean off-target actions | 15.4 |
-| Total planning time for 10 targets | 0.0085 s |
+| Mean expected total cost | 1144.680158 |
+| Mean path length | 11.7 |
+| Mean off-target actions | 0.0 |
+| Total planning time for 10 targets | 0.0015 s |
 | Prerequisite-valid paths | 10 / 10 |
 
 The previous `p_init`-only result was not a faithful BKT cost and has been
 replaced by the direct BKT expected-attempt calculation. The new result still
 uses a population prior, but now uses all four fitted BKT parameters in the
-action cost.
+action cost. Closure restriction removes target-irrelevant actions.
 
 ## Files and reproduction
 

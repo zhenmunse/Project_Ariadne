@@ -12,10 +12,10 @@
     46,
     52
   ],
-  "mean_expected_total_cost": 2543.545619136374,
-  "mean_path_length": 27.1,
-  "mean_off_target_actions": 15.4,
-  "total_planning_seconds": 0.008514499990269542,
+  "mean_expected_total_cost": 1144.680158422865,
+  "mean_path_length": 11.7,
+  "mean_off_target_actions": 0.0,
+  "total_planning_seconds": 0.001481700011936482,
   "all_paths_valid": true,
   "probability_source": "bkt_expected_attempt_cost"
 }
