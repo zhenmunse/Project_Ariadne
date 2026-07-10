@@ -95,6 +95,7 @@ def action_cost(model, edge_index, num_nodes: int, node: int, mastered: set[int]
 def main() -> None:
     with (ROOT / "configs" / "config.yaml").open(encoding="utf8") as file:
         config = yaml.safe_load(file)
+    torch.manual_seed(config["seed"])
     with (PROCESSED / "graph.pkl").open("rb") as file:
         graph = pickle.load(file)
     with (PROCESSED / "oracle_ckpt.pt").open("rb") as file:

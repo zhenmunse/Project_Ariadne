@@ -26,7 +26,7 @@ outside the target prerequisite closure are added.
 
 | Metric | Value |
 |---|---:|
-| Mean expected total cost | 1753.081957 |
+| Mean expected total cost | 1764.103351 |
 | Mean path length | 11.7 |
 | Mean off-target actions | 0.0 |
 | Valid paths | 10 / 10 |
