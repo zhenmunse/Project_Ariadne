@@ -1,0 +1,22 @@
+{
+  "condition": "Random Valid Ordering",
+  "targets": [
+    6,
+    7,
+    12,
+    18,
+    29,
+    36,
+    39,
+    42,
+    46,
+    52
+  ],
+  "mean_expected_total_cost": 1760.3976287400249,
+  "mean_path_length": 11.7,
+  "mean_off_target_actions": 0.0,
+  "total_planning_seconds": 3.032388199986599,
+  "all_paths_valid": true,
+  "evaluation_oracle": "local_ariadne_oracle_checkpoint",
+  "random_seed": 42
+}
