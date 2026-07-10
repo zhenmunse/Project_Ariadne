@@ -1,0 +1,21 @@
+{
+  "condition": "DKT + Greedy",
+  "targets": [
+    6,
+    7,
+    12,
+    18,
+    29,
+    36,
+    39,
+    42,
+    46,
+    52
+  ],
+  "mean_expected_total_cost": 2223.7498729023982,
+  "mean_path_length": 24.5,
+  "mean_off_target_actions": 12.8,
+  "total_planning_seconds": 0.0031010000238893554,
+  "all_paths_valid": true,
+  "probability_source": "archived_dkt_train_node_predictions"
+}

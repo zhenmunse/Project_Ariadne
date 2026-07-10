@@ -1,0 +1,10 @@
+{
+  "samples": 12022,
+  "binary_samples": 12022,
+  "mse": 0.18968795286348333,
+  "rmse": 0.43553180465206365,
+  "mae": 0.3805410914796102,
+  "auc": 0.7304368678169527,
+  "accuracy": 0.7106138745633006,
+  "probability_source": "archived_dkt_checkpoint"
+}
