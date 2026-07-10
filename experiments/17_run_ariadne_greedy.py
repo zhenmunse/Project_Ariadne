@@ -128,20 +128,23 @@ def main() -> None:
 
     trajectories = []
     for target in targets:
-        planner = GreedyPlanner(oracle, dag, planner_config, edge_index, len(graph["node_ids"]))
+        closure = nx.ancestors(dag, target) | {target}
+        closure_graph = dag.subgraph(closure).copy()
+        planner = GreedyPlanner(
+            oracle, closure_graph, planner_config, edge_index, len(graph["node_ids"])
+        )
         started = time.perf_counter()
-        cost, path = planner.solve(set(), {target})
+        cost, path = planner.solve(set(), closure)
         elapsed = time.perf_counter() - started
-        required = nx.ancestors(dag, target) | {target}
-        is_valid = valid_path(dag, path, target)
+        is_valid = valid_path(closure_graph, path, target)
         assert is_valid, (target, path)
         trajectories.append(
             {
                 "target_node": target,
                 "expected_total_cost": cost,
                 "path_length": len(path),
-                "required_nodes": len(required),
-                "off_target_actions": len(set(path) - required),
+                "required_nodes": len(closure),
+                "off_target_actions": len(set(path) - closure),
                 "planning_seconds": elapsed,
                 "path_is_valid": is_valid,
                 "path": json.dumps(path),

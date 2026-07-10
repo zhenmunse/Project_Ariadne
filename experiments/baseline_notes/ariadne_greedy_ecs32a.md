@@ -3,8 +3,9 @@
 ## Scope
 
 This condition combines the local Ariadne `MonotonicOracle` checkpoint with
-the repository's one-step `GreedyPlanner`. It uses the full 61-node DAG, seed
-42, and the same ten non-root targets as the other ECS32A planner baselines.
+the repository's one-step `GreedyPlanner`. It uses seed 42 and the same ten
+non-root targets as the other ECS32A planner baselines. Each target is planned
+on its induced prerequisite closure, using the closure as graph and goal.
 
 ## Oracle validation
 
@@ -21,15 +22,15 @@ the repository's one-step `GreedyPlanner`. It uses the full 61-node DAG, seed
 
 | Metric | Value |
 |---|---:|
-| Mean expected total cost | 4080.197087 |
-| Mean path length | 26.2 |
-| Mean off-target actions | 14.5 |
+| Mean expected total cost | 1762.466515 |
+| Mean path length | 11.7 |
+| Mean off-target actions | 0.0 |
 | Valid paths | 10 / 10 |
 | Probability source | local Ariadne checkpoint |
 
-The paths are valid, but the high cost and off-target count are expected for a
-myopic solver: it chooses the lowest immediate cost and does not account for
-future prerequisites or whether an action is useful for the target.
+The closure restriction removes target-irrelevant actions. Greedy still chooses
+the lowest immediate cost within the closure and does not account for future
+costs.
 
 ## Files and reproduction
 
@@ -42,4 +43,4 @@ future prerequisites or whether an action is useful for the target.
 .\.venv\Scripts\python.exe experiments\17_run_ariadne_greedy.py
 ```
 
-This branch is waiting for review and has not been committed.
+The run uses the same prerequisite-closure protocol as the LAO* benchmark.
