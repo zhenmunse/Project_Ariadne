@@ -15,8 +15,8 @@
   "mean_expected_total_cost": 1144.680158422865,
   "mean_path_length": 11.7,
   "mean_off_target_actions": 0.0,
-  "mean_expanded_states": 1904.6,
-  "total_planning_seconds": 71.72364400000515,
+  "mean_expanded_states": 21.9,
+  "total_planning_seconds": 0.008723900013137609,
   "all_paths_valid": true,
   "all_converged": true,
   "probability_source": "bkt_expected_attempt_cost"

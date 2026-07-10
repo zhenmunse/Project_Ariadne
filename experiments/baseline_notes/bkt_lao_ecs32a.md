@@ -5,7 +5,8 @@
 Condition 6 of the planning matrix. This experiment uses the fitted ECS32A
 BKT parameters archived at `data/baselines/pybkt/concept_parameters.csv`, the
 same train/validation sessions, DAG, seed, targets, and cost model as `BKT +
-Greedy`; only the Solver changes to LAO*.
+Greedy`; only the Solver changes to LAO*. For each target, both the planner
+graph and terminal goal are the target's prerequisite closure.
 
 The planner adapter uses all four BKT parameters. It computes the expected
 number of attempts until the first correct response while updating the latent
@@ -36,14 +37,15 @@ The same ten targets were used with seed 42:
 | Mean expected total cost | 1144.680158 |
 | Mean path length | 11.7 |
 | Mean off-target actions | 0.0 |
-| Mean expanded states | 1904.6 |
-| Total planning time for 10 targets | 71.72 s |
+| Mean expanded states | 21.9 |
+| Total planning time for 10 targets | 0.0087 s |
 | Converged targets | 10 / 10 |
 | Prerequisite-valid paths | 10 / 10 |
 
-LAO* reduces the mean expected cost relative to `BKT + Greedy` by selecting a
-long-horizon policy over the prerequisite DAG. All selected paths contain only
-required ancestors and the target for this run.
+Under the closure-restricted protocol, BKT + LAO* and BKT + Greedy have the
+same expected cost and path length because the BKT adapter's cost is fixed per
+concept state and both conditions must complete the same closure. LAO* still
+selects a valid long-horizon policy and expands only closure states.
 
 ## Files and reproduction
 

@@ -140,20 +140,23 @@ def main() -> None:
 
     trajectories = []
     for target in targets:
-        planner = DAGPlanner(oracle, dag, planner_config, edge_index, num_nodes)
+        closure = nx.ancestors(dag, target) | {target}
+        closure_graph = dag.subgraph(closure).copy()
+        planner = DAGPlanner(
+            oracle, closure_graph, planner_config, edge_index, num_nodes
+        )
         started = time.perf_counter()
-        result = planner.solve_result(set(), {target})
-        path = DAGPlanner._extract_path(frozenset(), frozenset({target}), result.policy)
+        result = planner.solve_result(set(), closure)
+        path = DAGPlanner._extract_path(frozenset(), frozenset(closure), result.policy)
         elapsed = time.perf_counter() - started
-        valid = is_valid_path(dag, path)
+        valid = is_valid_path(closure_graph, path)
         assert result.converged and path and path[-1] == target and valid, (target, path)
-        required_nodes = nx.ancestors(dag, target) | {target}
         trajectories.append({
             "target_node": target,
             "expected_total_cost": result.values[frozenset()],
             "path_length": len(path),
-            "required_nodes": len(required_nodes),
-            "off_target_actions": len(set(path) - required_nodes),
+            "required_nodes": len(closure),
+            "off_target_actions": len(set(path) - closure),
             "expanded_states": result.expanded_count,
             "iterations": result.iterations,
             "planning_seconds": elapsed,
