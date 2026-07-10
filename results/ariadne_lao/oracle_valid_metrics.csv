@@ -1,0 +1,2 @@
+samples,binary_samples,mse,rmse,mae,auc,accuracy,probability_source
+3103,2170,0.1236729621887207,0.35167166590690613,0.30333033204078674,0.7748728930221175,0.7986175115207373,local_ariadne_oracle_checkpoint
