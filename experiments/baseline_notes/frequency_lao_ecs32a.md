@@ -3,8 +3,10 @@
 ## Scope
 
 Condition 2 of the planning matrix. This experiment keeps the FrequencyOracle,
-data split, DAG, target nodes, random seed, and cost model from
+data split, target nodes, random seed, and cost model from
 `FrequencyOracle + Greedy`, replacing only the Solver with LAO*.
+For each target, both the planner graph and terminal goal are the target's
+prerequisite closure.
 
 The Oracle uses 25,089 training sessions and is evaluated on 3,103 validation
 sessions. Its metrics are unchanged from the Greedy condition.
@@ -27,16 +29,14 @@ The same ten targets were used with seed 42:
 | Mean path length | 11.7 |
 | Mean off-target actions | 0.0 |
 | Mean expanded states | 1156.9 |
-| Total planning time for 10 targets | 61.0016 s |
+| Total planning time for 10 targets | 0.0052 s |
 | Converged targets | 10 / 10 |
 | Prerequisite-valid paths | 10 / 10 |
 
-Compared with the first condition, LAO* reduces mean expected cost from
-`2018.949783` to `977.292569` and mean path length from `24.4` to `11.7`.
-The reduction is consistent with the Solver change: LAO* evaluates future
-costs and avoids the Greedy planner's off-target actions. The trade-off is
-search time, especially for targets 18, 36, and 39, which require more state
-expansions.
+Compared with the corrected Greedy condition, LAO* has the same mean cost and
+path length because FrequencyOracle is state-independent. The closure removes
+target-irrelevant actions from both conditions; LAO* still verifies the same
+ordering with fewer expanded states than full-DAG search.
 
 The reported cost is the planner's model-based expected cost, not an observed
 student learning outcome. The Oracle prediction quality is deliberately held
@@ -57,4 +57,4 @@ constant so this condition isolates planning strategy.
 ```
 
 Both the real-data run and the LAO* verification checks completed
-successfully after the planner fallback fix at commit `8f1ba3c`.
+successfully with prerequisite-closure planning.
