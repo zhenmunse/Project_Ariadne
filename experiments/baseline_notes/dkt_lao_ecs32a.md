@@ -4,7 +4,8 @@
 
 Condition 5 of the planning matrix. This experiment uses the same archived
 DKT prediction artifacts, DAG, data split, targets, seed, and cost model as
-`DKT + Greedy`; only the Solver changes to LAO*.
+`DKT + Greedy`; only the Solver changes to LAO*. Each target is planned on
+its induced prerequisite closure, using the closure as both graph and goal.
 
 The planner reads training-fold DKT predictions averaged by concept. This is a
 population-level adapter, not a student-specific DKT hidden-state planner.
@@ -29,13 +30,13 @@ The same ten targets were used with seed 42:
 | Mean expected total cost | 1075.324149 |
 | Mean path length | 11.7 |
 | Mean off-target actions | 0.0 |
-| Mean expanded states | 1313.1 |
-| Total planning time | 33.4319 s |
+| Mean expanded states | 21.9 |
+| Total planning time | 0.0069 s |
 | Prerequisite-valid paths | 10 / 10 |
 | Converged targets | 10 / 10 |
 
-The result is generated from local DKT prediction artifacts and is waiting
-for review before this branch is committed.
+The result is generated from local DKT prediction artifacts and follows the
+same prerequisite-closure protocol as the LAO* heuristic benchmark.
 
 ## Files and reproduction
 

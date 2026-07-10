@@ -15,8 +15,8 @@
   "mean_expected_total_cost": 1075.3241491809918,
   "mean_path_length": 11.7,
   "mean_off_target_actions": 0.0,
-  "mean_expanded_states": 1313.1,
-  "total_planning_seconds": 33.3487318999978,
+  "mean_expanded_states": 21.9,
+  "total_planning_seconds": 0.006894199992530048,
   "all_paths_valid": true,
   "all_converged": true,
   "probability_source": "archived_dkt_train_node_predictions"
