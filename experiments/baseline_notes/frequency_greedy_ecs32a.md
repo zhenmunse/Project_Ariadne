@@ -2,9 +2,9 @@
 
 ## Reproduction status
 
-This is the first rerun after the planner fallback fix at commit `8f1ba3c`.
-The run uses the real ECS32A processed sessions, seed 42, the fixed ten
-targets, and the 61-node/134-edge prerequisite DAG.
+This rerun uses the real ECS32A processed sessions, seed 42, the fixed ten
+targets, and a per-target prerequisite closure. Greedy is restricted to the
+induced closure graph and uses the full closure as its goal.
 
 ## Oracle metrics
 
@@ -27,14 +27,14 @@ Targets:
 
 | Metric | Value |
 |---|---:|
-| Mean expected total cost | 2018.949783 |
-| Mean path length | 24.4 |
-| Mean off-target actions | 12.7 |
-| Total planning time | 0.0046 s |
+| Mean expected total cost | 977.292569 |
+| Mean path length | 11.7 |
+| Mean off-target actions | 0.0 |
+| Total planning time | 0.0008 s |
 | Prerequisite-valid paths | 10 / 10 |
 
-The nonzero off-target count is expected for Greedy: it selects the cheapest
-currently valid action without looking ahead to the target's ancestor closure.
+The closure restriction removes target-irrelevant actions. Greedy still chooses
+the cheapest currently valid action within the closure, without looking ahead.
 
 ## Reproduction inputs and outputs
 
@@ -55,5 +55,5 @@ Verification commands:
 .\.venv\Scripts\python.exe experiments\04a_baseline_check.py
 ```
 
-Both commands completed successfully. This result is waiting for review;
-later matrix conditions have not been rerun yet.
+Both commands completed successfully. The result uses the same closure
+construction as the LAO* heuristic benchmark.

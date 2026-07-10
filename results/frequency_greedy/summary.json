@@ -12,10 +12,10 @@
     46,
     52
   ],
-  "mean_expected_total_cost": 2018.949783001935,
-  "mean_path_length": 24.4,
-  "mean_off_target_actions": 12.7,
-  "total_planning_seconds": 0.004642599989892915,
+  "mean_expected_total_cost": 977.2925691378507,
+  "mean_path_length": 11.7,
+  "mean_off_target_actions": 0.0,
+  "total_planning_seconds": 0.0008484000063617714,
   "all_paths_valid": true,
   "planner_heuristic": "sum"
 }
