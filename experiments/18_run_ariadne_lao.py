@@ -171,24 +171,26 @@ def main() -> None:
 
     trajectories = []
     for target in targets:
-        planner = DAGPlanner(oracle, dag, planner_config, edge_index, len(graph["node_ids"]))
+        goal_nodes = nx.ancestors(dag, target) | {target}
+        closure_graph = dag.subgraph(goal_nodes).copy()
+        planner = DAGPlanner(
+            oracle, closure_graph, planner_config, edge_index, len(graph["node_ids"])
+        )
         started = time.perf_counter()
         # Requiring the target and all ancestors is equivalent on a prerequisite
         # DAG, and gives LAO* an informative admissible lower bound.
-        goal_nodes = nx.ancestors(dag, target) | {target}
         result = planner.solve_result(set(), goal_nodes)
         path = DAGPlanner._extract_path(frozenset(), frozenset(goal_nodes), result.policy)
         elapsed = time.perf_counter() - started
-        required = nx.ancestors(dag, target) | {target}
-        is_valid = valid_path(dag, path, target)
+        is_valid = valid_path(closure_graph, path, target)
         assert result.converged and is_valid, (target, path)
         trajectories.append(
             {
                 "target_node": target,
                 "expected_total_cost": result.values[frozenset()],
                 "path_length": len(path),
-                "required_nodes": len(required),
-                "off_target_actions": len(set(path) - required),
+                "required_nodes": len(goal_nodes),
+                "off_target_actions": len(set(path) - goal_nodes),
                 "expanded_states": result.expanded_count,
                 "iterations": result.iterations,
                 "planning_seconds": elapsed,

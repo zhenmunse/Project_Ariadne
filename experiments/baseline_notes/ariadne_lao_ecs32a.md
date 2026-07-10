@@ -3,8 +3,9 @@
 ## Scope
 
 This condition combines the local Ariadne `MonotonicOracle` checkpoint with
-the repository's LAO* planner. It uses the full 61-node DAG, seed 42, and the
-same ten non-root targets as the other ECS32A planner baselines.
+the repository's LAO* planner. It uses seed 42 and the same ten non-root
+targets as the other ECS32A planner baselines. Each target uses its induced
+prerequisite closure as both the planner graph and terminal goal.
 
 The planner adapter exposes the Oracle's state-dependent probability and a
 valid best-case probability computed from the Oracle's monotonic all-mastered
@@ -27,17 +28,18 @@ informative admissible lower bound.
 
 | Metric | Value |
 |---|---:|
-| Mean expected total cost | 1720.655475 |
+| Mean expected total cost | 1724.133156 |
 | Mean path length | 11.7 |
 | Mean off-target actions | 0.0 |
-| Mean expanded states | 18.3 |
-| Total planning time | 9.0582 s |
+| Mean expanded states | 16.7 |
+| Total planning time | 0.8135 s |
 | Valid paths | 10 / 10 |
 | Converged targets | 10 / 10 |
 | Probability source | local Ariadne checkpoint |
 
-Compared with Ariadne + Greedy, LAO* avoids the Greedy planner's local
-off-target actions and produces the expected lower planning cost.
+Under the closure-restricted protocol, LAO* searches only target-relevant
+states and returns a valid long-horizon ordering. The model uses MC Dropout,
+so small run-to-run timing and cost variation is expected.
 
 ## Files and reproduction
 
@@ -50,4 +52,5 @@ off-target actions and produces the expected lower planning cost.
 .\.venv\Scripts\python.exe experiments\18_run_ariadne_lao.py
 ```
 
-This branch is waiting for review and has not been committed.
+The run follows the same prerequisite-closure protocol as the LAO* heuristic
+benchmark.
