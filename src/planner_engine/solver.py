@@ -199,6 +199,12 @@ class _OracleCostMixin:
 
     def _action_cost(self, action: int, state: State) -> float:
         """Geometric expected cost T_v / p(v, s)."""
+        if hasattr(self.oracle, "action_cost"):
+            cost = self._as_float(self.oracle.action_cost(action, state))
+            if cost <= 0.0:
+                raise ValueError(f"action_cost({action}) must be positive, got {cost}")
+            return cost
+
         p, T = self._query_oracle(action, state)
         return T / p
 
