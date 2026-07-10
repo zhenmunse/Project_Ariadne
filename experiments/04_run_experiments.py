@@ -88,31 +88,6 @@ def compute_bottleneck(
     return {"node_id": int(worst_node), "p_succ": float(worst_p)}
 
 
-def select_subgraph(
-    nx_dag: nx.DiGraph,
-    subgraph_size: int,
-) -> nx.DiGraph:
-    """Select an induced DAG subgraph of desired size.
-
-    Takes the first K nodes (sorted by node_id) and builds the induced subgraph.
-    Gracefully handles graphs smaller than subgraph_size.
-    """
-    all_nodes = sorted(nx_dag.nodes())
-    k = min(len(all_nodes), subgraph_size)
-    sub_nodes = all_nodes[:k]
-    sub = nx_dag.subgraph(sub_nodes).copy()
-    assert nx.is_directed_acyclic_graph(sub), "Subgraph is not a DAG!"
-    return sub
-
-
-def rebuild_edge_index(G: nx.DiGraph, num_nodes: int) -> torch.Tensor:
-    """Build edge_index [2, E] from nx.DiGraph (nodes must be 0..N-1)."""
-    if G.number_of_edges() == 0:
-        return torch.zeros(2, 0, dtype=torch.long)
-    src, dst = zip(*G.edges())
-    return torch.tensor([list(src), list(dst)], dtype=torch.long)
-
-
 # ==================================================================
 # Main
 # ==================================================================
@@ -136,7 +111,6 @@ def main():
 
     num_targets = exp_cfg["num_targets"]
     min_depth = exp_cfg["min_depth"]
-    subgraph_size = exp_cfg["subgraph_size"]
     mc_samples = cfg["oracle"]["mc_samples"]
 
     # --- Load graph --------------------------------------------------
@@ -148,14 +122,6 @@ def main():
     node_id_to_idx = graph_data["node_id_to_idx"]
 
     print(f"Full graph: {full_num_nodes} nodes, {full_dag.number_of_edges()} edges")
-
-    # --- Select subgraph ---------------------------------------------
-    sub_dag = select_subgraph(full_dag, subgraph_size)
-    sub_nodes = sorted(sub_dag.nodes())
-    sub_num_nodes = len(sub_nodes)
-    sub_edge_index = rebuild_edge_index(sub_dag, sub_num_nodes)
-
-    print(f"Subgraph:   {sub_num_nodes} nodes, {sub_dag.number_of_edges()} edges, DAG={nx.is_directed_acyclic_graph(sub_dag)}")
 
     # --- Load MonotonicOracle ----------------------------------------
     ckpt_path = os.path.join(processed_dir, "oracle_ckpt.pt")
@@ -182,7 +148,7 @@ def main():
     oracle_edge_index = torch.tensor(graph_data["edge_index"], dtype=torch.long)
 
     # --- Sample target nodes -----------------------------------------
-    depths = compute_node_depths(sub_dag)
+    depths = compute_node_depths(full_dag)
     max_depth = max(depths.values()) if depths else 0
     print(f"Node depths: max={max_depth}, min_depth_filter={min_depth}")
 
@@ -195,10 +161,10 @@ def main():
 
     if not deep_nodes:
         # Last resort: use all non-root nodes
-        roots = {n for n in sub_dag.nodes() if sub_dag.in_degree(n) == 0}
-        deep_nodes = sorted(sub_dag.nodes() - roots)
+        roots = {n for n in full_dag.nodes() if full_dag.in_degree(n) == 0}
+        deep_nodes = sorted(full_dag.nodes() - roots)
         if not deep_nodes:
-            deep_nodes = sorted(sub_dag.nodes())
+            deep_nodes = sorted(full_dag.nodes())
 
     deep_nodes.sort()
     rng = np.random.RandomState(seed)
@@ -253,14 +219,15 @@ def main():
     initial_state: Set[int] = set()
 
     for ti, target in enumerate(target_nodes):
-        target_set = {target}
+        target_set = nx.ancestors(full_dag, target) | {target}
+        closure_graph = full_dag.subgraph(target_set).copy()
         print(f"\n  Target {ti+1}/{len(target_nodes)}: node {target} (depth={depths.get(target, '?')})")
 
         for sname, sdef in strategies.items():
             oracle = sdef["oracle"]
             planner = sdef["planner_cls"](
                 oracle=oracle,
-                nx_graph=sub_dag,
+                nx_graph=closure_graph,
                 config=sdef["config"],
                 edge_index=oracle_edge_index,
                 num_nodes=ckpt["num_nodes"],  # oracle's num_nodes

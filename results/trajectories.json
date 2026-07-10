@@ -6,11 +6,11 @@
       0,
       1
     ],
-    "expected_total_cost": 240.7962906570756,
+    "expected_total_cost": 277.90524585045864,
     "path_length": 2,
     "bottleneck_node": {
       "node_id": 1,
-      "p_succ": 0.743066
+      "p_succ": 0.424075
     }
   },
   {
@@ -20,11 +20,11 @@
       0,
       1
     ],
-    "expected_total_cost": 249.82467412948608,
+    "expected_total_cost": 284.5622184616453,
     "path_length": 2,
     "bottleneck_node": {
       "node_id": 1,
-      "p_succ": 0.771298
+      "p_succ": 0.429392
     }
   },
   {
@@ -34,11 +34,11 @@
       0,
       1
     ],
-    "expected_total_cost": 240.63292264938354,
+    "expected_total_cost": 281.45332671958977,
     "path_length": 2,
     "bottleneck_node": {
       "node_id": 1,
-      "p_succ": 0.734165
+      "p_succ": 0.414658
     }
   },
   {
@@ -48,132 +48,931 @@
       0,
       1
     ],
-    "expected_total_cost": 207.50000596046448,
+    "expected_total_cost": 170.4040505609133,
     "path_length": 2,
     "bottleneck_node": {
-      "node_id": 1,
-      "p_succ": 0.833333
+      "node_id": 0,
+      "p_succ": 0.704209
     }
   },
   {
-    "target_node": 2,
-    "strategy_name": "Ariadne-Full",
-    "path": [
-      0,
-      2
-    ],
-    "expected_total_cost": 308.99799915147014,
-    "path_length": 2,
-    "bottleneck_node": {
-      "node_id": 2,
-      "p_succ": 0.48603
-    }
-  },
-  {
-    "target_node": 2,
-    "strategy_name": "Ariadne-Neutral",
-    "path": [
-      0,
-      2
-    ],
-    "expected_total_cost": 317.1090853214264,
-    "path_length": 2,
-    "bottleneck_node": {
-      "node_id": 2,
-      "p_succ": 0.479505
-    }
-  },
-  {
-    "target_node": 2,
-    "strategy_name": "Myopic",
-    "path": [
-      0,
-      1,
-      2
-    ],
-    "expected_total_cost": 381.3524651527405,
-    "path_length": 3,
-    "bottleneck_node": {
-      "node_id": 2,
-      "p_succ": 0.716127
-    }
-  },
-  {
-    "target_node": 2,
-    "strategy_name": "No-Prior",
-    "path": [
-      0,
-      2
-    ],
-    "expected_total_cost": 307.5,
-    "path_length": 2,
-    "bottleneck_node": {
-      "node_id": 2,
-      "p_succ": 0.5
-    }
-  },
-  {
-    "target_node": 3,
+    "target_node": 6,
     "strategy_name": "Ariadne-Full",
     "path": [
       0,
       1,
       2,
-      3
+      4,
+      5,
+      6
     ],
-    "expected_total_cost": 505.11928590375464,
-    "path_length": 4,
+    "expected_total_cost": 711.9980800739431,
+    "path_length": 6,
     "bottleneck_node": {
-      "node_id": 2,
-      "p_succ": 0.739458
+      "node_id": 5,
+      "p_succ": 0.394848
     }
   },
   {
-    "target_node": 3,
+    "target_node": 6,
     "strategy_name": "Ariadne-Neutral",
     "path": [
       0,
       1,
       2,
-      3
+      4,
+      5,
+      6
     ],
-    "expected_total_cost": 475.85933446884155,
-    "path_length": 4,
+    "expected_total_cost": 699.7971374402618,
+    "path_length": 6,
     "bottleneck_node": {
-      "node_id": 2,
-      "p_succ": 0.748745
+      "node_id": 5,
+      "p_succ": 0.381397
     }
   },
   {
-    "target_node": 3,
+    "target_node": 6,
     "strategy_name": "Myopic",
     "path": [
       0,
       1,
       2,
-      3
+      4,
+      5,
+      6
     ],
-    "expected_total_cost": 478.6240839958191,
-    "path_length": 4,
+    "expected_total_cost": 715.4311598822451,
+    "path_length": 6,
     "bottleneck_node": {
-      "node_id": 2,
-      "p_succ": 0.738703
+      "node_id": 5,
+      "p_succ": 0.393988
     }
   },
   {
-    "target_node": 3,
+    "target_node": 6,
     "strategy_name": "No-Prior",
     "path": [
       0,
       1,
       2,
-      3
+      4,
+      5,
+      6
     ],
-    "expected_total_cost": 702.5000059604645,
-    "path_length": 4,
+    "expected_total_cost": 478.13614537026,
+    "path_length": 6,
+    "bottleneck_node": {
+      "node_id": 0,
+      "p_succ": 0.704209
+    }
+  },
+  {
+    "target_node": 13,
+    "strategy_name": "Ariadne-Full",
+    "path": [
+      0,
+      1,
+      2,
+      4,
+      5,
+      11,
+      3,
+      6,
+      7,
+      8,
+      10,
+      12,
+      13
+    ],
+    "expected_total_cost": 1943.3792799920757,
+    "path_length": 13,
     "bottleneck_node": {
       "node_id": 3,
-      "p_succ": 0.25
+      "p_succ": 0.193706
+    }
+  },
+  {
+    "target_node": 13,
+    "strategy_name": "Ariadne-Neutral",
+    "path": [
+      0,
+      1,
+      2,
+      4,
+      5,
+      11,
+      6,
+      3,
+      7,
+      8,
+      10,
+      12,
+      13
+    ],
+    "expected_total_cost": 1942.0109778265073,
+    "path_length": 13,
+    "bottleneck_node": {
+      "node_id": 3,
+      "p_succ": 0.19982
+    }
+  },
+  {
+    "target_node": 13,
+    "strategy_name": "Myopic",
+    "path": [
+      0,
+      1,
+      2,
+      4,
+      5,
+      6,
+      11,
+      3,
+      7,
+      8,
+      10,
+      12,
+      13
+    ],
+    "expected_total_cost": 1957.1982615729924,
+    "path_length": 13,
+    "bottleneck_node": {
+      "node_id": 3,
+      "p_succ": 0.185721
+    }
+  },
+  {
+    "target_node": 13,
+    "strategy_name": "No-Prior",
+    "path": [
+      0,
+      1,
+      2,
+      4,
+      5,
+      3,
+      6,
+      11,
+      7,
+      8,
+      10,
+      12,
+      13
+    ],
+    "expected_total_cost": 1104.747448009386,
+    "path_length": 13,
+    "bottleneck_node": {
+      "node_id": 3,
+      "p_succ": 0.555046
+    }
+  },
+  {
+    "target_node": 14,
+    "strategy_name": "Ariadne-Full",
+    "path": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      11,
+      7,
+      8,
+      10,
+      12,
+      13,
+      14
+    ],
+    "expected_total_cost": 2074.849813535766,
+    "path_length": 14,
+    "bottleneck_node": {
+      "node_id": 3,
+      "p_succ": 0.196064
+    }
+  },
+  {
+    "target_node": 14,
+    "strategy_name": "Ariadne-Neutral",
+    "path": [
+      0,
+      1,
+      2,
+      4,
+      11,
+      3,
+      5,
+      6,
+      7,
+      8,
+      10,
+      12,
+      13,
+      14
+    ],
+    "expected_total_cost": 2146.93691271667,
+    "path_length": 14,
+    "bottleneck_node": {
+      "node_id": 3,
+      "p_succ": 0.20426
+    }
+  },
+  {
+    "target_node": 14,
+    "strategy_name": "Myopic",
+    "path": [
+      0,
+      1,
+      2,
+      4,
+      5,
+      6,
+      11,
+      3,
+      7,
+      8,
+      10,
+      12,
+      13,
+      14
+    ],
+    "expected_total_cost": 2130.2797121174417,
+    "path_length": 14,
+    "bottleneck_node": {
+      "node_id": 3,
+      "p_succ": 0.185576
+    }
+  },
+  {
+    "target_node": 14,
+    "strategy_name": "No-Prior",
+    "path": [
+      0,
+      1,
+      2,
+      4,
+      5,
+      3,
+      6,
+      11,
+      7,
+      8,
+      10,
+      12,
+      13,
+      14
+    ],
+    "expected_total_cost": 1192.9408419219283,
+    "path_length": 14,
+    "bottleneck_node": {
+      "node_id": 3,
+      "p_succ": 0.555046
+    }
+  },
+  {
+    "target_node": 34,
+    "strategy_name": "Ariadne-Full",
+    "path": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      11,
+      7,
+      8,
+      10,
+      12,
+      13,
+      15,
+      17,
+      32,
+      34
+    ],
+    "expected_total_cost": 2531.2508413666555,
+    "path_length": 17,
+    "bottleneck_node": {
+      "node_id": 3,
+      "p_succ": 0.194139
+    }
+  },
+  {
+    "target_node": 34,
+    "strategy_name": "Ariadne-Neutral",
+    "path": [
+      0,
+      1,
+      2,
+      4,
+      5,
+      6,
+      3,
+      11,
+      7,
+      8,
+      10,
+      12,
+      15,
+      13,
+      17,
+      32,
+      34
+    ],
+    "expected_total_cost": 2515.295748024131,
+    "path_length": 17,
+    "bottleneck_node": {
+      "node_id": 3,
+      "p_succ": 0.192994
+    }
+  },
+  {
+    "target_node": 34,
+    "strategy_name": "Myopic",
+    "path": [
+      0,
+      1,
+      2,
+      4,
+      5,
+      6,
+      11,
+      3,
+      7,
+      8,
+      10,
+      12,
+      15,
+      13,
+      17,
+      32,
+      34
+    ],
+    "expected_total_cost": 2549.355387240622,
+    "path_length": 17,
+    "bottleneck_node": {
+      "node_id": 3,
+      "p_succ": 0.196887
+    }
+  },
+  {
+    "target_node": 34,
+    "strategy_name": "No-Prior",
+    "path": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      11,
+      7,
+      8,
+      10,
+      12,
+      13,
+      15,
+      17,
+      32,
+      34
+    ],
+    "expected_total_cost": 1428.4591134027794,
+    "path_length": 17,
+    "bottleneck_node": {
+      "node_id": 3,
+      "p_succ": 0.555046
+    }
+  },
+  {
+    "target_node": 37,
+    "strategy_name": "Ariadne-Full",
+    "path": [
+      0,
+      1,
+      2,
+      4,
+      5,
+      3,
+      11,
+      6,
+      7,
+      29,
+      8,
+      10,
+      12,
+      13,
+      37
+    ],
+    "expected_total_cost": 2224.771036873803,
+    "path_length": 15,
+    "bottleneck_node": {
+      "node_id": 3,
+      "p_succ": 0.212927
+    }
+  },
+  {
+    "target_node": 37,
+    "strategy_name": "Ariadne-Neutral",
+    "path": [
+      0,
+      1,
+      2,
+      11,
+      4,
+      3,
+      5,
+      29,
+      6,
+      7,
+      8,
+      10,
+      12,
+      13,
+      37
+    ],
+    "expected_total_cost": 2239.917509451721,
+    "path_length": 15,
+    "bottleneck_node": {
+      "node_id": 3,
+      "p_succ": 0.215153
+    }
+  },
+  {
+    "target_node": 37,
+    "strategy_name": "Myopic",
+    "path": [
+      0,
+      1,
+      2,
+      4,
+      29,
+      5,
+      6,
+      11,
+      3,
+      7,
+      8,
+      10,
+      12,
+      13,
+      37
+    ],
+    "expected_total_cost": 2224.948687728829,
+    "path_length": 15,
+    "bottleneck_node": {
+      "node_id": 3,
+      "p_succ": 0.180646
+    }
+  },
+  {
+    "target_node": 37,
+    "strategy_name": "No-Prior",
+    "path": [
+      0,
+      1,
+      2,
+      4,
+      5,
+      3,
+      6,
+      11,
+      7,
+      8,
+      29,
+      10,
+      12,
+      13,
+      37
+    ],
+    "expected_total_cost": 1265.847277746676,
+    "path_length": 15,
+    "bottleneck_node": {
+      "node_id": 3,
+      "p_succ": 0.555046
+    }
+  },
+  {
+    "target_node": 46,
+    "strategy_name": "Ariadne-Full",
+    "path": [
+      0,
+      1,
+      2,
+      4,
+      3,
+      40,
+      46
+    ],
+    "expected_total_cost": 1076.7633625200958,
+    "path_length": 7,
+    "bottleneck_node": {
+      "node_id": 3,
+      "p_succ": 0.193322
+    }
+  },
+  {
+    "target_node": 46,
+    "strategy_name": "Ariadne-Neutral",
+    "path": [
+      0,
+      1,
+      2,
+      4,
+      3,
+      40,
+      46
+    ],
+    "expected_total_cost": 1088.3565563435054,
+    "path_length": 7,
+    "bottleneck_node": {
+      "node_id": 3,
+      "p_succ": 0.202962
+    }
+  },
+  {
+    "target_node": 46,
+    "strategy_name": "Myopic",
+    "path": [
+      0,
+      1,
+      2,
+      4,
+      3,
+      40,
+      46
+    ],
+    "expected_total_cost": 1187.0020878362336,
+    "path_length": 7,
+    "bottleneck_node": {
+      "node_id": 3,
+      "p_succ": 0.21312
+    }
+  },
+  {
+    "target_node": 46,
+    "strategy_name": "No-Prior",
+    "path": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      40,
+      46
+    ],
+    "expected_total_cost": 582.945643969505,
+    "path_length": 7,
+    "bottleneck_node": {
+      "node_id": 3,
+      "p_succ": 0.555046
+    }
+  },
+  {
+    "target_node": 49,
+    "strategy_name": "Ariadne-Full",
+    "path": [
+      0,
+      1,
+      2,
+      4,
+      5,
+      6,
+      11,
+      3,
+      7,
+      8,
+      10,
+      12,
+      13,
+      15,
+      17,
+      24,
+      40,
+      46,
+      47,
+      32,
+      35,
+      49
+    ],
+    "expected_total_cost": 3448.9686615627447,
+    "path_length": 22,
+    "bottleneck_node": {
+      "node_id": 3,
+      "p_succ": 0.181773
+    }
+  },
+  {
+    "target_node": 49,
+    "strategy_name": "Ariadne-Neutral",
+    "path": [
+      0,
+      1,
+      2,
+      11,
+      4,
+      5,
+      6,
+      3,
+      7,
+      8,
+      10,
+      40,
+      12,
+      13,
+      46,
+      15,
+      17,
+      32,
+      47,
+      24,
+      35,
+      49
+    ],
+    "expected_total_cost": 3459.4075450694563,
+    "path_length": 22,
+    "bottleneck_node": {
+      "node_id": 3,
+      "p_succ": 0.201018
+    }
+  },
+  {
+    "target_node": 49,
+    "strategy_name": "Myopic",
+    "path": [
+      0,
+      1,
+      2,
+      4,
+      5,
+      6,
+      11,
+      3,
+      7,
+      8,
+      10,
+      12,
+      15,
+      40,
+      46,
+      13,
+      17,
+      32,
+      24,
+      35,
+      47,
+      49
+    ],
+    "expected_total_cost": 3479.64908531545,
+    "path_length": 22,
+    "bottleneck_node": {
+      "node_id": 3,
+      "p_succ": 0.208792
+    }
+  },
+  {
+    "target_node": 49,
+    "strategy_name": "No-Prior",
+    "path": [
+      0,
+      1,
+      2,
+      4,
+      3,
+      5,
+      6,
+      11,
+      7,
+      8,
+      10,
+      12,
+      13,
+      15,
+      17,
+      24,
+      32,
+      40,
+      46,
+      35,
+      47,
+      49
+    ],
+    "expected_total_cost": 1851.191697707636,
+    "path_length": 22,
+    "bottleneck_node": {
+      "node_id": 47,
+      "p_succ": 0.542931
+    }
+  },
+  {
+    "target_node": 55,
+    "strategy_name": "Ariadne-Full",
+    "path": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      40,
+      46,
+      5,
+      6,
+      55
+    ],
+    "expected_total_cost": 1534.9732567936567,
+    "path_length": 10,
+    "bottleneck_node": {
+      "node_id": 3,
+      "p_succ": 0.179721
+    }
+  },
+  {
+    "target_node": 55,
+    "strategy_name": "Ariadne-Neutral",
+    "path": [
+      0,
+      1,
+      2,
+      4,
+      3,
+      40,
+      5,
+      6,
+      46,
+      55
+    ],
+    "expected_total_cost": 1522.3331098688652,
+    "path_length": 10,
+    "bottleneck_node": {
+      "node_id": 3,
+      "p_succ": 0.200555
+    }
+  },
+  {
+    "target_node": 55,
+    "strategy_name": "Myopic",
+    "path": [
+      0,
+      1,
+      2,
+      4,
+      5,
+      6,
+      3,
+      40,
+      46,
+      55
+    ],
+    "expected_total_cost": 1595.115101550643,
+    "path_length": 10,
+    "bottleneck_node": {
+      "node_id": 3,
+      "p_succ": 0.214783
+    }
+  },
+  {
+    "target_node": 55,
+    "strategy_name": "No-Prior",
+    "path": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      40,
+      46,
+      55
+    ],
+    "expected_total_cost": 825.9777409165799,
+    "path_length": 10,
+    "bottleneck_node": {
+      "node_id": 3,
+      "p_succ": 0.555046
+    }
+  },
+  {
+    "target_node": 58,
+    "strategy_name": "Ariadne-Full",
+    "path": [
+      0,
+      1,
+      2,
+      4,
+      11,
+      3,
+      5,
+      40,
+      6,
+      7,
+      8,
+      10,
+      12,
+      13,
+      46,
+      51,
+      52,
+      58
+    ],
+    "expected_total_cost": 2860.660090935374,
+    "path_length": 18,
+    "bottleneck_node": {
+      "node_id": 3,
+      "p_succ": 0.172288
+    }
+  },
+  {
+    "target_node": 58,
+    "strategy_name": "Ariadne-Neutral",
+    "path": [
+      0,
+      1,
+      2,
+      4,
+      3,
+      5,
+      6,
+      11,
+      7,
+      8,
+      10,
+      12,
+      13,
+      51,
+      40,
+      46,
+      52,
+      58
+    ],
+    "expected_total_cost": 2883.815148793127,
+    "path_length": 18,
+    "bottleneck_node": {
+      "node_id": 3,
+      "p_succ": 0.191045
+    }
+  },
+  {
+    "target_node": 58,
+    "strategy_name": "Myopic",
+    "path": [
+      0,
+      1,
+      2,
+      4,
+      5,
+      6,
+      11,
+      3,
+      7,
+      8,
+      10,
+      12,
+      13,
+      51,
+      52,
+      40,
+      46,
+      58
+    ],
+    "expected_total_cost": 2888.5702266375674,
+    "path_length": 18,
+    "bottleneck_node": {
+      "node_id": 3,
+      "p_succ": 0.187193
+    }
+  },
+  {
+    "target_node": 58,
+    "strategy_name": "No-Prior",
+    "path": [
+      0,
+      1,
+      2,
+      11,
+      4,
+      3,
+      5,
+      6,
+      7,
+      8,
+      10,
+      12,
+      13,
+      40,
+      46,
+      51,
+      52,
+      58
+    ],
+    "expected_total_cost": 1527.1155919160876,
+    "path_length": 18,
+    "bottleneck_node": {
+      "node_id": 3,
+      "p_succ": 0.555046
     }
   }
 ]
