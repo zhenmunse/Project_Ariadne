@@ -1,0 +1,21 @@
+{
+  "condition": "BKT + Greedy",
+  "targets": [
+    6,
+    7,
+    12,
+    18,
+    29,
+    36,
+    39,
+    42,
+    46,
+    52
+  ],
+  "mean_expected_total_cost": 2543.545619136374,
+  "mean_path_length": 27.1,
+  "mean_off_target_actions": 15.4,
+  "total_planning_seconds": 0.008514499990269542,
+  "all_paths_valid": true,
+  "probability_source": "bkt_expected_attempt_cost"
+}

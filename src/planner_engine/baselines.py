@@ -82,6 +82,12 @@ class GreedyPlanner:
         """Return geometric one-step expected cost T_v / p(v, s)."""
         frozen_state = frozenset(state)
 
+        if hasattr(self.oracle, "action_cost"):
+            cost = self._as_float(self.oracle.action_cost(action, frozen_state))
+            if cost <= 0.0:
+                raise ValueError(f"action_cost({action}) must be positive, got {cost}")
+            return cost
+
         if hasattr(self.oracle, "success_prob"):
             p = self._as_float(self.oracle.success_prob(action, frozen_state))
             if hasattr(self.oracle, "base_cost"):
