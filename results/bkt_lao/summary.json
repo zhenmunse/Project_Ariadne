@@ -1,0 +1,23 @@
+{
+  "condition": "BKT + LAO*",
+  "targets": [
+    6,
+    7,
+    12,
+    18,
+    29,
+    36,
+    39,
+    42,
+    46,
+    52
+  ],
+  "mean_expected_total_cost": 1144.680158422865,
+  "mean_path_length": 11.7,
+  "mean_off_target_actions": 0.0,
+  "mean_expanded_states": 1689.7,
+  "total_planning_seconds": 55.73452750001161,
+  "all_paths_valid": true,
+  "all_converged": true,
+  "probability_source": "bkt_expected_attempt_cost"
+}
