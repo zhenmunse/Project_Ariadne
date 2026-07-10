@@ -1,0 +1,22 @@
+{
+  "condition": "Linear Syllabus Order",
+  "targets": [
+    6,
+    7,
+    12,
+    18,
+    29,
+    36,
+    39,
+    42,
+    46,
+    52
+  ],
+  "mean_expected_total_cost": 1753.081957125894,
+  "mean_path_length": 11.7,
+  "mean_off_target_actions": 0.0,
+  "total_planning_seconds": 0.9541084000011324,
+  "all_paths_valid": true,
+  "evaluation_oracle": "local_ariadne_oracle_checkpoint",
+  "teaching_order_source": "data/ecs32a_teaching_order_required_full_v1.csv"
+}
