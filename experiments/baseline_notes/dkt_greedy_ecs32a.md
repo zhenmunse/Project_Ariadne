@@ -5,7 +5,8 @@
 Condition 4 of the planning matrix. This experiment uses the DKT prediction
 artifacts archived under `data/baselines/pykt/ecs32a_ariadne/` and keeps the
 same DAG, data split, targets, seed, and cost model as the other Greedy
-conditions.
+conditions. Each target is planned on its induced prerequisite closure, using
+the closure as both the planner graph and terminal goal.
 
 The planner uses training-fold DKT predictions averaged by concept. This is a
 population-level adapter, not a student-specific DKT hidden-state planner.
@@ -29,14 +30,15 @@ The same ten targets were used with seed 42:
 
 | Planning metric | Value |
 |---|---:|
-| Mean expected total cost | 2223.749873 |
-| Mean path length | 24.5 |
-| Mean off-target actions | 12.8 |
-| Total planning time | 0.0031 s |
+| Mean expected total cost | 1075.324149 |
+| Mean path length | 11.7 |
+| Mean off-target actions | 0.0 |
+| Total planning time | 0.0005 s |
 | Prerequisite-valid paths | 10 / 10 |
 
 The result is generated from the archived DKT prediction artifacts and is
-waiting for review before this branch is committed.
+restricted to the target prerequisite closures, matching the LAO* benchmark
+protocol.
 
 ## Files and reproduction
 

@@ -12,10 +12,10 @@
     46,
     52
   ],
-  "mean_expected_total_cost": 2223.7498729023982,
-  "mean_path_length": 24.5,
-  "mean_off_target_actions": 12.8,
-  "total_planning_seconds": 0.0031010000238893554,
+  "mean_expected_total_cost": 1075.3241491809918,
+  "mean_path_length": 11.7,
+  "mean_off_target_actions": 0.0,
+  "total_planning_seconds": 0.0005089000114821829,
   "all_paths_valid": true,
   "probability_source": "archived_dkt_train_node_predictions"
 }
