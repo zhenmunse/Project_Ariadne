@@ -20,7 +20,7 @@ from typing import Dict, FrozenSet, List, Optional, Set, Tuple
 
 import networkx as nx
 
-from src.planner_engine.heuristics import sum_heuristic
+from src.planner_engine.heuristics import max_heuristic, sum_heuristic
 from src.planner_engine.zpd_utils import get_valid_actions
 
 
@@ -153,11 +153,8 @@ class _OracleCostMixin:
         if hasattr(self.oracle, "best_case_success_prob"):
             p = getattr(self.oracle, "best_case_success_prob")(v)
             p_star = self._sanitize_probability(self._as_float(p))
-        elif hasattr(self.oracle, "success_prob"):
-            p_star = self.success_prob(v, self._target_for_heuristic)
         else:
-            # Legacy predict_mc oracles may not be monotone.  Using 1.0 keeps
-            # the heuristic admissible, though weaker.
+            # No monotonicity guarantee is implied by success_prob alone.
             p_star = 1.0
 
         self._best_case_prob_cache[v] = p_star
@@ -238,6 +235,13 @@ class DAGPlanner(_OracleCostMixin):
                 config.get("oracle", {}).get("t_base", 60.0),
             )
         )
+        self.heuristic_name: str = str(
+            config.get("planner", {}).get("heuristic", "sum")
+        ).lower()
+        if self.heuristic_name not in {"sum", "max", "zero"}:
+            raise ValueError(
+                "planner.heuristic must be one of: sum, max, zero"
+            )
 
         self.graph_explicit = ExplicitGraph()
         self._query_cache: Dict[Tuple[int, State], Tuple[float, float]] = {}
@@ -296,7 +300,7 @@ class DAGPlanner(_OracleCostMixin):
             values=values,
             expanded_count=sum(
                 1 for node in self.graph_explicit.expanded.values()
-                if node.is_expanded
+                if node.is_expanded and not node.is_terminal
             ),
             iterations=iterations,
             converged=converged,
@@ -335,6 +339,10 @@ class DAGPlanner(_OracleCostMixin):
     def _heuristic(self, state: State, target: State) -> float:
         if self._is_terminal(state, target):
             return 0.0
+        if self.heuristic_name == "zero":
+            return 0.0
+        if self.heuristic_name == "max":
+            return max_heuristic(state, target, self, self.graph)
         return sum_heuristic(state, target, self)
 
     def _ensure_state(self, state: State, target: State) -> StateNode:

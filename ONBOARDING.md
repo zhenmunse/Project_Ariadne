@@ -137,15 +137,18 @@ Priority-ordered baseline reproduction list:
 | P2 | SAINT+ | pykt-toolkit | More complex, may need GPU |
 | P3 | LLM baseline | To be designed | Will use Claude/GPT-4 API, detailed spec coming later |
 
-After baselines are individually verified, we integrate them into our 10-condition experiment matrix:
+After baselines are individually verified, we integrate them into our 12-condition experiment matrix:
 
-|  | Greedy | LAO\* (Optimal) |
+| Oracle \ Solver | Greedy | LAO\* (Optimal) |
 |---|---|---|
 | FrequencyOracle | Freq + Greedy | Freq + LAO\* |
+| BKT | BKT + Greedy | BKT + LAO\* |
 | DKT | DKT + Greedy | DKT + LAO\* |
 | MonotonicOracle | Mono + Greedy | **Mono + LAO\* (Ours)** |
 
 Plus standalone conditions: Random Valid Ordering, Linear Syllabus Order, LLM-Full, LLM-Zero.
+
+This gives the oracle-quality spectrum: FrequencyOracle (no personalization) → BKT (classical per-concept personalization) → DKT (neural sequence-level personalization) → MonotonicOracle (neural + structural prior).
 
 ---
 

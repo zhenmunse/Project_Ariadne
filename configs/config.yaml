@@ -7,6 +7,8 @@ data:
   raw_log: "data/raw/interactions.csv"
   item2node: "data/raw/item2node.csv"
   dag_edges: "data/raw/dag_edges.csv"
+  ecs32a_concepts: "data/ecs32a_concepts_required_full_v1.csv"
+  ecs32a_dag_edges: "data/ecs32a_dag_edges_required_full_v1.csv"
   processed_dir: "data/processed"
 
 # ---------- Mastery Proxy ----------
@@ -23,15 +25,22 @@ oracle:
   epochs: 50
   batch_size: 128
   model_path: "experiments/oracle.pt"
+  checkpoint: "data/processed/oracle_ckpt.pt"
 
 # ---------- Planner / Cost ----------
 planner:
+  base_cost: 60.0          # seconds per attempt
+  heuristic: sum           # sum | max | zero
   t_penalty: 300          # seconds; extra penalty on failure
   lambda_risk: 0.5        # uncertainty weight
 
 # ---------- Experiments ----------
 experiments:
   num_targets: 10          # number of target nodes to sample
+  planning_seed: 42        # reset once at the start of each planning run
+  heuristic_variants: [sum, max, zero]
+  planner_benchmark_oracle: static  # static | monotonic
+  planner_benchmark_results: "lao_heuristic_benchmark_{oracle}.csv"
   min_depth: 1             # minimum topological depth for target selection
   subgraph_size: 50        # desired subgraph node count
   results_dir: "results"

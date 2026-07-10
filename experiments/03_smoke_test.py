@@ -24,8 +24,9 @@ import networkx as nx
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
 
-from src.planner_engine.zpd_utils import get_valid_actions
+from src.planner_engine.heuristics import max_heuristic, sum_heuristic
 from src.planner_engine.solver import DAGPlanner, DAGPlannerDP
+from src.planner_engine.zpd_utils import get_valid_actions
 
 
 class TableOracle:
@@ -53,6 +54,17 @@ class TableOracle:
         vals = [p for (node, _state), p in self.probs.items() if node == v]
         vals.append(self.default_p)
         return max(vals)
+
+
+class SuccessOnlyOracle:
+    """Oracle intentionally lacking a best-case probability method."""
+
+    def __init__(self):
+        self.queries = []
+
+    def success_prob(self, v: int, mastered: FrozenSet[int]) -> float:
+        self.queries.append((v, mastered))
+        return 0.25
 
 
 def empty_edge_index():
@@ -93,6 +105,35 @@ def zpd_unit_tests():
     assert actual == [0], f"Expected [0], got {actual}"
 
     print("  [OK] ZPD tests passed\n")
+
+
+def heuristic_unit_tests():
+    print("=" * 60)
+    print("Part A2: Heuristic unit tests")
+    print("=" * 60)
+
+    graph = nx.DiGraph([(0, 1), (0, 2), (1, 3), (2, 3)])
+    oracle = SuccessOnlyOracle()
+    config = {
+        "planner": {"base_cost": 2.0},
+        "oracle": {"mc_samples": 1},
+    }
+    planner = DAGPlanner(oracle, graph, config, empty_edge_index(), num_nodes=4)
+
+    p_bar = planner.best_case_success_prob(0)
+    h_sum = sum_heuristic(frozenset(), frozenset(graph.nodes()), planner)
+    h_max = max_heuristic(
+        frozenset(), frozenset(graph.nodes()), planner, graph
+    )
+
+    assert p_bar == 1.0, f"Expected fallback p_bar=1.0, got {p_bar}"
+    assert h_sum == 8.0, f"Expected sum heuristic 8.0, got {h_sum}"
+    assert h_max == 6.0, f"Expected max heuristic 6.0, got {h_max}"
+    assert oracle.queries == [], "Heuristic fallback queried success_prob"
+
+    print(f"  fallback p_bar = {p_bar:.1f}")
+    print(f"  h_sum = {h_sum:.1f}, h_max = {h_max:.1f}")
+    print("  [OK] Heuristic tests passed\n")
 
 
 # ==================================================================
@@ -305,6 +346,7 @@ def real_oracle_smoke():
 
 def main():
     zpd_unit_tests()
+    heuristic_unit_tests()
     chain_test()
     branch_order_test()
     trap_test()
