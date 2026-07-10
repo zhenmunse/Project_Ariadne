@@ -1,0 +1,21 @@
+{
+  "condition": "Ariadne + Greedy",
+  "targets": [
+    6,
+    7,
+    12,
+    18,
+    29,
+    36,
+    39,
+    42,
+    46,
+    52
+  ],
+  "mean_expected_total_cost": 4080.197087057487,
+  "mean_path_length": 26.2,
+  "mean_off_target_actions": 14.5,
+  "total_planning_seconds": 7.086636699998053,
+  "all_paths_valid": true,
+  "probability_source": "local_ariadne_oracle_checkpoint"
+}
