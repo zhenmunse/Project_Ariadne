@@ -1,185 +1,127 @@
-"""Evaluate the syllabus order on ECS32A prerequisite closures."""
+"""Generate Linear Syllabus sequences under the shared protocol."""
+
+from __future__ import annotations
 
 import csv
-import json
-import pickle
 import sys
-import time
 from pathlib import Path
-
-import networkx as nx
-import numpy as np
-import pandas as pd
-import torch
-import yaml
 
 
 ROOT = Path(__file__).resolve().parents[1]
-PROCESSED = ROOT / "data" / "processed"
-SYLLABUS = ROOT / "data" / "ecs32a_teaching_order_required_full_v1.csv"
+SYLLABUS_PATH = ROOT / "data" / "ecs32a_teaching_order_required_full_v1.csv"
 OUTPUT = ROOT / "results" / "linear_syllabus_order"
+SEQUENCES_PATH = OUTPUT / "sequences.jsonl"
 sys.path.insert(0, str(ROOT))
 
-from src.oracle_core.dataset import get_dataloader
-from src.oracle_core.model import MonotonicOracle
+from experiments.common.manifest import (
+    DEFAULT_DAG_PATH,
+    load_dag,
+    load_manifest,
+    manifest_hash,
+    sha256_file,
+)
+from experiments.common.schema import Method, SequenceRecord, write_jsonl
 
 
-def auc_score(labels: np.ndarray, probabilities: np.ndarray) -> float:
-    ranks = pd.Series(probabilities).rank(method="average").to_numpy()
-    positive = labels == 1
-    n_positive = int(positive.sum())
-    n_negative = len(labels) - n_positive
-    if not n_positive or not n_negative:
-        raise ValueError("AUC requires both binary classes")
-    return float(
-        (ranks[positive].sum() - n_positive * (n_positive + 1) / 2)
-        / (n_positive * n_negative)
-    )
+def load_teaching_order(path: str | Path = SYLLABUS_PATH) -> dict[int, int]:
+    """Load a strict one-to-one node-to-position teaching order."""
+    path = Path(path)
+    with path.open(encoding="utf-8", newline="") as file:
+        rows = list(csv.DictReader(file))
+    if not rows or "node_id" not in rows[0] or "teaching_order" not in rows[0]:
+        raise ValueError("Teaching order CSV requires node_id and teaching_order columns")
 
-
-def validation_metrics(graph: dict, checkpoint: dict, model: MonotonicOracle) -> dict:
-    with (PROCESSED / "valid_sessions.pkl").open("rb") as file:
-        samples = pickle.load(file)
-    edge_index = torch.tensor(graph["edge_index"], dtype=torch.long)
-    loader = get_dataloader(
-        samples,
-        graph["node_id_to_idx"],
-        len(graph["node_ids"]),
-        batch_size=checkpoint["config"]["batch_size"],
-        shuffle=False,
-    )
-    probabilities, labels = [], []
-    with torch.no_grad():
-        for x, target, mask, label in loader:
-            probability, _ = model.forward_batch(x, edge_index, target, mask)
-            probabilities.append(probability)
-            labels.append(label)
-
-    y_prob = torch.cat(probabilities).numpy()
-    y_true = torch.cat(labels).numpy()
-    binary = np.isin(y_true, [0.0, 1.0])
-    binary_true, binary_prob = y_true[binary], y_prob[binary]
-    return {
-        "samples": len(y_true),
-        "binary_samples": int(binary.sum()),
-        "mse": float(np.mean((y_true - y_prob) ** 2)),
-        "rmse": float(np.sqrt(np.mean((y_true - y_prob) ** 2))),
-        "mae": float(np.mean(np.abs(y_true - y_prob))),
-        "auc": auc_score(binary_true, binary_prob),
-        "accuracy": float(np.mean((binary_prob >= 0.5) == (binary_true == 1.0))),
-        "probability_source": "local_ariadne_oracle_checkpoint",
-    }
-
-
-def load_teaching_order() -> dict[int, int]:
-    with SYLLABUS.open(encoding="utf8", newline="") as file:
-        order = {int(row["node_id"]): int(row["teaching_order"]) for row in csv.DictReader(file)}
+    order = {}
+    for row_number, row in enumerate(rows, start=2):
+        try:
+            node = int(row["node_id"])
+            position = int(row["teaching_order"])
+        except (TypeError, ValueError) as error:
+            raise ValueError(
+                f"Invalid teaching order value at CSV row {row_number}"
+            ) from error
+        if str(node) != row["node_id"].strip() or str(position) != row[
+            "teaching_order"
+        ].strip():
+            raise ValueError(f"Teaching order IDs must be canonical integers at row {row_number}")
+        if node in order:
+            raise ValueError(f"Duplicate teaching-order node ID: {node}")
+        order[node] = position
     return order
 
 
-def action_cost(model, edge_index, num_nodes: int, node: int, mastered: set[int], mc_samples: int) -> float:
-    x = torch.zeros(num_nodes, 2)
-    mask = torch.zeros(num_nodes)
-    for mastered_node in mastered:
-        mask[mastered_node] = 1.0
-    probability, _, _ = model.predict_mc(
-        x,
-        edge_index,
-        torch.tensor(node, dtype=torch.long),
-        mask,
-        mc_samples=mc_samples,
-    )
-    return 60.0 / max(float(probability.item()), 1e-12)
+def validate_teaching_order(
+    order: dict[int, int],
+    nodes: list[int],
+    edges: list[tuple[int, int]],
+) -> None:
+    if len(nodes) != 61 or len(edges) != 134:
+        raise ValueError("Shared ECS32A DAG must contain exactly 61 nodes and 134 edges")
+    if set(order) != set(nodes):
+        missing = sorted(set(nodes) - set(order))
+        extra = sorted(set(order) - set(nodes))
+        raise ValueError(f"Teaching order node mismatch; missing={missing}, extra={extra}")
+    positions = list(order.values())
+    if len(positions) != len(set(positions)):
+        raise ValueError("Teaching order contains duplicate positions")
+    if sorted(positions) != list(range(1, len(nodes) + 1)):
+        raise ValueError("Teaching order positions must be exactly 1 through 61")
+    violations = [
+        (src, dst) for src, dst in edges if order[src] >= order[dst]
+    ]
+    if violations:
+        raise ValueError(f"Teaching order violates prerequisite edges: {violations}")
+
+
+def generate_records(manifest: dict, order: dict[int, int]) -> list[SequenceRecord]:
+    protocol_hash = manifest_hash(manifest)
+    evaluator_hash = sha256_file(ROOT / "experiments" / "common" / "evaluator.py")
+    syllabus_hash = sha256_file(SYLLABUS_PATH)
+    records = []
+    for closure in manifest["closures"]:
+        sequence = sorted(closure["sequence_nodes"], key=order.__getitem__)
+        if set(sequence) != set(closure["sequence_nodes"]):
+            raise AssertionError("Syllabus sequence does not cover sequence_nodes")
+        if not sequence or sequence[-1] != closure["target_node"]:
+            raise AssertionError(
+                f"Target {closure['target_node']} is not final in syllabus sequence"
+            )
+        records.append(
+            SequenceRecord(
+                method=Method.LINEAR_SYLLABUS,
+                target_node=closure["target_node"],
+                run_id=0,
+                sequence=sequence,
+                internal_cost=None,
+                metadata={
+                    "closure_hash": closure["closure_hash"],
+                    "manifest_hash": protocol_hash,
+                    "evaluator_hash": evaluator_hash,
+                    "teaching_order_hash": syllabus_hash,
+                    "teaching_order_source": "data/ecs32a_teaching_order_required_full_v1.csv",
+                },
+            )
+        )
+    return records
 
 
 def main() -> None:
-    with (ROOT / "configs" / "config.yaml").open(encoding="utf8") as file:
-        config = yaml.safe_load(file)
-    torch.manual_seed(config["seed"])
-    with (PROCESSED / "graph.pkl").open("rb") as file:
-        graph = pickle.load(file)
-    with (PROCESSED / "oracle_ckpt.pt").open("rb") as file:
-        checkpoint = torch.load(file, map_location="cpu", weights_only=False)
-    with (PROCESSED / "train_sessions.pkl").open("rb") as file:
-        train_samples = pickle.load(file)
+    manifest = load_manifest()
+    nodes, edges = load_dag(DEFAULT_DAG_PATH)
+    order = load_teaching_order()
+    validate_teaching_order(order, nodes, edges)
 
-    if checkpoint["node_id_to_idx"] != graph["node_id_to_idx"]:
-        raise ValueError("checkpoint and graph use different node mappings")
-    teaching_order = load_teaching_order()
-    if set(teaching_order) != set(graph["node_ids"]):
-        raise ValueError("teaching order does not cover the DAG nodes")
-    if len(teaching_order) != len(set(teaching_order.values())):
-        raise ValueError("teaching order contains duplicate positions")
-    if any(teaching_order[src] >= teaching_order[dst] for src, dst in graph["nx_dag"].edges()):
-        raise ValueError("teaching order violates a prerequisite edge")
+    first = generate_records(manifest, order)
+    second = generate_records(manifest, order)
+    if first != second:
+        raise AssertionError("Linear Syllabus generation is not deterministic")
 
-    model = MonotonicOracle(
-        num_nodes=checkpoint["num_nodes"],
-        hidden_dim=checkpoint["config"]["hidden_dim"],
-        dropout=checkpoint["config"]["dropout"],
-    )
-    model.load_state_dict(checkpoint["state_dict"])
-    model.eval()
-
-    dag: nx.DiGraph = graph["nx_dag"]
-    observed = {target for _, target, _ in train_samples}
-    candidates = sorted(node for node in observed if dag.in_degree(node) > 0)
-    rng = np.random.default_rng(config["seed"])
-    targets = sorted(
-        rng.choice(
-            candidates,
-            size=min(config["experiments"]["num_targets"], len(candidates)),
-            replace=False,
-        ).tolist()
-    )
-    edge_index = torch.tensor(graph["edge_index"], dtype=torch.long)
-    mc_samples = config["oracle"]["mc_samples"]
-
-    trajectories = []
-    for target in targets:
-        closure = nx.ancestors(dag, target) | {target}
-        path = sorted(closure, key=teaching_order.__getitem__)
-        assert path[-1] == target
-        mastered: set[int] = set()
-        started = time.perf_counter()
-        total_cost = 0.0
-        for node in path:
-            assert set(dag.predecessors(node)) <= mastered
-            total_cost += action_cost(model, edge_index, len(graph["node_ids"]), node, mastered, mc_samples)
-            mastered.add(node)
-        trajectories.append(
-            {
-                "target_node": target,
-                "expected_total_cost": total_cost,
-                "path_length": len(path),
-                "required_nodes": len(closure),
-                "off_target_actions": len(set(path) - closure),
-                "planning_seconds": time.perf_counter() - started,
-                "path_is_valid": mastered == closure,
-                "path": json.dumps(path),
-            }
-        )
-
-    metrics = validation_metrics(graph, checkpoint, model)
     OUTPUT.mkdir(parents=True, exist_ok=True)
-    pd.DataFrame([metrics]).to_csv(OUTPUT / "oracle_valid_metrics.csv", index=False)
-    pd.DataFrame(trajectories).to_csv(OUTPUT / "planner_trajectories.csv", index=False)
-    summary = {
-        "condition": "Linear Syllabus Order",
-        "targets": targets,
-        "mean_expected_total_cost": float(np.mean([r["expected_total_cost"] for r in trajectories])),
-        "mean_path_length": float(np.mean([r["path_length"] for r in trajectories])),
-        "mean_off_target_actions": 0.0,
-        "total_planning_seconds": float(sum(r["planning_seconds"] for r in trajectories)),
-        "all_paths_valid": all(r["path_is_valid"] for r in trajectories),
-        "evaluation_oracle": "local_ariadne_oracle_checkpoint",
-        "teaching_order_source": "data/ecs32a_teaching_order_required_full_v1.csv",
-    }
-    (OUTPUT / "summary.json").write_text(json.dumps(summary, indent=2), encoding="utf8")
-
-    print(pd.DataFrame([metrics]).to_string(index=False))
-    print(pd.DataFrame(trajectories).drop(columns="path").to_string(index=False))
-    print(json.dumps(summary, indent=2))
+    write_jsonl(SEQUENCES_PATH, first)
+    print(f"teaching_nodes={len(order)}")
+    print(f"validated_edges={len(edges)}")
+    print(f"records={len(first)}")
+    print(f"sequences={SEQUENCES_PATH}")
 
 
 if __name__ == "__main__":

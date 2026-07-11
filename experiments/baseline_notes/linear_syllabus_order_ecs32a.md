@@ -1,52 +1,37 @@
 # Linear Syllabus Order on ECS32A
 
-## Scope
+## Protocol
 
-For each target, this baseline takes the target and all of its prerequisite
-ancestors, then sorts them by the official ECS32A teaching order. The supplied
-teaching-order file covers all 61 DAG concepts, and all 134 DAG edges point
-forward in that order.
+For each shared-manifest target, this deterministic baseline restricts the
+official ECS32A teaching order to the target's `sequence_nodes`. It generates
+standard sequence records only and has no internal Oracle, so
+`internal_cost=null`. Public cost and regret are produced exclusively by the
+canonical common scorer.
 
-The sequence is evaluated with the local Ariadne checkpoint so its expected
-cost is comparable with the other standalone ordering baseline. No nodes
-outside the target prerequisite closure are added.
+The runner validates before generation that:
 
-## Oracle validation
+- the teaching-order artifact covers all 61 DAG nodes exactly once;
+- positions are exactly the integers 1 through 61;
+- all 134 prerequisite edges point to a later teaching position;
+- every target closure sequence covers `sequence_nodes` exactly once;
+- every target is the final sequence node.
 
-| Metric | Value |
-|---|---:|
-| Samples | 3,103 |
-| Binary samples | 2,170 |
-| AUC | 0.774873 |
-| Accuracy | 0.798618 |
-| RMSE | 0.351672 |
-| MAE | 0.303330 |
-
-## Planning result
-
-| Metric | Value |
-|---|---:|
-| Mean expected total cost | 1764.103351 |
-| Mean path length | 11.7 |
-| Mean off-target actions | 0.0 |
-| Valid paths | 10 / 10 |
-| Evaluation Oracle | local Ariadne checkpoint |
-| Teaching-order source | `data/ecs32a_teaching_order_required_full_v1.csv` |
-
-The syllabus ordering is a deterministic reference policy. Its cost is close to
-the random valid ordering and higher than the LAO* result because it follows
-the course order rather than optimizing the model-based expected cost.
+Each record stores the closure, materialized manifest, evaluator, and teaching
+order artifact hashes. No manually maintained summary is generated; Task 14's
+aggregator will derive final tables from the scored records.
 
 ## Files and reproduction
 
 | File | Purpose |
 |---|---|
 | `data/ecs32a_teaching_order_required_full_v1.csv` | Official teaching order. |
-| `experiments/20_run_linear_syllabus_order.py` | Generates and evaluates syllabus sequences. |
-| `results/linear_syllabus_order/` | Metrics, trajectories, and summary. |
+| `experiments/20_run_linear_syllabus_order.py` | Validates the order and generates standard records. |
+| `results/linear_syllabus_order/sequences.jsonl` | Standard method output. |
+| `results/linear_syllabus_order/scored_sequences.csv` | Canonical evaluator output. |
 
 ```powershell
-.\.venv\Scripts\python.exe experiments\20_run_linear_syllabus_order.py
+python experiments\20_run_linear_syllabus_order.py
+python experiments\score_sequences.py `
+  results\linear_syllabus_order\sequences.jsonl `
+  --output results\linear_syllabus_order\scored_sequences.csv
 ```
-
-This branch is waiting for review and has not been committed.
