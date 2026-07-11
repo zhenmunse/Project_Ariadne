@@ -39,26 +39,39 @@ def sha256_file(path: str | Path) -> str:
     return digest.hexdigest()
 
 
-def sha256_files(paths: Iterable[str | Path]) -> str:
-    """Hash a named collection of artifacts deterministically.
+def _protocol_path(path: Path) -> str:
+    """Return a stable repo-relative path where possible."""
+    resolved = path.resolve()
+    try:
+        return resolved.relative_to(ROOT.resolve()).as_posix()
+    except ValueError:
+        return resolved.as_posix()
 
-    Filenames and byte lengths delimit each artifact, preventing two different
-    file collections from accidentally hashing as the same byte stream.
-    """
-    existing = sorted((Path(path) for path in paths if Path(path).is_file()), key=str)
-    if not existing:
-        raise FileNotFoundError("No train/validation split artifacts were found")
 
-    digest = hashlib.sha256()
-    for path in existing:
-        name = path.name.encode("utf-8")
-        digest.update(len(name).to_bytes(8, "big"))
-        digest.update(name)
-        digest.update(path.stat().st_size.to_bytes(8, "big"))
-        with path.open("rb") as file:
-            for chunk in iter(lambda: file.read(1024 * 1024), b""):
-                digest.update(chunk)
-    return digest.hexdigest()
+def artifact_collection(paths: Iterable[str | Path]) -> dict[str, Any]:
+    """Describe and hash a collection, including explicitly missing files."""
+    artifacts = []
+    for path in sorted((Path(path) for path in paths), key=_protocol_path):
+        exists = path.is_file()
+        artifacts.append(
+            {
+                "path": _protocol_path(path),
+                "exists": exists,
+                "sha256": sha256_file(path) if exists else None,
+            }
+        )
+    if not artifacts:
+        raise ValueError("At least one split artifact path must be specified")
+    return {
+        "combined_hash": hashlib.sha256(_canonical_json(artifacts)).hexdigest(),
+        "artifacts": artifacts,
+    }
+
+
+def _require_node_id(value: Any, field: str) -> int:
+    if not isinstance(value, int) or isinstance(value, bool):
+        raise TypeError(f"{field} must be an integer node ID")
+    return value
 
 
 def _load_dag(path: Path) -> tuple[list[int], list[tuple[int, int]]]:
@@ -71,17 +84,27 @@ def _load_dag(path: Path) -> tuple[list[int], list[tuple[int, int]]]:
         raise ValueError("DAG JSON must contain 'nodes' and 'edges' lists")
 
     nodes = sorted(
-        int(node["node_id"] if isinstance(node, dict) else node) for node in raw_nodes
+        _require_node_id(
+            node["node_id"] if isinstance(node, dict) else node,
+            "nodes[].node_id",
+        )
+        for node in raw_nodes
     )
     edges = sorted(
         (
-            int(edge["src"] if isinstance(edge, dict) else edge[0]),
-            int(edge["dst"] if isinstance(edge, dict) else edge[1]),
+            _require_node_id(
+                edge["src"] if isinstance(edge, dict) else edge[0], "edges[].src"
+            ),
+            _require_node_id(
+                edge["dst"] if isinstance(edge, dict) else edge[1], "edges[].dst"
+            ),
         )
         for edge in raw_edges
     )
     if len(nodes) != len(set(nodes)):
         raise ValueError("DAG contains duplicate node IDs")
+    if len(edges) != len(set(edges)):
+        raise ValueError("DAG contains duplicate edges")
     if any(src not in nodes or dst not in nodes for src, dst in edges):
         raise ValueError("DAG edge references an unknown node")
     return nodes, edges
@@ -182,8 +205,8 @@ def load_manifest(
     ):
         raise TypeError("every initial_state entry must be an integer node ID")
 
-    targets = [int(target) for target in raw["targets"]]
-    initial_state = [int(node) for node in raw["initial_state"]]
+    targets = list(raw["targets"])
+    initial_state = list(raw["initial_state"])
     if len(targets) != len(set(targets)):
         raise ValueError("targets must not contain duplicates")
     if len(initial_state) != len(set(initial_state)):
@@ -196,6 +219,25 @@ def load_manifest(
         raise ValueError(f"Manifest references unknown DAG nodes: {unknown}")
 
     closures = [_closure(target, nodes, edges) for target in targets]
+    initial_set = set(initial_state)
+    missing_prerequisites = sorted(
+        (src, dst) for src, dst in edges if dst in initial_set and src not in initial_set
+    )
+    if missing_prerequisites:
+        raise ValueError(
+            "initial_state must be prerequisite-closed; missing prerequisite edges: "
+            f"{missing_prerequisites}"
+        )
+    for closure in closures:
+        outside = sorted(initial_set - set(closure["nodes"]))
+        if outside:
+            raise ValueError(
+                f"initial_state must be a subset of target {closure['target_node']} "
+                f"closure; outside nodes: {outside}"
+            )
+        closure["sequence_nodes"] = [
+            node for node in closure["nodes"] if node not in initial_set
+        ]
     return {
         "seed": raw["seed"],
         "targets": targets,
@@ -205,7 +247,7 @@ def load_manifest(
         "artifact_hashes": {
             "dag": sha256_file(dag_path),
             "oracle_checkpoint": sha256_file(checkpoint_path),
-            "train_validation_split": sha256_files(split_paths),
+            "train_validation_split": artifact_collection(split_paths),
         },
     }
 
