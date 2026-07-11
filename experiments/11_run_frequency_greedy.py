@@ -70,6 +70,9 @@ def frequency_metrics(
         ]["combined_hash"],
         "train_artifact_hash": sha256_file(PROCESSED / "train_sessions.pkl"),
         "validation_artifact_hash": sha256_file(PROCESSED / "valid_sessions.pkl"),
+        "evaluator_hash": sha256_file(
+            ROOT / "experiments" / "common" / "evaluator.py"
+        ),
     }
 
 
