@@ -74,7 +74,9 @@ def _require_node_id(value: Any, field: str) -> int:
     return value
 
 
-def _load_dag(path: Path) -> tuple[list[int], list[tuple[int, int]]]:
+def load_dag(path: str | Path) -> tuple[list[int], list[tuple[int, int]]]:
+    """Load and strictly validate the protocol DAG artifact."""
+    path = Path(path)
     with path.open("r", encoding="utf-8") as file:
         payload = json.load(file)
 
@@ -212,7 +214,7 @@ def load_manifest(
     if len(initial_state) != len(set(initial_state)):
         raise ValueError("initial_state must not contain duplicates")
 
-    nodes, edges = _load_dag(dag_path)
+    nodes, edges = load_dag(dag_path)
     _topological_order(nodes, edges)
     unknown = sorted((set(targets) | set(initial_state)) - set(nodes))
     if unknown:

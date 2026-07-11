@@ -9,7 +9,7 @@ from typing import Any, Iterable
 import torch
 
 from src.oracle_core.model import MonotonicOracle
-from experiments.common.manifest import _load_dag
+from experiments.common.manifest import load_dag
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -22,8 +22,10 @@ class FrozenMonotonicOracle:
     """Expose a checkpoint as a fixed function of ``(node, mastery set)``.
 
     Inference always uses ``model.eval()`` and a zero feature tensor.  The
-    CUDA is explicit and mandatory by default so experiment runs cannot
-    silently fall back to CPU.
+    CPU is the canonical protocol backend because its tiny 61-node workload
+    does not benefit materially from GPU inference and CPU results are easier
+    to reproduce bitwise across repeated runs.  Callers may explicitly select
+    CUDA as a non-canonical acceleration mode.
     """
 
     def __init__(
@@ -33,7 +35,7 @@ class FrozenMonotonicOracle:
         node_id_to_idx: dict[int, int],
         *,
         base_cost: float = 60.0,
-        device: str | torch.device = "cuda",
+        device: str | torch.device = "cpu",
     ) -> None:
         if isinstance(base_cost, bool) or not isinstance(base_cost, (int, float)):
             raise TypeError("base_cost must be a positive number")
@@ -75,10 +77,12 @@ class FrozenMonotonicOracle:
         dag_path: str | Path = DEFAULT_DAG_PATH,
         *,
         base_cost: float = 60.0,
-        device: str | torch.device = "cuda",
+        device: str | torch.device = "cpu",
     ) -> "FrozenMonotonicOracle":
         """Build the adapter from the frozen checkpoint and DAG artifacts."""
         device = torch.device(device)
+        if device.type == "cuda" and not torch.cuda.is_available():
+            raise RuntimeError("CUDA was requested but is not available")
         checkpoint = torch.load(
             Path(checkpoint_path), map_location=device, weights_only=False
         )
@@ -92,7 +96,7 @@ class FrozenMonotonicOracle:
             raise TypeError("checkpoint node_id_to_idx must be a dictionary")
         node_id_to_idx = dict(raw_mapping)
 
-        dag_nodes, dag_edges = _load_dag(Path(dag_path))
+        dag_nodes, dag_edges = load_dag(dag_path)
         if set(dag_nodes) != set(node_id_to_idx):
             raise ValueError("DAG and checkpoint use different node IDs")
         indexed_edges: list[tuple[int, int]] = []
