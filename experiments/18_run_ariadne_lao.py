@@ -1,4 +1,6 @@
-"""Run Ariadne's MonotonicOracle with the LAO* planner."""
+"""Run Ariadne + LAO* under the deterministic shared protocol."""
+
+from __future__ import annotations
 
 import json
 import pickle
@@ -10,58 +12,27 @@ import networkx as nx
 import numpy as np
 import pandas as pd
 import torch
-import yaml
 
 
 ROOT = Path(__file__).resolve().parents[1]
 PROCESSED = ROOT / "data" / "processed"
 OUTPUT = ROOT / "results" / "ariadne_lao"
+SEQUENCES_PATH = OUTPUT / "sequences.jsonl"
+METRICS_PATH = OUTPUT / "oracle_valid_metrics.csv"
 sys.path.insert(0, str(ROOT))
 
+from experiments.common.frozen_oracle import FrozenMonotonicOracle
+from experiments.common.manifest import (
+    load_manifest,
+    manifest_hash,
+    sha256_file,
+)
+from experiments.common.schema import Method, SequenceRecord, write_jsonl
 from src.oracle_core.dataset import get_dataloader
-from src.oracle_core.model import MonotonicOracle
-from src.planner_engine.solver import DAGPlanner
+from src.planner_engine.solver import DAGPlanner, DAGPlannerDP
 
 
-class AriadneOracle:
-    """Planner adapter for the monotonic checkpoint Oracle."""
-
-    def __init__(self, model, edge_index, num_nodes: int, mc_samples: int):
-        self.model = model
-        self.edge_index = edge_index
-        self.num_nodes = num_nodes
-        self.mc_samples = mc_samples
-        self._probabilities = {}
-        self._best_case = {}
-
-    def _predict(self, node: int, mastered: frozenset[int]) -> float:
-        x = torch.zeros(self.num_nodes, 2)
-        mask = torch.zeros(self.num_nodes)
-        for mastered_node in mastered:
-            mask[mastered_node] = 1.0
-        probability, _, _ = self.model.predict_mc(
-            x,
-            self.edge_index,
-            torch.tensor(node, dtype=torch.long),
-            mask,
-            mc_samples=self.mc_samples,
-        )
-        return float(probability.item())
-
-    def success_prob(self, node: int, mastered: frozenset[int]) -> float:
-        key = (node, mastered)
-        if key not in self._probabilities:
-            self._probabilities[key] = self._predict(node, mastered)
-        return self._probabilities[key]
-
-    def best_case_success_prob(self, node: int) -> float:
-        if node not in self._best_case:
-            all_mastered = frozenset(range(self.num_nodes))
-            self._best_case[node] = self._predict(node, all_mastered)
-        return self._best_case[node]
-
-    def base_cost(self, node: int) -> float:
-        return 60.0
+DP_TOLERANCE = 1e-9
 
 
 def auc_score(labels: np.ndarray, probabilities: np.ndarray) -> float:
@@ -77,150 +48,214 @@ def auc_score(labels: np.ndarray, probabilities: np.ndarray) -> float:
     )
 
 
-def valid_path(graph: nx.DiGraph, path: list[int], target: int) -> bool:
-    mastered: set[int] = set()
-    for node in path:
-        if node in mastered or not set(graph.predecessors(node)) <= mastered:
-            return False
-        mastered.add(node)
-    return bool(path) and path[-1] == target
+def _metrics(labels: np.ndarray, probabilities: np.ndarray, prefix: str) -> dict:
+    binary = np.isin(labels, [0.0, 1.0])
+    binary_labels = labels[binary]
+    binary_probabilities = probabilities[binary]
+    squared_error = (labels - probabilities) ** 2
+    return {
+        f"{prefix}_mse": float(np.mean(squared_error)),
+        f"{prefix}_rmse": float(np.sqrt(np.mean(squared_error))),
+        f"{prefix}_mae": float(np.mean(np.abs(labels - probabilities))),
+        f"{prefix}_auc": auc_score(binary_labels, binary_probabilities),
+        f"{prefix}_accuracy": float(
+            np.mean((binary_probabilities >= 0.5) == (binary_labels == 1.0))
+        ),
+    }
 
 
-def load_oracle(graph: dict, checkpoint: dict, mc_samples: int) -> AriadneOracle:
-    if checkpoint["node_id_to_idx"] != graph["node_id_to_idx"]:
-        raise ValueError("checkpoint and graph use different node mappings")
-    model = MonotonicOracle(
-        num_nodes=checkpoint["num_nodes"],
-        hidden_dim=checkpoint["config"]["hidden_dim"],
-        dropout=checkpoint["config"]["dropout"],
-    )
-    model.load_state_dict(checkpoint["state_dict"])
-    model.eval()
-    edge_index = torch.tensor(graph["edge_index"], dtype=torch.long)
-    return AriadneOracle(model, edge_index, checkpoint["num_nodes"], mc_samples)
-
-
-def validation_metrics(graph: dict, checkpoint: dict) -> dict:
-    with (PROCESSED / "valid_sessions.pkl").open("rb") as file:
+def validation_metrics(oracle: FrozenMonotonicOracle, graph: dict) -> dict:
+    validation_path = PROCESSED / "valid_sessions.pkl"
+    if not validation_path.is_file():
+        raise FileNotFoundError(
+            f"Missing {validation_path}; run experiments/09_prepare_oracle_data.py"
+        )
+    with validation_path.open("rb") as file:
         samples = pickle.load(file)
+    if graph["node_id_to_idx"] != oracle.node_id_to_idx:
+        raise ValueError("validation graph and frozen checkpoint use different node mappings")
 
-    model = MonotonicOracle(
-        num_nodes=checkpoint["num_nodes"],
-        hidden_dim=checkpoint["config"]["hidden_dim"],
-        dropout=checkpoint["config"]["dropout"],
-    )
-    model.load_state_dict(checkpoint["state_dict"])
-    model.eval()
-    edge_index = torch.tensor(graph["edge_index"], dtype=torch.long)
     loader = get_dataloader(
         samples,
         graph["node_id_to_idx"],
         len(graph["node_ids"]),
-        batch_size=checkpoint["config"]["batch_size"],
+        batch_size=128,
         shuffle=False,
     )
-
-    probabilities, labels = [], []
+    full_probabilities, planning_probabilities, labels = [], [], []
+    oracle.model.eval()
     with torch.no_grad():
-        for x, target, mask, label in loader:
-            probability, _ = model.forward_batch(x, edge_index, target, mask)
-            probabilities.append(probability)
+        for x, target, mastery_mask, label in loader:
+            x = x.to(oracle.device)
+            target = target.to(oracle.device)
+            mastery_mask = mastery_mask.to(oracle.device)
+            full_probability, _ = oracle.model.forward_batch(
+                x, oracle.edge_index, target, mastery_mask
+            )
+            planning_probability, _ = oracle.model.forward_batch(
+                torch.zeros_like(x), oracle.edge_index, target, mastery_mask
+            )
+            full_probabilities.append(full_probability.cpu())
+            planning_probabilities.append(planning_probability.cpu())
             labels.append(label)
 
-    y_prob = torch.cat(probabilities).numpy()
     y_true = torch.cat(labels).numpy()
-    binary = np.isin(y_true, [0.0, 1.0])
-    binary_true, binary_prob = y_true[binary], y_prob[binary]
+    full = torch.cat(full_probabilities).numpy()
+    planning = torch.cat(planning_probabilities).numpy()
     return {
         "samples": len(y_true),
-        "binary_samples": int(binary.sum()),
-        "mse": float(np.mean((y_true - y_prob) ** 2)),
-        "rmse": float(np.sqrt(np.mean((y_true - y_prob) ** 2))),
-        "mae": float(np.mean(np.abs(y_true - y_prob))),
-        "auc": auc_score(binary_true, binary_prob),
-        "accuracy": float(np.mean((binary_prob >= 0.5) == (binary_true == 1.0))),
-        "probability_source": "local_ariadne_oracle_checkpoint",
+        "binary_samples": int(np.isin(y_true, [0.0, 1.0]).sum()),
+        **_metrics(y_true, full, "full_feature"),
+        **_metrics(y_true, planning, "planning_mode"),
+        "planning_mode_x": "all_zero",
+        "inference_backend": "cpu",
     }
+
+
+def _closure_graph(closure: dict) -> nx.DiGraph:
+    graph = nx.DiGraph()
+    graph.add_nodes_from(closure["nodes"])
+    graph.add_edges_from(tuple(edge) for edge in closure["edges"])
+    return graph
+
+
+def generate_records(
+    manifest: dict,
+    oracle: FrozenMonotonicOracle,
+) -> list[SequenceRecord]:
+    records = []
+    initial_state = set(manifest["initial_state"])
+    initial_frozen = frozenset(initial_state)
+    protocol_hash = manifest_hash(manifest)
+    evaluator_hash = sha256_file(ROOT / "experiments" / "common" / "evaluator.py")
+    planner_config = {
+        "planner": {"base_cost": manifest["base_cost"], "heuristic": "sum"}
+    }
+
+    for closure in manifest["closures"]:
+        graph = _closure_graph(closure)
+        goal = set(closure["nodes"])
+        lao = DAGPlanner(
+            oracle=oracle,
+            nx_graph=graph,
+            config=planner_config,
+            edge_index=oracle.edge_index,
+            num_nodes=oracle.model.num_nodes,
+        )
+        started = time.perf_counter()
+        lao_result = lao.solve_result(set(initial_state), goal)
+        planning_seconds = time.perf_counter() - started
+        sequence = DAGPlanner._extract_path(
+            initial_frozen, frozenset(goal), lao_result.policy
+        )
+        lao_cost = float(lao_result.values[initial_frozen])
+
+        dp = DAGPlannerDP(
+            oracle=oracle,
+            nx_graph=graph,
+            config=planner_config,
+            edge_index=oracle.edge_index,
+            num_nodes=oracle.model.num_nodes,
+        )
+        dp_cost, dp_sequence = dp.solve(set(initial_state), goal)
+        gap = abs(lao_cost - dp_cost)
+        if not lao_result.converged:
+            raise AssertionError(f"LAO* did not converge for target {closure['target_node']}")
+        if gap >= DP_TOLERANCE:
+            raise AssertionError(
+                f"LAO* and DP differ for target {closure['target_node']}: "
+                f"LAO*={lao_cost}, DP={dp_cost}, gap={gap}"
+            )
+        if set(sequence) != set(closure["sequence_nodes"]):
+            raise AssertionError(
+                f"LAO* sequence does not cover target {closure['target_node']} closure"
+            )
+
+        records.append(
+            SequenceRecord(
+                method=Method.ARIADNE_LAO,
+                target_node=closure["target_node"],
+                run_id=0,
+                sequence=sequence,
+                internal_cost=lao_cost,
+                metadata={
+                    "closure_hash": closure["closure_hash"],
+                    "manifest_hash": protocol_hash,
+                    "evaluator_hash": evaluator_hash,
+                    "oracle_checkpoint_hash": manifest["artifact_hashes"][
+                        "oracle_checkpoint"
+                    ],
+                    "exact_dp_cost": float(dp_cost),
+                    "exact_dp_sequence": list(dp_sequence),
+                    "lao_dp_absolute_gap": gap,
+                    "expanded_states": lao_result.expanded_count,
+                    "iterations": lao_result.iterations,
+                    "planning_seconds": planning_seconds,
+                    "converged": lao_result.converged,
+                    "heuristic": "sum_p_bar_1",
+                    "inference_backend": "cpu",
+                },
+            )
+        )
+    return records
+
+
+def _deterministic_signature(records: list[SequenceRecord]) -> list[tuple]:
+    return [
+        (
+            record.target_node,
+            record.sequence,
+            record.internal_cost,
+            record.metadata["exact_dp_cost"],
+            record.metadata["expanded_states"],
+            record.metadata["iterations"],
+        )
+        for record in records
+    ]
 
 
 def main() -> None:
-    with (ROOT / "configs" / "config.yaml").open(encoding="utf8") as file:
-        config = yaml.safe_load(file)
+    manifest = load_manifest()
+    first_oracle = FrozenMonotonicOracle.from_artifacts(
+        base_cost=manifest["base_cost"], device="cpu"
+    )
+    second_oracle = FrozenMonotonicOracle.from_artifacts(
+        base_cost=manifest["base_cost"], device="cpu"
+    )
+    first_records = generate_records(manifest, first_oracle)
+    second_records = generate_records(manifest, second_oracle)
+    if _deterministic_signature(first_records) != _deterministic_signature(second_records):
+        raise AssertionError("Independent Ariadne + LAO* runs were not deterministic")
+
     with (PROCESSED / "graph.pkl").open("rb") as file:
         graph = pickle.load(file)
-    checkpoint = torch.load(
-        PROCESSED / "oracle_ckpt.pt", map_location="cpu", weights_only=False
+    metrics = validation_metrics(first_oracle, graph)
+    metrics.update(
+        {
+            "manifest_hash": manifest_hash(manifest),
+            "dag_hash": manifest["artifact_hashes"]["dag"],
+            "oracle_checkpoint_hash": manifest["artifact_hashes"][
+                "oracle_checkpoint"
+            ],
+            "train_validation_split_hash": manifest["artifact_hashes"][
+                "train_validation_split"
+            ]["combined_hash"],
+            "validation_artifact_hash": sha256_file(
+                PROCESSED / "valid_sessions.pkl"
+            ),
+            "evaluator_hash": sha256_file(
+                ROOT / "experiments" / "common" / "evaluator.py"
+            ),
+        }
     )
-    with (PROCESSED / "train_sessions.pkl").open("rb") as file:
-        train_samples = pickle.load(file)
 
-    oracle = load_oracle(graph, checkpoint, config["oracle"]["mc_samples"])
-    dag: nx.DiGraph = graph["nx_dag"]
-    observed = {target for _, target, _ in train_samples}
-    candidates = sorted(node for node in observed if dag.in_degree(node) > 0)
-    rng = np.random.default_rng(config["seed"])
-    targets = sorted(
-        rng.choice(
-            candidates,
-            size=min(config["experiments"]["num_targets"], len(candidates)),
-            replace=False,
-        ).tolist()
-    )
-    planner_config = {"planner": config["planner"], "oracle": config["oracle"]}
-    edge_index = torch.tensor(graph["edge_index"], dtype=torch.long)
-
-    trajectories = []
-    for target in targets:
-        goal_nodes = nx.ancestors(dag, target) | {target}
-        closure_graph = dag.subgraph(goal_nodes).copy()
-        planner = DAGPlanner(
-            oracle, closure_graph, planner_config, edge_index, len(graph["node_ids"])
-        )
-        started = time.perf_counter()
-        # Requiring the target and all ancestors is equivalent on a prerequisite
-        # DAG, and gives LAO* an informative admissible lower bound.
-        result = planner.solve_result(set(), goal_nodes)
-        path = DAGPlanner._extract_path(frozenset(), frozenset(goal_nodes), result.policy)
-        elapsed = time.perf_counter() - started
-        is_valid = valid_path(closure_graph, path, target)
-        assert result.converged and is_valid, (target, path)
-        trajectories.append(
-            {
-                "target_node": target,
-                "expected_total_cost": result.values[frozenset()],
-                "path_length": len(path),
-                "required_nodes": len(goal_nodes),
-                "off_target_actions": len(set(path) - goal_nodes),
-                "expanded_states": result.expanded_count,
-                "iterations": result.iterations,
-                "planning_seconds": elapsed,
-                "converged": result.converged,
-                "path_is_valid": is_valid,
-                "path": json.dumps(path),
-            }
-        )
-
-    metrics = validation_metrics(graph, checkpoint)
     OUTPUT.mkdir(parents=True, exist_ok=True)
-    pd.DataFrame([metrics]).to_csv(OUTPUT / "oracle_valid_metrics.csv", index=False)
-    pd.DataFrame(trajectories).to_csv(OUTPUT / "planner_trajectories.csv", index=False)
-    summary = {
-        "condition": "Ariadne + LAO*",
-        "targets": targets,
-        "mean_expected_total_cost": float(np.mean([r["expected_total_cost"] for r in trajectories])),
-        "mean_path_length": float(np.mean([r["path_length"] for r in trajectories])),
-        "mean_off_target_actions": float(np.mean([r["off_target_actions"] for r in trajectories])),
-        "mean_expanded_states": float(np.mean([r["expanded_states"] for r in trajectories])),
-        "total_planning_seconds": float(sum(r["planning_seconds"] for r in trajectories)),
-        "all_paths_valid": all(r["path_is_valid"] for r in trajectories),
-        "all_converged": all(r["converged"] for r in trajectories),
-        "probability_source": "local_ariadne_oracle_checkpoint",
-    }
-    (OUTPUT / "summary.json").write_text(json.dumps(summary, indent=2), encoding="utf8")
-
+    write_jsonl(SEQUENCES_PATH, first_records)
+    pd.DataFrame([metrics]).to_csv(METRICS_PATH, index=False)
     print(pd.DataFrame([metrics]).to_string(index=False))
-    print(pd.DataFrame(trajectories).drop(columns="path").to_string(index=False))
-    print(json.dumps(summary, indent=2))
+    print(f"sequences={SEQUENCES_PATH}")
+    print(f"metrics={METRICS_PATH}")
+    print(json.dumps({"targets": manifest["targets"], "records": len(first_records)}))
 
 
 if __name__ == "__main__":

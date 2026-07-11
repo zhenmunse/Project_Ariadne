@@ -126,6 +126,7 @@ def generate_records(
 ) -> list[SequenceRecord]:
     records = []
     protocol_hash = manifest_hash(manifest)
+    evaluator_hash = sha256_file(ROOT / "experiments" / "common" / "evaluator.py")
     initial_state = set(manifest["initial_state"])
     planner_config = {"planner": {"base_cost": manifest["base_cost"]}}
     for closure in manifest["closures"]:
@@ -155,6 +156,7 @@ def generate_records(
                 internal_cost=internal_cost,
                 metadata={
                     "closure_hash": closure["closure_hash"],
+                    "evaluator_hash": evaluator_hash,
                     "manifest_hash": protocol_hash,
                     "path_length": len(sequence),
                     "planning_seconds": planning_seconds,
@@ -201,6 +203,9 @@ def main() -> None:
             ]["combined_hash"],
             "validation_artifact_hash": sha256_file(
                 PROCESSED / "valid_sessions.pkl"
+            ),
+            "evaluator_hash": sha256_file(
+                ROOT / "experiments" / "common" / "evaluator.py"
             ),
         }
     )
