@@ -22,7 +22,7 @@ METRICS_PATH = OUTPUT / "oracle_valid_metrics.csv"
 sys.path.insert(0, str(ROOT))
 
 from experiments.common.frozen_oracle import FrozenMonotonicOracle
-from experiments.common.manifest import load_manifest
+from experiments.common.manifest import load_manifest, manifest_hash, sha256_file
 from experiments.common.schema import Method, SequenceRecord, write_jsonl
 from src.oracle_core.dataset import get_dataloader
 from src.planner_engine.baselines import GreedyPlanner
@@ -125,6 +125,7 @@ def generate_records(
     oracle: FrozenMonotonicOracle,
 ) -> list[SequenceRecord]:
     records = []
+    protocol_hash = manifest_hash(manifest)
     initial_state = set(manifest["initial_state"])
     planner_config = {"planner": {"base_cost": manifest["base_cost"]}}
     for closure in manifest["closures"]:
@@ -154,6 +155,7 @@ def generate_records(
                 internal_cost=internal_cost,
                 metadata={
                     "closure_hash": closure["closure_hash"],
+                    "manifest_hash": protocol_hash,
                     "path_length": len(sequence),
                     "planning_seconds": planning_seconds,
                     "oracle_state_dependence": True,
@@ -187,6 +189,21 @@ def main() -> None:
     with (PROCESSED / "graph.pkl").open("rb") as file:
         graph = pickle.load(file)
     metrics = validation_metrics(first_oracle, graph)
+    metrics.update(
+        {
+            "manifest_hash": manifest_hash(manifest),
+            "dag_hash": manifest["artifact_hashes"]["dag"],
+            "oracle_checkpoint_hash": manifest["artifact_hashes"][
+                "oracle_checkpoint"
+            ],
+            "train_validation_split_hash": manifest["artifact_hashes"][
+                "train_validation_split"
+            ]["combined_hash"],
+            "validation_artifact_hash": sha256_file(
+                PROCESSED / "valid_sessions.pkl"
+            ),
+        }
+    )
 
     OUTPUT.mkdir(parents=True, exist_ok=True)
     write_jsonl(SEQUENCES_PATH, first_records)

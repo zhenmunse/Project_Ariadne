@@ -12,6 +12,11 @@ cost. Public evaluation cost and normalized regret are produced separately by
 `experiments/score_sequences.py` under the same frozen evaluator used for all
 conditions.
 
+Every sequence record stores the materialized manifest hash. The validation
+metrics artifact additionally stores the DAG, Oracle checkpoint, combined
+train/validation split, and exact `valid_sessions.pkl` hashes, so the reported
+metrics remain attributable without committing the generated pickle.
+
 ## Oracle validation modes
 
 | Metric | Full feature | Planning mode (`x=0`) |
