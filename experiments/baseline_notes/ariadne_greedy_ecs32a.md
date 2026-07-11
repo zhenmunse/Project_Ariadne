@@ -1,46 +1,60 @@
 # Ariadne + Greedy on ECS32A
 
-## Scope
+## Protocol
 
-This condition combines the local Ariadne `MonotonicOracle` checkpoint with
-the repository's one-step `GreedyPlanner`. It uses seed 42 and the same ten
-non-root targets as the other ECS32A planner baselines. Each target is planned
-on its induced prerequisite closure, using the closure as graph and goal.
+This condition uses the shared experiment manifest, the canonical CPU
+`FrozenMonotonicOracle`, and the repository's one-step `GreedyPlanner`.
+Targets and prerequisite closures are read from
+`experiments/common/manifest.json`; the runner does not sample targets.
 
-## Oracle validation
+The method emits only standard sequence records plus its internal planning
+cost. Public evaluation cost and normalized regret are produced separately by
+`experiments/score_sequences.py` under the same frozen evaluator used for all
+conditions.
+
+## Oracle validation modes
+
+| Metric | Full feature | Planning mode (`x=0`) |
+|---|---:|---:|
+| Samples | 3,103 | 3,103 |
+| Binary samples | 2,170 | 2,170 |
+| AUC | 0.774873 | 0.610952 |
+| Accuracy | 0.798618 | 0.402765 |
+| RMSE | 0.351672 | 0.500678 |
+| MAE | 0.303330 | 0.436528 |
+
+The planner uses planning mode. Full-feature validation measures the complete
+predictor with historical features and must not be presented as the metric for
+the zero-history planning interface.
+
+## Planning and common scoring
 
 | Metric | Value |
 |---|---:|
-| Samples | 3,103 |
-| Binary samples | 2,170 |
-| AUC | 0.774873 |
-| Accuracy | 0.798618 |
-| RMSE | 0.351672 |
-| MAE | 0.303330 |
+| Targets | 10 |
+| Valid sequences | 10 / 10 |
+| Mean evaluation cost | 1789.669432 |
+| Mean normalized regret | 0.000000593392 |
+| Median normalized regret | 0.0 |
+| Maximum normalized regret | 0.000005933923 (target 39) |
 
-## Planning result
-
-| Metric | Value |
-|---|---:|
-| Mean expected total cost | 1762.466515 |
-| Mean path length | 11.7 |
-| Mean off-target actions | 0.0 |
-| Valid paths | 10 / 10 |
-| Probability source | local Ariadne checkpoint |
-
-The closure restriction removes target-irrelevant actions. Greedy still chooses
-the lowest immediate cost within the closure and does not account for future
-costs.
+Two independent runner invocations, each with a newly constructed frozen
+Oracle, produced identical sequences and internal costs. Runtime metadata is
+diagnostic and is not expected to be bitwise identical.
 
 ## Files and reproduction
 
 | File | Purpose |
 |---|---|
-| `experiments/17_run_ariadne_greedy.py` | Runs validation and planning. |
-| `results/ariadne_greedy/` | Metrics, trajectories, and summary. |
+| `experiments/17_run_ariadne_greedy.py` | Generates standard sequences and both validation modes. |
+| `results/ariadne_greedy/sequences.jsonl` | Method output records. |
+| `results/ariadne_greedy/oracle_valid_metrics.csv` | Full-feature and planning-mode metrics. |
+| `results/ariadne_greedy/scored_sequences.csv` | Output from the independent common scorer. |
 
 ```powershell
-.\.venv\Scripts\python.exe experiments\17_run_ariadne_greedy.py
+python experiments\09_prepare_oracle_data.py
+python experiments\17_run_ariadne_greedy.py
+python experiments\score_sequences.py `
+  results\ariadne_greedy\sequences.jsonl `
+  --output results\ariadne_greedy\scored_sequences.csv
 ```
-
-The run uses the same prerequisite-closure protocol as the LAO* benchmark.

@@ -1,2 +1,2 @@
-samples,binary_samples,mse,rmse,mae,auc,accuracy,probability_source
-3103,2170,0.1236729696393013,0.35167166590690613,0.30333033204078674,0.7748728930221175,0.7986175115207373,local_ariadne_oracle_checkpoint
+samples,binary_samples,full_feature_mse,full_feature_rmse,full_feature_mae,full_feature_auc,full_feature_accuracy,planning_mode_mse,planning_mode_rmse,planning_mode_mae,planning_mode_auc,planning_mode_accuracy,planning_mode_x,inference_backend
+3103,2170,0.1236729696393013,0.35167166590690613,0.30333033204078674,0.7748728930221175,0.7986175115207373,0.2506786584854126,0.5006781816482544,0.4365278482437134,0.6109516962892716,0.40276497695852537,all_zero,cpu

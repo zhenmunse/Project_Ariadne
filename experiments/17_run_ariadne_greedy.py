@@ -1,4 +1,6 @@
-"""Run Ariadne's MonotonicOracle with the Greedy planner."""
+"""Run Ariadne + Greedy under the deterministic shared protocol."""
+
+from __future__ import annotations
 
 import json
 import pickle
@@ -10,16 +12,19 @@ import networkx as nx
 import numpy as np
 import pandas as pd
 import torch
-import yaml
 
 
 ROOT = Path(__file__).resolve().parents[1]
 PROCESSED = ROOT / "data" / "processed"
 OUTPUT = ROOT / "results" / "ariadne_greedy"
+SEQUENCES_PATH = OUTPUT / "sequences.jsonl"
+METRICS_PATH = OUTPUT / "oracle_valid_metrics.csv"
 sys.path.insert(0, str(ROOT))
 
+from experiments.common.frozen_oracle import FrozenMonotonicOracle
+from experiments.common.manifest import load_manifest
+from experiments.common.schema import Method, SequenceRecord, write_jsonl
 from src.oracle_core.dataset import get_dataloader
-from src.oracle_core.model import MonotonicOracle
 from src.planner_engine.baselines import GreedyPlanner
 
 
@@ -36,140 +41,161 @@ def auc_score(labels: np.ndarray, probabilities: np.ndarray) -> float:
     )
 
 
-def valid_path(graph: nx.DiGraph, path: list[int], target: int) -> bool:
-    mastered: set[int] = set()
-    for node in path:
-        if node in mastered or not set(graph.predecessors(node)) <= mastered:
-            return False
-        mastered.add(node)
-    return bool(path) and path[-1] == target
+def _metrics(labels: np.ndarray, probabilities: np.ndarray, prefix: str) -> dict:
+    binary = np.isin(labels, [0.0, 1.0])
+    binary_labels = labels[binary]
+    binary_probabilities = probabilities[binary]
+    squared_error = (labels - probabilities) ** 2
+    return {
+        f"{prefix}_mse": float(np.mean(squared_error)),
+        f"{prefix}_rmse": float(np.sqrt(np.mean(squared_error))),
+        f"{prefix}_mae": float(np.mean(np.abs(labels - probabilities))),
+        f"{prefix}_auc": auc_score(binary_labels, binary_probabilities),
+        f"{prefix}_accuracy": float(
+            np.mean((binary_probabilities >= 0.5) == (binary_labels == 1.0))
+        ),
+    }
 
 
-def validation_metrics(graph: dict, checkpoint: dict) -> dict:
-    with (PROCESSED / "valid_sessions.pkl").open("rb") as file:
+def validation_metrics(
+    oracle: FrozenMonotonicOracle,
+    graph: dict,
+) -> dict:
+    """Report full-feature and zero-history planning-mode validation metrics."""
+    validation_path = PROCESSED / "valid_sessions.pkl"
+    if not validation_path.is_file():
+        raise FileNotFoundError(
+            f"Missing {validation_path}; run experiments/09_prepare_oracle_data.py"
+        )
+    with validation_path.open("rb") as file:
         samples = pickle.load(file)
 
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = MonotonicOracle(
-        num_nodes=checkpoint["num_nodes"],
-        hidden_dim=checkpoint["config"]["hidden_dim"],
-        dropout=checkpoint["config"]["dropout"],
-    ).to(device)
-    model.load_state_dict(checkpoint["state_dict"])
-    model.eval()
+    if graph["node_id_to_idx"] != oracle.node_id_to_idx:
+        raise ValueError("validation graph and frozen checkpoint use different node mappings")
 
-    edge_index = torch.tensor(graph["edge_index"], dtype=torch.long, device=device)
     loader = get_dataloader(
         samples,
         graph["node_id_to_idx"],
         len(graph["node_ids"]),
-        batch_size=checkpoint["config"]["batch_size"],
+        batch_size=128,
         shuffle=False,
     )
-    probabilities, labels = [], []
+    full_probabilities = []
+    planning_probabilities = []
+    labels = []
+    oracle.model.eval()
     with torch.no_grad():
-        for x, target, mask, label in loader:
-            probability, _ = model.forward_batch(
-                x.to(device), edge_index, target.to(device), mask.to(device)
+        for x, target, mastery_mask, label in loader:
+            x = x.to(oracle.device)
+            target = target.to(oracle.device)
+            mastery_mask = mastery_mask.to(oracle.device)
+            full_probability, _ = oracle.model.forward_batch(
+                x, oracle.edge_index, target, mastery_mask
             )
-            probabilities.append(probability.cpu())
+            planning_probability, _ = oracle.model.forward_batch(
+                torch.zeros_like(x), oracle.edge_index, target, mastery_mask
+            )
+            full_probabilities.append(full_probability.cpu())
+            planning_probabilities.append(planning_probability.cpu())
             labels.append(label)
 
-    y_prob = torch.cat(probabilities).numpy()
     y_true = torch.cat(labels).numpy()
-    binary = np.isin(y_true, [0.0, 1.0])
-    binary_true, binary_prob = y_true[binary], y_prob[binary]
+    full = torch.cat(full_probabilities).numpy()
+    planning = torch.cat(planning_probabilities).numpy()
+    binary_samples = int(np.isin(y_true, [0.0, 1.0]).sum())
     return {
         "samples": len(y_true),
-        "binary_samples": int(binary.sum()),
-        "mse": float(np.mean((y_true - y_prob) ** 2)),
-        "rmse": float(np.sqrt(np.mean((y_true - y_prob) ** 2))),
-        "mae": float(np.mean(np.abs(y_true - y_prob))),
-        "auc": auc_score(binary_true, binary_prob),
-        "accuracy": float(np.mean((binary_prob >= 0.5) == (binary_true == 1.0))),
-        "probability_source": "local_ariadne_oracle_checkpoint",
+        "binary_samples": binary_samples,
+        **_metrics(y_true, full, "full_feature"),
+        **_metrics(y_true, planning, "planning_mode"),
+        "planning_mode_x": "all_zero",
+        "inference_backend": "cpu",
     }
+
+
+def _closure_graph(closure: dict) -> nx.DiGraph:
+    graph = nx.DiGraph()
+    graph.add_nodes_from(closure["nodes"])
+    graph.add_edges_from(tuple(edge) for edge in closure["edges"])
+    return graph
+
+
+def generate_records(
+    manifest: dict,
+    oracle: FrozenMonotonicOracle,
+) -> list[SequenceRecord]:
+    records = []
+    initial_state = set(manifest["initial_state"])
+    planner_config = {"planner": {"base_cost": manifest["base_cost"]}}
+    for closure in manifest["closures"]:
+        graph = _closure_graph(closure)
+        planner = GreedyPlanner(
+            oracle=oracle,
+            nx_graph=graph,
+            config=planner_config,
+            edge_index=oracle.edge_index,
+            num_nodes=oracle.model.num_nodes,
+        )
+        started = time.perf_counter()
+        internal_cost, sequence = planner.solve(
+            set(initial_state), set(closure["nodes"])
+        )
+        planning_seconds = time.perf_counter() - started
+        if set(sequence) != set(closure["sequence_nodes"]):
+            raise RuntimeError(
+                f"Greedy sequence does not cover target {closure['target_node']} closure"
+            )
+        records.append(
+            SequenceRecord(
+                method=Method.ARIADNE_GREEDY,
+                target_node=closure["target_node"],
+                run_id=0,
+                sequence=sequence,
+                internal_cost=internal_cost,
+                metadata={
+                    "closure_hash": closure["closure_hash"],
+                    "path_length": len(sequence),
+                    "planning_seconds": planning_seconds,
+                    "oracle_state_dependence": True,
+                    "inference_backend": "cpu",
+                },
+            )
+        )
+    return records
+
+
+def _deterministic_signature(records: list[SequenceRecord]) -> list[tuple]:
+    return [
+        (record.target_node, record.sequence, record.internal_cost)
+        for record in records
+    ]
 
 
 def main() -> None:
-    with (ROOT / "configs" / "config.yaml").open(encoding="utf8") as file:
-        config = yaml.safe_load(file)
+    manifest = load_manifest()
+    first_oracle = FrozenMonotonicOracle.from_artifacts(
+        base_cost=manifest["base_cost"], device="cpu"
+    )
+    second_oracle = FrozenMonotonicOracle.from_artifacts(
+        base_cost=manifest["base_cost"], device="cpu"
+    )
+    first_records = generate_records(manifest, first_oracle)
+    second_records = generate_records(manifest, second_oracle)
+    if _deterministic_signature(first_records) != _deterministic_signature(second_records):
+        raise AssertionError("Independent Ariadne + Greedy runs were not deterministic")
+
     with (PROCESSED / "graph.pkl").open("rb") as file:
         graph = pickle.load(file)
-    with (PROCESSED / "oracle_ckpt.pt").open("rb") as file:
-        checkpoint = torch.load(file, map_location="cpu", weights_only=False)
-    with (PROCESSED / "train_sessions.pkl").open("rb") as file:
-        train_samples = pickle.load(file)
+    metrics = validation_metrics(first_oracle, graph)
 
-    if checkpoint["node_id_to_idx"] != graph["node_id_to_idx"]:
-        raise ValueError("checkpoint and graph use different node mappings")
-
-    oracle = MonotonicOracle(
-        num_nodes=checkpoint["num_nodes"],
-        hidden_dim=checkpoint["config"]["hidden_dim"],
-        dropout=checkpoint["config"]["dropout"],
-    )
-    oracle.load_state_dict(checkpoint["state_dict"])
-    oracle.eval()
-
-    dag: nx.DiGraph = graph["nx_dag"]
-    observed = {target for _, target, _ in train_samples}
-    candidates = sorted(node for node in observed if dag.in_degree(node) > 0)
-    rng = np.random.default_rng(config["seed"])
-    targets = sorted(
-        rng.choice(
-            candidates,
-            size=min(config["experiments"]["num_targets"], len(candidates)),
-            replace=False,
-        ).tolist()
-    )
-    planner_config = {"planner": config["planner"], "oracle": config["oracle"]}
-    edge_index = torch.tensor(graph["edge_index"], dtype=torch.long)
-
-    trajectories = []
-    for target in targets:
-        closure = nx.ancestors(dag, target) | {target}
-        closure_graph = dag.subgraph(closure).copy()
-        planner = GreedyPlanner(
-            oracle, closure_graph, planner_config, edge_index, len(graph["node_ids"])
-        )
-        started = time.perf_counter()
-        cost, path = planner.solve(set(), closure)
-        elapsed = time.perf_counter() - started
-        is_valid = valid_path(closure_graph, path, target)
-        assert is_valid, (target, path)
-        trajectories.append(
-            {
-                "target_node": target,
-                "expected_total_cost": cost,
-                "path_length": len(path),
-                "required_nodes": len(closure),
-                "off_target_actions": len(set(path) - closure),
-                "planning_seconds": elapsed,
-                "path_is_valid": is_valid,
-                "path": json.dumps(path),
-            }
-        )
-
-    metrics = validation_metrics(graph, checkpoint)
     OUTPUT.mkdir(parents=True, exist_ok=True)
-    pd.DataFrame([metrics]).to_csv(OUTPUT / "oracle_valid_metrics.csv", index=False)
-    pd.DataFrame(trajectories).to_csv(OUTPUT / "planner_trajectories.csv", index=False)
-    summary = {
-        "condition": "Ariadne + Greedy",
-        "targets": targets,
-        "mean_expected_total_cost": float(np.mean([r["expected_total_cost"] for r in trajectories])),
-        "mean_path_length": float(np.mean([r["path_length"] for r in trajectories])),
-        "mean_off_target_actions": float(np.mean([r["off_target_actions"] for r in trajectories])),
-        "total_planning_seconds": float(sum(r["planning_seconds"] for r in trajectories)),
-        "all_paths_valid": all(r["path_is_valid"] for r in trajectories),
-        "probability_source": "local_ariadne_oracle_checkpoint",
-    }
-    (OUTPUT / "summary.json").write_text(json.dumps(summary, indent=2), encoding="utf8")
+    write_jsonl(SEQUENCES_PATH, first_records)
+    pd.DataFrame([metrics]).to_csv(METRICS_PATH, index=False)
 
     print(pd.DataFrame([metrics]).to_string(index=False))
-    print(pd.DataFrame(trajectories).drop(columns="path").to_string(index=False))
-    print(json.dumps(summary, indent=2))
+    print(f"sequences={SEQUENCES_PATH}")
+    print(f"metrics={METRICS_PATH}")
+    print(json.dumps({"targets": manifest["targets"], "records": len(first_records)}))
 
 
 if __name__ == "__main__":
