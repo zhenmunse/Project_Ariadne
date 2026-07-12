@@ -42,7 +42,7 @@ class LLMHarnessTests(unittest.TestCase):
         self.assertEqual(opened["requested_model_id"], "deepseek-v4-pro")
         self.assertEqual(opened["reasoning"], "max")
         self.assertTrue(opened["thinking_enabled"])
-        self.assertEqual(closed["model_id_status"], "frozen_for_task17_preflight")
+        self.assertEqual(closed["model_id_status"], "smoke_verified")
         self.assertEqual(opened["model_id_status"], "smoke_verified")
         policy = self.config["request_policy"]
         self.assertTrue(policy["single_turn"] and policy["fresh_request"])

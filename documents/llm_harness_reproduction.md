@@ -36,14 +36,15 @@ effort `max`. Both omit temperature and top-p and use a 4096-token final-output
 budget. A formal request remains prohibited until the account-level smoke test
 also confirms access and the response metadata contract.
 
-The DeepSeek generic provider preflight completed successfully on July 12,
-2026: the API returned `deepseek-v4-pro`, a nonempty request ID, finish reason
-`stop`, usage metadata and a complete raw payload. The smoke request is marked
-`smoke_test=true` and `excluded_from_analysis=true`. Its restricted raw artifact
-is ignored by Git; `experiments/llm/generated/provider_preflight.json` records
-the restricted artifact hash and sanitized audit metadata. OpenAI remains
-explicitly pending until its separate preflight is authorized and completed,
-so `formal_execution_ready` remains false.
+Both generic provider preflights completed successfully on July 12, 2026.
+DeepSeek returned `deepseek-v4-pro` with finish reason `stop`; OpenAI returned
+`gpt-5.6-sol` with finish reason `completed`. Both responses contained a
+nonempty provider request ID, usage metadata and a complete raw payload. Each
+smoke request is marked `smoke_test=true` and `excluded_from_analysis=true`.
+The restricted raw artifacts are ignored by Git;
+`experiments/llm/generated/provider_preflight.json` records their hashes and
+sanitized audit metadata. Both model configuration entries are
+`model_id_status=smoke_verified`, and `formal_execution_ready` is true.
 
 API secrets are read only from these environment variables:
 

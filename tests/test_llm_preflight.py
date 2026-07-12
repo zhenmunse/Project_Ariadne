@@ -29,9 +29,17 @@ class LLMPreflightTests(unittest.TestCase):
         self.assertTrue(deepseek["smoke"]["provider_request_id_present"])
         self.assertTrue(deepseek["smoke"]["raw_provider_payload_present"])
 
-    def test_openai_remains_explicitly_pending(self) -> None:
-        self.assertFalse(self.preflight["providers"]["closed_frontier"]["smoke_verified"])
-        self.assertFalse(self.preflight["formal_execution_ready"])
+    def test_openai_smoke_is_verified_and_preflight_is_ready(self) -> None:
+        openai = self.preflight["providers"]["closed_frontier"]
+        self.assertTrue(openai["smoke_verified"])
+        self.assertEqual(openai["requested_model_id"], "gpt-5.6-sol")
+        self.assertEqual(openai["smoke"]["response_model_id"], "gpt-5.6-sol")
+        self.assertTrue(openai["smoke"]["smoke_test"])
+        self.assertTrue(openai["smoke"]["excluded_from_analysis"])
+        self.assertTrue(openai["smoke"]["provider_request_id_present"])
+        self.assertTrue(openai["smoke"]["raw_provider_payload_present"])
+        self.assertEqual(openai["model_id_status"], "smoke_verified")
+        self.assertTrue(self.preflight["formal_execution_ready"])
 
     def test_freeze_hashes_bind_current_machine_readable_inputs(self) -> None:
         self.assertEqual(self.preflight["run_config_hash"], sha256_file(LLM / "run_config.json"))

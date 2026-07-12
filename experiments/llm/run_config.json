@@ -21,7 +21,7 @@
       "max_output_tokens": 4096,
       "api_key_env": "OPENAI_API_KEY",
       "endpoint": "https://api.openai.com/v1/responses",
-      "model_id_status": "frozen_for_task17_preflight",
+      "model_id_status": "smoke_verified",
       "multi_agent": false,
       "provider": "closed_frontier",
       "reasoning": "xhigh",
