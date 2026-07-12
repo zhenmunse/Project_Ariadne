@@ -76,7 +76,7 @@
   "sources": {
     "adapter_spec": {
       "path": "documents/kt_set_adapter_spec.md",
-      "sha256": "4cad57b1e7ebe888474a3d44f291e148773d9e6b7d3ac804d0a89e14e11337ae"
+      "sha256": "cbfb383717739cf83a3279cd039ee9432ca22a28b9aa2546f6238871ccb05c45"
     },
     "cleaned_interactions": {
       "path": "data/processed/cleaned_interactions.csv",
