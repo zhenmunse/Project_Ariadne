@@ -71,6 +71,7 @@ python experiments\build_bkt_distillation_data.py
 python experiments\train_bkt_set_oracle.py
 python experiments\13_run_bkt_greedy.py
 python experiments\14_run_bkt_set_lao.py
+python experiments\summarize_bkt_set.py
 python -m unittest
 ```
 
@@ -169,6 +170,7 @@ suffix. It is not a `torch.save` file and must be loaded through
 | Greedy sequences | `b5cb5dbcafa233a0072a232b8e88dc79b52ae8790c9abf64132f809e91409fa6` |
 | LAO* sequences | `aab0f38581271eb721520922f27c594c04f66e3a889a7d9f44ec14d7cc2ed73d` |
 | LAO* public scores | `303beaf2dc20e861828a4bac0198b200bdab246b245694a8cd85b2bd839be02c` |
+| Task 12 summary | `25cc09d3e9e8742531c5dbd49c580f0902da1f3d76d6b27664971814527a211d` |
 
 `results/bkt_set/planner_comparison.csv` contains measured wall-clock runtime;
 its file hash is intentionally not a determinism contract. The deterministic
@@ -183,7 +185,7 @@ expanded-state counts and iteration counts.
 | BKT teacher | `artifacts/bkt_set/bkt_parameters.json`, `artifacts/bkt_set/pooled_bkt_parameters.json`, `artifacts/bkt_set/bkt_coverage.json`, `artifacts/bkt_set/bkt_teacher_metadata.json` |
 | Distillation | `artifacts/bkt_set/train_prefix_examples.parquet`, `artifacts/bkt_set/validation_prefix_examples.parquet`, `artifacts/bkt_set/train_grouped_tuples.parquet`, `artifacts/bkt_set/validation_grouped_tuples.parquet`, `artifacts/bkt_set/distillation_metadata.json` |
 | Surrogate | `artifacts/bkt_set/surrogate_config.json`, `artifacts/bkt_set/surrogate_checkpoint.pt`, `artifacts/bkt_set/surrogate_metrics.json` |
-| Diagnostics | `results/bkt_set/oracle_metrics.csv`, `results/bkt_set/state_dependence.csv`, `results/bkt_set/planner_comparison.csv` |
+| Diagnostics | `results/bkt_set/oracle_metrics.csv`, `results/bkt_set/state_dependence.csv`, `results/bkt_set/planner_comparison.csv`, `results/bkt_set/task12_summary.json` |
 | Greedy | `results/bkt_set_greedy/sequences.jsonl`, `results/bkt_set_greedy/scored_sequences.csv` |
 | LAO* | `results/bkt_set_lao/sequences.jsonl`, `results/bkt_set_lao/scored_sequences.csv` |
 

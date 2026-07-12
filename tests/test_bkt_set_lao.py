@@ -21,6 +21,7 @@ LAO_RESULTS = ROOT / "results" / "bkt_set_lao"
 GREEDY_RESULTS = ROOT / "results" / "bkt_set_greedy"
 COMPARISON_PATH = ROOT / "results" / "bkt_set" / "planner_comparison.csv"
 RUNNER = importlib.import_module("experiments.14_run_bkt_set_lao")
+SUMMARY = importlib.import_module("experiments.summarize_bkt_set")
 
 
 def packed(value: float) -> bytes:
@@ -197,6 +198,7 @@ class BKTSetLAOTests(unittest.TestCase):
             "results/bkt_set_greedy/sequences.jsonl",
             "results/bkt_set_lao/sequences.jsonl",
             "results/bkt_set_lao/scored_sequences.csv",
+            "results/bkt_set/task12_summary.json",
         ]
         for relative in expected_paths:
             self.assertTrue((ROOT / relative).is_file(), relative)
@@ -209,6 +211,7 @@ class BKTSetLAOTests(unittest.TestCase):
             sha256_file(GREEDY_RESULTS / "sequences.jsonl"),
             sha256_file(LAO_RESULTS / "sequences.jsonl"),
             sha256_file(LAO_RESULTS / "scored_sequences.csv"),
+            sha256_file(ROOT / "results" / "bkt_set" / "task12_summary.json"),
         ]
         for value in expected_hashes:
             self.assertIn(value, document)
@@ -219,12 +222,32 @@ class BKTSetLAOTests(unittest.TestCase):
             "train_bkt_set_oracle.py",
             "13_run_bkt_greedy.py",
             "14_run_bkt_set_lao.py",
+            "summarize_bkt_set.py",
         ):
             self.assertIn(command, document)
         self.assertIn("not a `torch.save` file", document)
         self.assertFalse((ROOT / "experiments" / "16_run_bkt_lao.py").exists())
         legacy_results = ROOT / "results" / "bkt_lao"
         self.assertFalse(legacy_results.exists() and any(legacy_results.iterdir()))
+
+    def test_task12_summary_is_generated_from_current_artifacts(self) -> None:
+        summary_path = ROOT / "results" / "bkt_set" / "task12_summary.json"
+        with summary_path.open(encoding="utf-8") as file:
+            stored = json.load(file)
+        self.assertEqual(stored, SUMMARY.build_summary())
+        self.assertEqual(stored["status"], "go")
+        self.assertEqual(stored["condition_name"], "BKT-derived Set Oracle")
+        self.assertEqual(stored["greedy_valid_targets"], 10)
+        self.assertEqual(stored["lao_valid_targets"], 10)
+        self.assertEqual(stored["lao_dp_max_gap"], 0.0)
+        self.assertEqual(
+            stored["surrogate_checkpoint_hash"],
+            sha256_file(ARTIFACTS / "surrogate_checkpoint.pt"),
+        )
+        self.assertEqual(
+            stored["public_evaluator_hash"],
+            sha256_file(ROOT / "experiments" / "common" / "evaluator.py"),
+        )
 
 
 if __name__ == "__main__":
