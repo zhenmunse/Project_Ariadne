@@ -20,12 +20,14 @@ class OpenWeightProvider:
         endpoint: str | None,
         requested_model_id: str | None,
         reasoning: str | None,
+        thinking_enabled: bool = True,
         api_key_env: str = "DEEPSEEK_API_KEY",
         transport: JSONTransport = urllib_json_transport,
     ) -> None:
         self.endpoint = endpoint
         self.requested_model_id = requested_model_id
         self.reasoning = reasoning
+        self.thinking_enabled = thinking_enabled
         self.api_key_env = api_key_env
         self.transport = transport
 
@@ -46,6 +48,7 @@ class OpenWeightProvider:
                 {"role": "user", "content": request.user_prompt},
             ],
             "reasoning_effort": request.reasoning_config.get("effort"),
+            "thinking": {"type": "enabled" if self.thinking_enabled else "disabled"},
             "max_tokens": request.max_output_tokens,
             "stream": False,
         }

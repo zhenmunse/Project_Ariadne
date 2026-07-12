@@ -71,6 +71,10 @@ class MockProvider:
         return result + [target]
 
     def _response_text(self, request: ProviderRequest, fixture: str) -> str:
+        if fixture == "empty_response":
+            return ""
+        if fixture == "invalid_json":
+            return "{'sequence': []}"
         valid = self._valid_sequence(request.user_prompt)
         payload = json.dumps({"sequence": valid}, separators=(",", ":"))
         if fixture == "valid":
@@ -79,8 +83,6 @@ class MockProvider:
             return f"```json\n{payload}\n```"
         if fixture == "outer_text":
             return f"Here is the answer: {payload}"
-        if fixture == "invalid_json":
-            return "{'sequence': []}"
         if fixture == "duplicate_node":
             invalid = valid.copy(); invalid[1] = invalid[0]
             return json.dumps({"sequence": invalid})
@@ -94,8 +96,6 @@ class MockProvider:
         if fixture == "target_not_final":
             invalid = valid.copy(); invalid[-1], invalid[-2] = invalid[-2], invalid[-1]
             return json.dumps({"sequence": invalid})
-        if fixture == "empty_response":
-            return ""
         raise ValueError(f"Unknown mock fixture: {fixture}")
 
     def complete(self, request: ProviderRequest) -> ProviderResponse:

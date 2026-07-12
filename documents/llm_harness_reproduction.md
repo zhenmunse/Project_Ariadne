@@ -28,9 +28,22 @@ Before Task 17, each entry must have a provider-verified exact:
 - native `reasoning` setting;
 - supported sampling configuration.
 
-Task 16 intentionally leaves model IDs and endpoints null and marks them
-`must_be_frozen_before_task17`. Both formal adapters fail their capability gate
-while either value is unset. No request can be sent in that state.
+Task 17 preflight freezes OpenAI as `gpt-5.6-sol` at
+`https://api.openai.com/v1/responses` with `xhigh` reasoning and no multi-agent
+mode. It freezes DeepSeek as `deepseek-v4-pro` at
+`https://api.deepseek.com/chat/completions`, with thinking enabled and reasoning
+effort `max`. Both omit temperature and top-p and use a 4096-token final-output
+budget. A formal request remains prohibited until the account-level smoke test
+also confirms access and the response metadata contract.
+
+The DeepSeek generic provider preflight completed successfully on July 12,
+2026: the API returned `deepseek-v4-pro`, a nonempty request ID, finish reason
+`stop`, usage metadata and a complete raw payload. The smoke request is marked
+`smoke_test=true` and `excluded_from_analysis=true`. Its restricted raw artifact
+is ignored by Git; `experiments/llm/generated/provider_preflight.json` records
+the restricted artifact hash and sanitized audit metadata. OpenAI remains
+explicitly pending until its separate preflight is authorized and completed,
+so `formal_execution_ready` remains false.
 
 API secrets are read only from these environment variables:
 
@@ -77,6 +90,12 @@ The run manifest contains exactly:
 
 Running dry-run twice must leave every generated JSON byte-identical.
 
+Input regeneration requires the repository's full data environment, including
+`pandas` and parquet support. The normal execution path loads the frozen JSON
+inputs and does not import those preparation-only dependencies, so `--help`
+and an individual provider or mock run work from any Python installation that
+has the lightweight runtime dependencies installed.
+
 ## Mock execution
 
 Mock mode never accesses the network. Use a temporary or explicitly mock-only
@@ -104,7 +123,9 @@ endpoint pass the capability gate:
 
 ```powershell
 python experiments\llm\run_llm.py `
+  --single-run `
   --provider closed_frontier `
+  --model closed_frontier `
   --condition zero `
   --target 42 `
   --run-id 7
@@ -114,6 +135,47 @@ python experiments\llm\run_llm.py `
   --condition full `
   --target 42
 ```
+
+Use `--single-run` for an individually controlled formal experiment. This
+safety mode requires explicit `--provider`, `--model`, `--condition`,
+`--target`, and `--run-id` values and aborts unless they resolve to exactly one
+entry in the frozen run manifest. For example, the completed DeepSeek smoke-in
+formal-grid invocation is reproducible with:
+
+```powershell
+D:\anaconda3\python.exe experiments\llm\run_llm.py `
+  --single-run `
+  --provider open_weight `
+  --model open_weight `
+  --condition zero `
+  --target 6 `
+  --run-id 0
+```
+
+Omit `--single-run` only when a reviewed batch selection is intentional. Batch
+filters may select multiple targets or repetitions.
+
+## Concurrent batch execution
+
+Batch runs can overlap independent API waits with `--workers`. The default is
+`1`; a conservative initial formal setting is `5`, increased only after
+observing provider rate limits and account quotas. For example, all pending
+DeepSeek Zero runs can be resumed with:
+
+```powershell
+D:\anaconda3\python.exe experiments\llm\run_llm.py `
+  --provider open_weight `
+  --condition zero `
+  --only pending `
+  --workers 5
+```
+
+The scheduler rejects non-positive worker counts and duplicate logical run
+identities. Threads share only the stateless provider adapter; each logical run
+retains a distinct request/raw/parsed path and its existing retry, resume,
+first-success, and invalid-no-retry semantics. Do not launch overlapping shell
+processes over the same run range. Provider HTTP 429 responses remain governed
+by the frozen transport-retry policy.
 
 Filters never change logical identity. A run key remains:
 
@@ -143,7 +205,7 @@ The default maximum transport attempt count is three.
 
 ## Artifact layers
 
-Each attempt uses three append-only paths:
+Each attempt uses three attempt-indexed paths:
 
 ```text
 results/llm/requests/<logical_run_key>/<attempt>.json
@@ -156,6 +218,12 @@ logical identity and source hashes. Raw artifacts contain the verbatim response
 text, response-reported model ID, provider request ID, usage, finish reason,
 latency and complete provider payload. Parsed artifacts bind the raw byte hash
 to parser and structural-validation results.
+
+Within one attempt, the request artifact is atomically updated from
+`request_prepared` to `request_dispatched` and, when applicable, to
+`transport_error`. It is never overwritten across attempt numbers. Raw and
+parsed artifacts are written once per attempt and are the strictly append-only
+response layers.
 
 Only structurally valid parsed runs may later become canonical
 `SequenceRecord` objects. Invalid runs remain parsed all-run records with no

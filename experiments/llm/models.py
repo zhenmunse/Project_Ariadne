@@ -55,6 +55,10 @@ class ProviderResponse:
             raise ValueError("Provider response must preserve requested and actual model IDs")
         if not self.provider_request_id or not self.created_at_utc:
             raise ValueError("Provider response requires request ID and UTC timestamp")
+        if not self.finish_reason:
+            raise ValueError("Provider response requires a nonempty finish reason/status")
+        if not isinstance(self.raw_provider_payload, dict) or not self.raw_provider_payload:
+            raise ValueError("Provider response requires a nonempty raw provider payload")
         if self.latency_seconds < 0:
             raise ValueError("Provider latency must be nonnegative")
 
