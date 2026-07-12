@@ -6,6 +6,7 @@ import csv
 import importlib
 import json
 import struct
+import subprocess
 import unittest
 from pathlib import Path
 
@@ -40,7 +41,7 @@ class BKTSetLAOTests(unittest.TestCase):
         self.assertEqual(checkpoint_hash, RUNNER.EXPECTED_SURROGATE_CHECKPOINT_HASH)
         self.assertEqual(
             checkpoint_hash,
-            "d285d7666e658c8f10637deffc986e408e5a15bbb2d3dcff50856cff7250d4f4",
+            "4a4ae471e06dbeeea46bf09f0502f39455576ccdd7f992e0184912cac7b60791",
         )
         self.assertEqual(
             {record.metadata["surrogate_checkpoint_hash"] for record in self.greedy},
@@ -50,6 +51,46 @@ class BKTSetLAOTests(unittest.TestCase):
             encoding="utf-8"
         )
         self.assertNotIn("train_bkt_set_oracle", source)
+
+    def test_all_surrogate_source_texts_have_canonical_lf_attributes(self) -> None:
+        text_sources = [
+            "artifacts/bkt_set/distillation_metadata.json",
+            "artifacts/bkt_set/bkt_teacher_metadata.json",
+            "artifacts/bkt_set/bkt_parameters.json",
+            "artifacts/bkt_set/pooled_bkt_parameters.json",
+            "artifacts/bkt_set/bkt_coverage.json",
+            "documents/kt_set_adapter_spec.md",
+            "data/ecs32a_dag_required_full_v1.json",
+            "experiments/common/evaluator.py",
+            "data/kt_set/student_split.json",
+            "data/kt_set/preprocessing_manifest.json",
+            "data/processed/cleaned_interactions.csv",
+            "data/question_concept_mapping_final.csv",
+        ]
+        binary_sources = [
+            "artifacts/bkt_set/train_grouped_tuples.parquet",
+            "artifacts/bkt_set/validation_grouped_tuples.parquet",
+            "artifacts/bkt_set/train_prefix_examples.parquet",
+            "artifacts/bkt_set/validation_prefix_examples.parquet",
+        ]
+        for path in text_sources:
+            output = subprocess.run(
+                ["git", "check-attr", "eol", "--", path],
+                cwd=ROOT,
+                check=True,
+                capture_output=True,
+                text=True,
+            ).stdout.strip()
+            self.assertEqual(output, f"{path}: eol: lf")
+        for path in binary_sources:
+            output = subprocess.run(
+                ["git", "check-attr", "text", "--", path],
+                cwd=ROOT,
+                check=True,
+                capture_output=True,
+                text=True,
+            ).stdout.strip()
+            self.assertEqual(output, f"{path}: text: unset")
 
     def test_records_are_complete_and_provenance_matched(self) -> None:
         self.assertEqual(len(self.records), 10)

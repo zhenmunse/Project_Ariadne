@@ -12,7 +12,7 @@ Both the Greedy reference and LAO* load the same custom deterministic tensor
 checkpoint on CPU. The checkpoint SHA-256 is:
 
 ```
-d285d7666e658c8f10637deffc986e408e5a15bbb2d3dcff50856cff7250d4f4
+4a4ae471e06dbeeea46bf09f0502f39455576ccdd7f992e0184912cac7b60791
 ```
 
 The runner does not train or modify the surrogate. It rejects a different

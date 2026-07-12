@@ -1,2 +1,0 @@
-samples,binary_samples,mse,rmse,mae,auc,accuracy,probability_source
-3103,2170,0.17728425794239108,0.42105137209417937,0.37429703397249137,0.5917978524886047,0.5861751152073733,bkt_initial_correct_probability

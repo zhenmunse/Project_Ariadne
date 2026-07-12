@@ -1,10 +1,19 @@
-# Hash-sensitive KT/BKT protocol artifacts use canonical LF bytes on every OS.
-data/kt_set/*.json text eol=lf
-artifacts/bkt_set/*.json text eol=lf
+# Canonical repository text bytes. Several experiment provenance records use
+# raw SHA-256, so checkout must not translate line endings on any platform.
+*.py text eol=lf
+*.md text eol=lf
+*.json text eol=lf
+*.jsonl text eol=lf
+*.csv text eol=lf
+*.yaml text eol=lf
+*.yml text eol=lf
+*.txt text eol=lf
+
+# Binary data and model formats must never undergo text conversion.
+*.parquet binary
+*.pkl binary
+*.npy binary
+*.npz binary
+
+# BKT-set checkpoints are canonical JSON/base64 rather than torch.save files.
 artifacts/bkt_set/*.pt text eol=lf
-results/bkt_set/*.csv text eol=lf
-results/bkt_set_greedy/*.jsonl text eol=lf
-results/bkt_set_greedy/*.csv text eol=lf
-results/bkt_set_lao/*.jsonl text eol=lf
-results/bkt_set_lao/*.csv text eol=lf
-documents/kt_set_adapter_spec.md text eol=lf
