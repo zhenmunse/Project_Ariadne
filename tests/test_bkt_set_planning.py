@@ -37,7 +37,7 @@ class BKTSetGreedyTests(unittest.TestCase):
         self.assertEqual(actual, RUNNER.EXPECTED_SURROGATE_CHECKPOINT_HASH)
         self.assertEqual(
             actual,
-            "b00a8184babd0280f979af41d1403c7c0ea0fe4b4bb70c05c71be3fb5ccff920",
+            "4a4ae471e06dbeeea46bf09f0502f39455576ccdd7f992e0184912cac7b60791",
         )
         source = (ROOT / "experiments" / "13_run_bkt_greedy.py").read_text(
             encoding="utf-8"

@@ -1,6 +1,6 @@
 {
   "backoff_rule": "pooled_zero_observation_bkt",
-  "bkt_parameter_artifact_hash": "dce0dd620bace0a0fb682de2d2fc2e55baa4f14f1cb1c1038fc1c029a1e866f7",
+  "bkt_parameter_artifact_hash": "d3616777af5d48b8f5bc18d37e3ad11eb892b4c98a1ea52f2283baf8f2f5cd98",
   "concept_specific_nodes": [
     3,
     4,
@@ -36,7 +36,7 @@
     51
   ],
   "pooled_backoff_nodes_hash": "b46031fda3a690ca5956734dd3f8ee1ccebdd5c8328df5b45b24c3e4f1fc033d",
-  "pooled_parameter_artifact_hash": "528f694875cc7a2ca6575fb6509e197fe78dd0d0c31bdd3a4062b9c64cb5ac89",
+  "pooled_parameter_artifact_hash": "5ca92b3ccb665d45f28435b51d305ba8f5e33ba4a64f0f29697f8e97e258245c",
   "pooled_parameter_vector_hash": "b91780a500397f5fb457aab4707f7d5769dee5a7da373049bae5fae04c2cd503",
   "required_node_count": 27,
   "required_nodes": [

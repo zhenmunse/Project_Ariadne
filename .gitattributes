@@ -1,0 +1,19 @@
+# Canonical repository text bytes. Several experiment provenance records use
+# raw SHA-256, so checkout must not translate line endings on any platform.
+*.py text eol=lf
+*.md text eol=lf
+*.json text eol=lf
+*.jsonl text eol=lf
+*.csv text eol=lf
+*.yaml text eol=lf
+*.yml text eol=lf
+*.txt text eol=lf
+
+# Binary data and model formats must never undergo text conversion.
+*.parquet binary
+*.pkl binary
+*.npy binary
+*.npz binary
+
+# BKT-set checkpoints are canonical JSON/base64 rather than torch.save files.
+artifacts/bkt_set/*.pt text eol=lf

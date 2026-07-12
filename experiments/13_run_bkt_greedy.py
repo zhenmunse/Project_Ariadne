@@ -20,7 +20,7 @@ CONFIG_PATH = ARTIFACTS / "surrogate_config.json"
 CHECKPOINT_PATH = ARTIFACTS / "surrogate_checkpoint.pt"
 METRICS_PATH = ARTIFACTS / "surrogate_metrics.json"
 EXPECTED_SURROGATE_CHECKPOINT_HASH = (
-    "b00a8184babd0280f979af41d1403c7c0ea0fe4b4bb70c05c71be3fb5ccff920"
+    "4a4ae471e06dbeeea46bf09f0502f39455576ccdd7f992e0184912cac7b60791"
 )
 sys.path.insert(0, str(ROOT))
 
