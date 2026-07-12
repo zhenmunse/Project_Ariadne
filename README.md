@@ -117,6 +117,15 @@ Cost = T_base + (1 - P_succ) * T_penalty + lambda_risk * sigma2
 
 ## Pipeline
 
+### Current deterministic experiment protocol
+
+The legacy prototype pipeline below remains useful for orientation. For the
+paper-facing deterministic BKT condition, use the authoritative
+[BKT-derived Set Oracle reproduction guide](documents/bkt_set_oracle_reproduction.md).
+It records the canonical student split, chronological BKT teacher, pooled
+zero-observation backoff, set-oracle distillation, frozen checkpoint hashes,
+Greedy/LAO* commands, exact-DP checks, and public-evaluator semantics.
+
 Install dependencies first:
 
 ```bash

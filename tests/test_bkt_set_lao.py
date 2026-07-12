@@ -186,6 +186,46 @@ class BKTSetLAOTests(unittest.TestCase):
             all(float(row["lao_dp_absolute_gap"]) < RUNNER.DP_TOLERANCE for row in comparison_rows)
         )
 
+    def test_reproduction_document_matches_frozen_artifacts(self) -> None:
+        document_path = ROOT / "documents" / "bkt_set_oracle_reproduction.md"
+        document = document_path.read_text(encoding="utf-8")
+        expected_paths = [
+            "data/kt_set/student_split.json",
+            "data/kt_set/concept_sessions.parquet",
+            "artifacts/bkt_set/surrogate_config.json",
+            "artifacts/bkt_set/surrogate_checkpoint.pt",
+            "results/bkt_set_greedy/sequences.jsonl",
+            "results/bkt_set_lao/sequences.jsonl",
+            "results/bkt_set_lao/scored_sequences.csv",
+        ]
+        for relative in expected_paths:
+            self.assertTrue((ROOT / relative).is_file(), relative)
+            self.assertIn(relative, document)
+        expected_hashes = [
+            sha256_file(ROOT / "data" / "kt_set" / "student_split.json"),
+            sha256_file(ROOT / "data" / "kt_set" / "concept_sessions.parquet"),
+            sha256_file(ARTIFACTS / "surrogate_config.json"),
+            sha256_file(ARTIFACTS / "surrogate_checkpoint.pt"),
+            sha256_file(GREEDY_RESULTS / "sequences.jsonl"),
+            sha256_file(LAO_RESULTS / "sequences.jsonl"),
+            sha256_file(LAO_RESULTS / "scored_sequences.csv"),
+        ]
+        for value in expected_hashes:
+            self.assertIn(value, document)
+        for command in (
+            "prepare_kt_data.py",
+            "train_bkt_teacher.py",
+            "build_bkt_distillation_data.py",
+            "train_bkt_set_oracle.py",
+            "13_run_bkt_greedy.py",
+            "14_run_bkt_set_lao.py",
+        ):
+            self.assertIn(command, document)
+        self.assertIn("not a `torch.save` file", document)
+        self.assertFalse((ROOT / "experiments" / "16_run_bkt_lao.py").exists())
+        legacy_results = ROOT / "results" / "bkt_lao"
+        self.assertFalse(legacy_results.exists() and any(legacy_results.iterdir()))
+
 
 if __name__ == "__main__":
     unittest.main()
