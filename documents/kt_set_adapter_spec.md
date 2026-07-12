@@ -72,6 +72,25 @@ An empty prefix may be used only if the teacher defines an auditable initial
 prediction. Otherwise it is excluded for both teachers and the exclusion count
 is recorded.
 
+### Frozen KT observation encoding
+
+The observation unit for both BKT and DKT is one canonical concept session as
+produced by the session aggregation in `experiments/09_prepare_oracle_data.py`.
+It is not a raw item interaction. Each session has:
+
+- `student_id`: the session owner;
+- `target_node`: the canonical DAG concept ID obtained from the unique
+  item-to-concept mapping;
+- `timestamp`: the timestamp assigned by the canonical session aggregator and
+  used for chronological ordering;
+- `session_score`: the canonical continuous session score in `[0, 1]`;
+- `correct`: `1` if and only if `session_score >= 0.8`, otherwise `0`.
+
+The continuous `session_score` is retained for mastery compression. Only the
+binary `correct` value is supplied as a response observation to BKT or DKT.
+Neither model may reinterpret a fractional score as a fractional Bernoulli
+observation or choose a different correctness threshold.
+
 ## Prefix-to-mastery compression
 
 The compression rule uses the existing project configuration:
@@ -108,9 +127,10 @@ order.
 ### BKT teacher
 
 Fit one BKT model per mapped concept using training students only. Binary
-correctness observations are processed chronologically. For each prefix and
-target `v`, use the student's current posterior mastery probability for `v`
-and the fitted BKT parameters to compute:
+correctness observations are the frozen session-level `correct` values defined
+above and are processed chronologically. For each prefix and target `v`, use
+the student's current posterior mastery probability for `v` and the fitted BKT
+parameters to compute:
 
 ```text
 p_teacher(v | prefix)
@@ -124,13 +144,31 @@ updated only after the actual next observation is scored.
 
 ### DKT teacher
 
-Train or load the frozen DKT model using the canonical student split and a
-recorded node-to-model-index mapping. At a prediction point, run the teacher on
-the complete ordered prefix and extract the output coordinate corresponding to
-target `v`. No current or future outcome may enter that forward pass. The
-implementation must include a leakage regression test that changes the held-out
-current label while keeping the prefix fixed and verifies that the extracted
-teacher probability is unchanged.
+The DKT checkpoint must be retrained using the canonical student split in this
+document. An existing checkpoint trained under a different or unverifiable
+split is not eligible for Task 13, even if it has the same architecture.
+
+One DKT time step is one canonical concept session. The skill is the canonical
+DAG `target_node`, translated through a persisted `node_id_to_model_idx`
+mapping; it is never the raw item ID. The response is the frozen binary
+session-level `correct` value defined above. Sessions are ordered by the frozen
+chronology rule, and ties retain the stable source order.
+
+At a prediction point, run the teacher on the complete ordered prefix and
+extract the output coordinate corresponding to target `v`. No current or future
+outcome may enter that forward pass. DKT sequences are not truncated: the
+maximum sequence length is the maximum complete prefix length in the canonical
+training/validation data. Mini-batches may right-pad shorter sequences with a
+dedicated padding value and an explicit mask; padded steps must not affect the
+hidden state, loss, or extracted probability. If the implementation or library
+cannot process the observed maximum length, this specification must be amended
+and re-approved before training; Task 13 may not silently introduce a truncation
+rule. In particular, neither earliest-prefix nor recent-prefix truncation is
+currently permitted.
+
+The implementation must include a leakage regression test that changes the
+held-out current label while keeping the prefix fixed and verifies that the
+extracted teacher probability is unchanged.
 
 The exact DKT checkpoint, configuration, model-index mapping, PyTorch version,
 and extraction convention must be hashed or recorded in the artifact metadata.
@@ -156,8 +194,12 @@ read-only.
 Within each data split, group identical `(s, v)` examples, store the arithmetic
 mean teacher probability and the observation count, and sort groups
 lexicographically by the mastery bit vector and target ID. Training loss is
-weighted by the stored count, making aggregation mathematically equivalent to
-training on the ungrouped examples while removing input-order dependence.
+weighted by the stored count. This preserves the parameter-dependent part of
+the ungrouped squared-error objective and therefore gives identical gradients
+and minimizers. The grouped loss value differs from the raw ungrouped loss by a
+parameter-independent within-group variance term. Validation must consequently
+report both count-weighted grouped surrogate MSE and prefix-level
+teacher-versus-surrogate MSE computed against the ungrouped examples.
 
 The distilled dataset artifact must store counts and hashes for its raw source,
 mapping, split membership, teacher, DAG, compression configuration, and tuple
@@ -210,14 +252,29 @@ Report, separately for train and validation students:
 - number of students, prefixes, unique mastery states, and unique `(s, v)`
   pairs;
 - target coverage and per-target example counts;
-- teacher-versus-surrogate MSE and MAE;
+- count-weighted grouped surrogate MSE;
+- prefix-level teacher-versus-surrogate MSE and MAE on ungrouped examples;
 - maximum absolute error and probability range;
+- state-effect maximum, median, and 95th percentile;
 - hashes of every input and output artifact.
 
-The state-dependence regression must find at least one target `v` and two valid,
-distinct prerequisite-closed states `s1` and `s2` in the validation query table
-such that the surrogate's packed outputs differ. This proves that the adapter
-has not collapsed to a population prior; it does not claim monotonicity.
+For each target represented in at least two distinct valid validation states,
+compute all pairwise absolute effects `|p(v, s1) - p(v, s2)|`. Report the
+maximum across all targets and pairs, plus the median and 95th percentile over
+the per-target maximum effects. Targets with fewer than two observed states are
+reported separately and excluded from the percentile calculation.
+
+The state-dependence regression has two simultaneous requirements:
+
+1. at least one target has two prerequisite-closed validation states whose
+   packed outputs differ; and
+2. `max_state_effect >= 1e-6`.
+
+The first detects exact collapse to a population prior; the second prevents a
+single floating-point ULP from satisfying the July 18 go/no-go rule. These tests
+do not claim that the learned function is monotone. The observed effect sizes,
+including the maximum, median, and 95th percentile, remain reported experimental
+results rather than additional post hoc acceptance thresholds.
 
 The deterministic-query tests above and full target-coverage check are hard
 requirements. Tasks 12 and 13 may add teacher-specific quality diagnostics, but
@@ -254,4 +311,3 @@ rule, and return that value for every state. Do not label this fallback as a
 BKT-derived or DKT-derived Set Oracle, and do not combine its probabilities
 with a partially working KT adapter. Its state independence must be stated in
 results metadata and treated as a negative-control condition.
-
