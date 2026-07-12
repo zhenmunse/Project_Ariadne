@@ -1,13 +1,13 @@
 {
-  "checkpoint_artifact_hash": "0013f9fac2c491c0690a0c1290a7fc1dd19173e932d960aa25a83e81580821df",
+  "checkpoint_artifact_hash": "78f6513776897444445d13d182ec4851baafe84e8c0fbdcd8c4a765a3c26e2d6",
   "checkpoint_tensor_hash": "48901d7eeab0580aba90d0fce1d282d300121ea6cbe5abe73791af30299df490",
   "condition_name": "DKT-derived Set Oracle teacher",
-  "config_hash": "19def376eeb37bde788564910e9f020841833c8a79db2e9ca51e915a2da72ebe",
+  "config_hash": "add41a59081ef6118c5b3f9a96dfcac3ad7e12916702f4b50772d223ca3f9b53",
   "current_outcome_excluded": true,
   "generation_command": "python experiments/train_dkt_teacher.py",
   "hidden_state_scope": "independent per student sequence",
   "input_is_canonical_concept_session": true,
-  "input_metadata_hash": "66b3f3e5830cd3377952cbd03cba16d4eaece05d82ad2b33d0ebec16d79c2b35",
+  "input_metadata_hash": "81f501c98105045af2c14b6391d4d238b53660298914a3faecd3a8b7587a9459",
   "query_targets": "all 27 planning-required nodes at every prefix",
   "required_nodes": [
     0,
@@ -42,6 +42,6 @@
   "teacher": "DKT",
   "test_students_used": 0,
   "train_students": 236,
-  "training_metrics_hash": "23a1de0be32112ad9b1627b54c374df497b40d21c95506d922630bb44a837cc6",
+  "training_metrics_hash": "ae3c10bb3de0b661e143f58a0ad1a760fd4d8e3fe48e8e56dadfa0643bd7b903",
   "validation_students": 29
 }

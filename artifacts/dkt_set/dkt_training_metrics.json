@@ -1,10 +1,10 @@
 {
   "best_validation_bce": 0.5957606786149492,
-  "config_hash": "19def376eeb37bde788564910e9f020841833c8a79db2e9ca51e915a2da72ebe",
+  "config_hash": "add41a59081ef6118c5b3f9a96dfcac3ad7e12916702f4b50772d223ca3f9b53",
   "epochs_run": 35,
   "schema_version": 1,
   "selected_epoch": 15,
-  "teacher_checkpoint_artifact_hash": "0013f9fac2c491c0690a0c1290a7fc1dd19173e932d960aa25a83e81580821df",
+  "teacher_checkpoint_artifact_hash": "78f6513776897444445d13d182ec4851baafe84e8c0fbdcd8c4a765a3c26e2d6",
   "teacher_checkpoint_tensor_hash": "48901d7eeab0580aba90d0fce1d282d300121ea6cbe5abe73791af30299df490",
   "test_students_used": 0,
   "train": {

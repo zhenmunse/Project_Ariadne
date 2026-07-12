@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import math
+import hashlib
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Sequence
@@ -129,9 +130,24 @@ class FrozenDKTTeacher:
     ) -> "FrozenDKTTeacher":
         import json
 
-        with Path(config_path).open("r", encoding="utf-8") as file:
+        config_path = Path(config_path)
+        checkpoint_path = Path(checkpoint_path)
+        with config_path.open("r", encoding="utf-8") as file:
             config = json.load(file)
         payload = load_deterministic_checkpoint(checkpoint_path)
+        required = {
+            "config_hash",
+            "node_order",
+            "selected_epoch",
+            "tensor_hash",
+            "state_dict",
+        }
+        missing = sorted(required - set(payload))
+        if missing:
+            raise ValueError(f"DKT checkpoint metadata missing fields: {missing}")
+        digest = hashlib.sha256(config_path.read_bytes()).hexdigest()
+        if payload["config_hash"] != digest:
+            raise ValueError("DKT checkpoint/config hash mismatch")
         architecture = config["architecture"]
         model = DKTTeacherModel(
             num_nodes=architecture["num_nodes"],

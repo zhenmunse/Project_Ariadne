@@ -105,12 +105,10 @@
   },
   "statistics": {
     "test": {
-      "sequence_length_max": 211,
-      "sequence_length_median": 118.0,
-      "sequence_length_min": 6,
-      "sequences": 29,
-      "sessions": 3367,
-      "students": 29
+      "outcomes_inspected": false,
+      "sessions_inspected": false,
+      "student_count_from_frozen_split_artifact": 29,
+      "used": false
     },
     "train": {
       "sequence_length_max": 421,

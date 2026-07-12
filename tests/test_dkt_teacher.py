@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import json
+import hashlib
 import struct
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -82,7 +84,13 @@ class FrozenDKTTeacherArtifactTests(unittest.TestCase):
         self.assertEqual(self.input_metadata["interaction_vocabulary_size"], 122)
         self.assertEqual(self.input_metadata["statistics"]["train"]["students"], 236)
         self.assertEqual(self.input_metadata["statistics"]["validation"]["students"], 29)
-        self.assertEqual(self.input_metadata["statistics"]["test"]["students"], 29)
+        test = self.input_metadata["statistics"]["test"]
+        self.assertEqual(test["student_count_from_frozen_split_artifact"], 29)
+        self.assertFalse(test["sessions_inspected"])
+        self.assertFalse(test["outcomes_inspected"])
+        self.assertFalse(test["used"])
+        self.assertNotIn("sessions", test)
+        self.assertNotIn("sequence_length_min", test)
 
     def test_checkpoint_identity_and_recorded_metrics(self) -> None:
         self.assertEqual(
@@ -111,6 +119,52 @@ class FrozenDKTTeacherArtifactTests(unittest.TestCase):
         self.teacher.probability_table(history_a)
         b_after = self.teacher.probability_table(history_b)
         self.assertTrue(torch.equal(b_before, b_after))
+
+    def test_modified_config_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            config_path = Path(directory) / "config.json"
+            checkpoint_path = Path(directory) / "checkpoint.pt"
+            with (ARTIFACTS / "dkt_config.json").open(encoding="utf-8") as file:
+                config = json.load(file)
+            config["training"]["seed"] = 999
+            config_path.write_text(json.dumps(config), encoding="utf-8")
+            checkpoint_path.write_bytes((ARTIFACTS / "dkt_checkpoint.pt").read_bytes())
+            with self.assertRaisesRegex(ValueError, "checkpoint/config hash mismatch"):
+                FrozenDKTTeacher.from_artifacts(
+                    config_path=config_path, checkpoint_path=checkpoint_path
+                )
+
+    def test_modified_checkpoint_config_hash_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            config_path = Path(directory) / "config.json"
+            checkpoint_path = Path(directory) / "checkpoint.pt"
+            config_path.write_bytes((ARTIFACTS / "dkt_config.json").read_bytes())
+            with (ARTIFACTS / "dkt_checkpoint.pt").open(encoding="utf-8") as file:
+                checkpoint = json.load(file)
+            checkpoint["metadata"]["config_hash"] = "0" * 64
+            checkpoint_path.write_text(json.dumps(checkpoint), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "checkpoint/config hash mismatch"):
+                FrozenDKTTeacher.from_artifacts(
+                    config_path=config_path, checkpoint_path=checkpoint_path
+                )
+
+    def test_node_order_mismatch_is_rejected_after_hash_binding(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            config_path = Path(directory) / "config.json"
+            checkpoint_path = Path(directory) / "checkpoint.pt"
+            with (ARTIFACTS / "dkt_config.json").open(encoding="utf-8") as file:
+                config = json.load(file)
+            config["node_order"] = list(reversed(config["node_order"]))
+            config_path.write_text(json.dumps(config), encoding="utf-8")
+            config_hash = hashlib.sha256(config_path.read_bytes()).hexdigest()
+            with (ARTIFACTS / "dkt_checkpoint.pt").open(encoding="utf-8") as file:
+                checkpoint = json.load(file)
+            checkpoint["metadata"]["config_hash"] = config_hash
+            checkpoint_path.write_text(json.dumps(checkpoint), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "node order mismatch"):
+                FrozenDKTTeacher.from_artifacts(
+                    config_path=config_path, checkpoint_path=checkpoint_path
+                )
 
 
 if __name__ == "__main__":

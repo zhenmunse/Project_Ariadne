@@ -134,7 +134,9 @@ def _input_metadata(
     node_order: list[int],
 ) -> dict:
     statistics_by_split = {}
-    for name in ("train", "validation", "test"):
+    if not set(sessions["split"]).issubset({"train", "validation"}):
+        raise ValueError("DKT input metadata may inspect only train/validation sessions")
+    for name in ("train", "validation"):
         rows = sessions[sessions["split"] == name]
         lengths = [len(group) for _, group in rows.groupby("student_id", sort=True)]
         statistics_by_split[name] = {
@@ -147,6 +149,12 @@ def _input_metadata(
         }
         if set(rows["student_id"].astype(str)) != set(split[name]):
             raise ValueError(f"Canonical sessions/{name} student split mismatch")
+    statistics_by_split["test"] = {
+        "student_count_from_frozen_split_artifact": len(split["test"]),
+        "sessions_inspected": False,
+        "outcomes_inspected": False,
+        "used": False,
+    }
     return {
         "schema_version": 1,
         "event_unit": "canonical concept session",
@@ -207,7 +215,10 @@ def train_dkt_teacher() -> dict[str, str]:
     validation_sequences = build_sequences(
         sessions, split_name="validation", node_to_index=node_to_index
     )
-    input_metadata = _input_metadata(sessions, split, node_order)
+    train_validation_sessions = sessions[
+        sessions["split"].isin(["train", "validation"])
+    ].copy()
+    input_metadata = _input_metadata(train_validation_sessions, split, node_order)
     OUTPUT.mkdir(parents=True, exist_ok=True)
     write_json(INPUT_METADATA_PATH, input_metadata)
 
