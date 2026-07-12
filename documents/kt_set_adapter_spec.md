@@ -295,11 +295,19 @@ or replaced with FrequencyOracle probabilities. The public condition remains
 teacher_parameterization = concept_specific_with_pooled_zero_observation_backoff
 ```
 
-Define `pooled_parameter_hash` as SHA-256 of canonical sorted-key JSON containing
-the selected `(prior, learn, guess, slip)` values, all frozen optimizer settings,
-the four restart results, the ordered pooled sequence IDs, their observation
-counts, and all training input hashes. The hash field itself is excluded from
-its input.
+Define `pooled_parameter_vector_hash` as SHA-256 of canonical sorted-key JSON
+containing only the selected `(prior, learn, guess, slip)` values. Define
+`pooled_parameter_artifact_hash` separately as the SHA-256 of the complete
+`pooled_bkt_parameters.json` bytes, including optimizer settings, restart
+results, ordered sequence IDs, observation counts, and input hashes. A protocol
+or provenance-only change may alter the artifact hash but must not alter the
+vector hash when the four fitted values are unchanged.
+
+Every node entry in `bkt_parameters.json` stores a `parameter_values_hash` over
+its canonical four-value dictionary. The artifact also stores one top-level
+`parameter_values_hash` over the ordered 27-node mapping of node ID, parameter
+source, and four values. Its complete file SHA-256 is separately named
+`bkt_parameter_artifact_hash`.
 
 ### DKT teacher
 
@@ -491,8 +499,11 @@ The BKT teacher additionally produces and hashes:
   list, coverage fraction `1.0`, backoff rule
   `pooled_zero_observation_bkt`, and the pooled parameter hash.
 
-Every later BKT-derived sequence record stores `bkt_parameter_hash`,
-`pooled_bkt_parameter_hash`, and `pooled_backoff_nodes_hash`.
+Every later BKT-derived sequence record stores `parameter_values_hash`,
+`bkt_parameter_artifact_hash`, `pooled_parameter_vector_hash`,
+`pooled_parameter_artifact_hash`, and `pooled_backoff_nodes_hash`. Numerical
+model equality is checked with the values/vector hashes; exact provenance
+identity is checked with the artifact hashes.
 
 The BKT regression suite must prove that all observed required nodes use
 concept-specific parameters, exactly the eight frozen zero-observation nodes

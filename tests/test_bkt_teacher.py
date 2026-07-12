@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import struct
 import subprocess
@@ -9,6 +10,7 @@ import sys
 import unittest
 from pathlib import Path
 
+from experiments.kt.artifacts import canonical_json_bytes, sha256_file
 from src.oracle_core.bkt_teacher import (
     BKTParameters,
     BKTTeacher,
@@ -100,6 +102,8 @@ class BKTArtifactTests(unittest.TestCase):
             cls.parameters = json.load(file)
         with (ARTIFACTS / "bkt_coverage.json").open(encoding="utf-8") as file:
             cls.coverage = json.load(file)
+        with (ARTIFACTS / "pooled_bkt_parameters.json").open(encoding="utf-8") as file:
+            cls.pooled = json.load(file)
         with (ARTIFACTS / "bkt_teacher_metadata.json").open(encoding="utf-8") as file:
             cls.metadata = json.load(file)
 
@@ -130,6 +134,45 @@ class BKTArtifactTests(unittest.TestCase):
             probability = state.query(node)
             self.assertGreaterEqual(probability, 0.0)
             self.assertLessEqual(probability, 1.0)
+
+    def test_numeric_value_hashes_are_separate_from_artifact_hashes(self) -> None:
+        vector = self.pooled["parameters"]
+        vector_hash = hashlib.sha256(canonical_json_bytes(vector)).hexdigest()
+        self.assertEqual(self.pooled["pooled_parameter_vector_hash"], vector_hash)
+        self.assertEqual(self.coverage["pooled_parameter_vector_hash"], vector_hash)
+        self.assertEqual(
+            self.coverage["pooled_parameter_artifact_hash"],
+            sha256_file(ARTIFACTS / "pooled_bkt_parameters.json"),
+        )
+
+        values_payload = []
+        for entry in self.parameters["parameters"]:
+            entry_values = {
+                name: entry[name] for name in ("guess", "learn", "prior", "slip")
+            }
+            self.assertEqual(
+                entry["parameter_values_hash"],
+                hashlib.sha256(canonical_json_bytes(entry_values)).hexdigest(),
+            )
+            values_payload.append(
+                {
+                    "node_id": entry["node_id"],
+                    "parameter_source": entry["parameter_source"],
+                    "prior": entry["prior"],
+                    "learn": entry["learn"],
+                    "guess": entry["guess"],
+                    "slip": entry["slip"],
+                }
+            )
+        values_hash = hashlib.sha256(
+            canonical_json_bytes(values_payload)
+        ).hexdigest()
+        self.assertEqual(self.parameters["parameter_values_hash"], values_hash)
+        self.assertEqual(self.coverage["parameter_values_hash"], values_hash)
+        self.assertEqual(
+            self.coverage["bkt_parameter_artifact_hash"],
+            sha256_file(ARTIFACTS / "bkt_parameters.json"),
+        )
 
 
 if __name__ == "__main__":

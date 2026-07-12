@@ -23,6 +23,7 @@
   },
   "coverage": {
     "backoff_rule": "pooled_zero_observation_bkt",
+    "bkt_parameter_artifact_hash": "dce0dd620bace0a0fb682de2d2fc2e55baa4f14f1cb1c1038fc1c029a1e866f7",
     "concept_specific_nodes": [
       3,
       4,
@@ -46,6 +47,7 @@
     ],
     "coverage_fraction": 1.0,
     "missing_nodes": [],
+    "parameter_values_hash": "6a773d04b9ccd12f4d32736c1b5860ccc3cbc8f1ad20eb577ee655d205bf8f3f",
     "pooled_backoff_nodes": [
       0,
       1,
@@ -57,7 +59,8 @@
       51
     ],
     "pooled_backoff_nodes_hash": "b46031fda3a690ca5956734dd3f8ee1ccebdd5c8328df5b45b24c3e4f1fc033d",
-    "pooled_parameter_hash": "81426ecd4b9dd2a2c7a35b3e1f5294019b693f5e5ca740c5edca1bf01c08b5c1",
+    "pooled_parameter_artifact_hash": "528f694875cc7a2ca6575fb6509e197fe78dd0d0c31bdd3a4062b9c64cb5ac89",
+    "pooled_parameter_vector_hash": "b91780a500397f5fb457aab4707f7d5769dee5a7da373049bae5fae04c2cd503",
     "required_node_count": 27,
     "required_nodes": [
       0,
@@ -210,19 +213,19 @@
   "sources": {
     "adapter_spec": {
       "path": "documents/kt_set_adapter_spec.md",
-      "sha256": "33df723229d8d30c499bbcbb987f680172d1e7a226abbd262c2784ceb6870d7a"
+      "sha256": "73e6d3818749e67bd3969675ce1e3d90fc811bef976a7b80f0463495546578a0"
     },
     "bkt_coverage": {
       "path": "artifacts/bkt_set/bkt_coverage.json",
-      "sha256": "22b303499d8fb42870c4fa649e52c378c01f3b6e9f27c58108d30db57005f575"
+      "sha256": "bbc241a3522bde8ff6bccd1d1cd57a82c9ebed15192274cd25a02af0436342ac"
     },
     "bkt_parameters": {
       "path": "artifacts/bkt_set/bkt_parameters.json",
-      "sha256": "ef0f5302f4b6a997fe2f871c88f999b3a51f683c2c35008e1646942dcc8913a9"
+      "sha256": "dce0dd620bace0a0fb682de2d2fc2e55baa4f14f1cb1c1038fc1c029a1e866f7"
     },
     "bkt_teacher_metadata": {
       "path": "artifacts/bkt_set/bkt_teacher_metadata.json",
-      "sha256": "3d0f34031df30410a46cb4af97ca04a7596050b42c29957c8b3c7f7d4da2120b"
+      "sha256": "c394ed4fb86957ab9722129eabb44838e4368b5a633e12f0c00fe5bc9af32e62"
     },
     "concept_sessions": {
       "path": "data/kt_set/concept_sessions.parquet",
@@ -230,11 +233,11 @@
     },
     "pooled_bkt_parameters": {
       "path": "artifacts/bkt_set/pooled_bkt_parameters.json",
-      "sha256": "d2017da7b66cbf5372330489a9f77cf7005d55cc736639d861b791bea5004719"
+      "sha256": "528f694875cc7a2ca6575fb6509e197fe78dd0d0c31bdd3a4062b9c64cb5ac89"
     },
     "preprocessing_manifest": {
       "path": "data/kt_set/preprocessing_manifest.json",
-      "sha256": "731979b41ac13ae479a4088c83b6ba69807170a316306fe17750ec4d95a59158"
+      "sha256": "079189145105ef31c05bd32459888bdb8bd825bb015ea5a86c9ccfdb71dfb1c9"
     },
     "student_split": {
       "path": "data/kt_set/student_split.json",

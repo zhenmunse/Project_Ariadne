@@ -140,7 +140,7 @@ def train_bkt_teacher(
         "scipy_version": scipy.__version__,
     }
     ordered_pooled_ids = sorted(pooled_sequences)
-    pooled_hash_payload = {
+    pooled_provenance = {
         "parameters": pooled_result.parameters.to_dict(),
         "optimizer": optimizer,
         "restarts": list(pooled_result.restarts),
@@ -148,20 +148,21 @@ def train_bkt_teacher(
         "observation_counts": [len(pooled_sequences[key]) for key in ordered_pooled_ids],
         "input_hashes": input_hashes,
     }
-    pooled_parameter_hash = hashlib.sha256(
-        canonical_json_bytes(pooled_hash_payload)
+    pooled_parameter_vector_hash = hashlib.sha256(
+        canonical_json_bytes(pooled_result.parameters.to_dict())
     ).hexdigest()
     pooled_artifact = {
-        **pooled_hash_payload,
+        **pooled_provenance,
         "objective": pooled_result.objective,
         "selected_restart": pooled_result.selected_restart,
         "sequence_count": len(pooled_sequences),
         "observation_count": int(sum(map(len, pooled_sequences.values()))),
-        "pooled_parameter_hash": pooled_parameter_hash,
+        "pooled_parameter_vector_hash": pooled_parameter_vector_hash,
         "sequence_definition": "independent (student_id, target_node) trajectories",
         "training_split": "train",
     }
     write_json(pooled_path, pooled_artifact)
+    pooled_parameter_artifact_hash = sha256_file(pooled_path)
 
     parameter_rows = []
     pooled_parameters = pooled_result.parameters
@@ -177,25 +178,45 @@ def train_bkt_teacher(
             source = "pooled_zero_observation_bkt"
             node_sessions = train.iloc[0:0]
             fit = None
+        parameter_values = parameters.to_dict()
         parameter_rows.append(
             {
                 "node_id": node,
-                **parameters.to_dict(),
+                **parameter_values,
+                "parameter_values_hash": hashlib.sha256(
+                    canonical_json_bytes(parameter_values)
+                ).hexdigest(),
                 "parameter_source": source,
                 "train_observations": int(len(node_sessions)),
                 "train_students": int(node_sessions["student_id"].nunique()),
                 "fit": fit,
             }
         )
+    parameter_values_payload = [
+        {
+            "node_id": entry["node_id"],
+            "parameter_source": entry["parameter_source"],
+            "prior": entry["prior"],
+            "learn": entry["learn"],
+            "guess": entry["guess"],
+            "slip": entry["slip"],
+        }
+        for entry in parameter_rows
+    ]
+    parameter_values_hash = hashlib.sha256(
+        canonical_json_bytes(parameter_values_payload)
+    ).hexdigest()
     parameter_artifact = {
         "teacher_parameterization": PARAMETERIZATION,
         "required_nodes": required_nodes,
         "parameters": parameter_rows,
+        "parameter_values_hash": parameter_values_hash,
         "optimizer": optimizer,
-        "pooled_parameter_hash": pooled_parameter_hash,
+        "pooled_parameter_vector_hash": pooled_parameter_vector_hash,
         "input_hashes": input_hashes,
     }
     write_json(parameters_path, parameter_artifact)
+    bkt_parameter_artifact_hash = sha256_file(parameters_path)
 
     backoff_nodes_hash = hashlib.sha256(
         canonical_json_bytes(zero_observation_nodes)
@@ -209,7 +230,10 @@ def train_bkt_teacher(
         "missing_nodes": [],
         "coverage_fraction": 1.0,
         "backoff_rule": "pooled_zero_observation_bkt",
-        "pooled_parameter_hash": pooled_parameter_hash,
+        "parameter_values_hash": parameter_values_hash,
+        "bkt_parameter_artifact_hash": bkt_parameter_artifact_hash,
+        "pooled_parameter_vector_hash": pooled_parameter_vector_hash,
+        "pooled_parameter_artifact_hash": pooled_parameter_artifact_hash,
     }
     write_json(coverage_path, coverage)
 
@@ -227,17 +251,22 @@ def train_bkt_teacher(
         "required_nodes": required_nodes,
         "concept_specific_nodes": observed_required_nodes,
         "pooled_backoff_nodes": zero_observation_nodes,
+        "parameter_values_hash": parameter_values_hash,
+        "pooled_parameter_vector_hash": pooled_parameter_vector_hash,
         "optimizer": optimizer,
         "input_hashes": input_hashes,
         "artifacts": {
             "bkt_parameters": {
                 "path": protocol_path(parameters_path),
-                "sha256": sha256_file(parameters_path),
+                "sha256": bkt_parameter_artifact_hash,
+                "artifact_hash": bkt_parameter_artifact_hash,
+                "parameter_values_hash": parameter_values_hash,
             },
             "pooled_bkt_parameters": {
                 "path": protocol_path(pooled_path),
-                "sha256": sha256_file(pooled_path),
-                "pooled_parameter_hash": pooled_parameter_hash,
+                "sha256": pooled_parameter_artifact_hash,
+                "artifact_hash": pooled_parameter_artifact_hash,
+                "parameter_vector_hash": pooled_parameter_vector_hash,
             },
             "bkt_coverage": {
                 "path": protocol_path(coverage_path),
