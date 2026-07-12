@@ -1,0 +1,170 @@
+{
+  "artifacts": {
+    "concept_sessions": {
+      "columns": [
+        "student_id",
+        "session_index",
+        "source_order",
+        "timestamp",
+        "target_node",
+        "session_score",
+        "correct",
+        "split"
+      ],
+      "dtypes": {
+        "correct": "int64",
+        "session_index": "int64",
+        "session_score": "float64",
+        "source_order": "int64",
+        "split": "object",
+        "student_id": "object",
+        "target_node": "int64",
+        "timestamp": "object"
+      },
+      "format": "parquet",
+      "path": "data/kt_set/concept_sessions.parquet",
+      "rows": 31559,
+      "sha256": "668f16997fb0bd59d16a174188daaec2164412e3b848305d79d4edd75fdbfe07"
+    },
+    "student_split": {
+      "path": "data/kt_set/student_split.json",
+      "sha256": "516885f2bc972e20f14939f63d1db14423b2745d3e1fc4c2914161bd0b92d435"
+    }
+  },
+  "counts": {
+    "mapped_interactions": 70893,
+    "sessions": 31559,
+    "splits": {
+      "test": {
+        "sessions": 3367,
+        "students": 29
+      },
+      "train": {
+        "sessions": 25089,
+        "students": 236
+      },
+      "validation": {
+        "sessions": 3103,
+        "students": 29
+      }
+    },
+    "students": 294
+  },
+  "generation_command": "python experiments/kt/prepare_kt_data.py",
+  "mastery_rule": {
+    "consecutive": 3,
+    "irreversible": true,
+    "observation_source": "canonical training split only",
+    "projection": "zero-observation prerequisite completion",
+    "threshold": 0.8,
+    "training_observed_nodes": [
+      3,
+      4,
+      6,
+      7,
+      8,
+      10,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      23,
+      27,
+      29,
+      33,
+      35,
+      36,
+      38,
+      39,
+      40,
+      41,
+      42,
+      43,
+      44,
+      46,
+      47,
+      52,
+      55,
+      56,
+      57
+    ],
+    "training_observed_nodes_hash": "d2fbd8389ab2901834cc88aa4c11f54807f70808a576b12f65f655939cb76ff0",
+    "zero_observation_nodes": [
+      0,
+      1,
+      2,
+      5,
+      9,
+      11,
+      21,
+      22,
+      24,
+      25,
+      26,
+      28,
+      30,
+      31,
+      32,
+      34,
+      37,
+      45,
+      48,
+      49,
+      50,
+      51,
+      53,
+      54,
+      58,
+      59,
+      60
+    ],
+    "zero_observation_nodes_hash": "47ca6d6d085a531a2ce866021b51c4b1bd95f647190e5c676a5c258b33358992"
+  },
+  "schema_version": 2,
+  "session_algorithm": {
+    "correct_rule": "1 iff session_score >= 0.8",
+    "score": "arithmetic mean of binary interaction correctness",
+    "tie_break": [
+      "timestamp",
+      "source_order"
+    ],
+    "unit": "consecutive same-node interactions per student"
+  },
+  "software": {
+    "numpy": "2.3.5",
+    "pandas": "2.3.3",
+    "pyarrow": "21.0.0",
+    "python": "3.13.9"
+  },
+  "sources": {
+    "adapter_spec": {
+      "path": "documents/kt_set_adapter_spec.md",
+      "sha256": "73e6d3818749e67bd3969675ce1e3d90fc811bef976a7b80f0463495546578a0"
+    },
+    "cleaned_interactions": {
+      "path": "data/processed/cleaned_interactions.csv",
+      "sha256": "38edfe2f45868058e131031648311292c2af857bc15bdc99791f518829f58913"
+    },
+    "dag": {
+      "path": "data/ecs32a_dag_required_full_v1.json",
+      "sha256": "fa9a1a2e466626b985c2870a8500bad0b4b770806a8f95131e0c5be2369e65f0"
+    },
+    "question_concept_mapping": {
+      "path": "data/question_concept_mapping_final.csv",
+      "sha256": "ec647d0d511d0923cf174a9e82287ca3335611ca059aa19de4c4e29812b345a5"
+    }
+  },
+  "split_algorithm": {
+    "rng": "numpy.random.default_rng",
+    "rounding": "floor",
+    "seed": 42,
+    "student_order": "first occurrence after canonical session aggregation",
+    "test_fraction": 0.1,
+    "validation_fraction": 0.1
+  }
+}
