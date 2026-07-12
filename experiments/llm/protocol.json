@@ -1,0 +1,71 @@
+{
+  "base_cost": 60.0,
+  "conditions": {
+    "full": {
+      "additional_fields": [
+        "attempt_count",
+        "success_rate"
+      ],
+      "common_fields": [
+        "anonymized_concepts",
+        "anonymized_prerequisite_edges"
+      ]
+    },
+    "zero": {
+      "additional_fields": [],
+      "common_fields": [
+        "anonymized_concepts",
+        "anonymized_prerequisite_edges"
+      ]
+    }
+  },
+  "cost_semantics": {
+    "empirical_duration": false,
+    "uniform_for_all_concepts": true,
+    "unit": "nominal_seconds_per_attempt"
+  },
+  "excluded_student_fields": [
+    "median_completion_time",
+    "mean_completion_time",
+    "empirical_per_concept_duration",
+    "raw_student_histories"
+  ],
+  "objective": {
+    "id": "expected_uniform_cost_attempts",
+    "shared_by_conditions": [
+      "zero",
+      "full"
+    ],
+    "statement": "minimize model-based expected attempts under uniform per-attempt cost"
+  },
+  "paper_section_3_wording": "In our experiments, we use a uniform per-attempt cost of 60 seconds, so expected cost is proportional to expected attempt count.",
+  "schema_version": 1,
+  "statistics": {
+    "attempt_count": {
+      "definition": "number of canonical training concept sessions targeting the concept",
+      "split": "train",
+      "unit": "canonical_concept_session"
+    },
+    "success_rate": {
+      "correct_if": "session_score >= 0.8",
+      "correctness_threshold": 0.8,
+      "definition": "correct canonical training concept sessions divided by attempt_count",
+      "denominator": "attempt_count",
+      "numerator": "count of canonical training concept sessions with session_score >= 0.8",
+      "render_decimal_places": 4,
+      "split": "train",
+      "unit": "binary_session_success_fraction"
+    },
+    "zero_observation": {
+      "attempt_count": 0,
+      "imputation_allowed": false,
+      "success_rate": null
+    }
+  },
+  "uniform_cost_applies_to": [
+    "all_planners",
+    "public_evaluator",
+    "llm_zero",
+    "llm_full"
+  ]
+}
