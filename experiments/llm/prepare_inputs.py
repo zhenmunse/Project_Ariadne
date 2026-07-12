@@ -20,8 +20,13 @@ RUN_CONFIG_PATH = LLM / "run_config.json"
 
 
 def _source_hashes() -> dict[str, str]:
-    names = ["artifacts.py", "anonymize.py", "statistics.py", "prompts.py", "prepare_inputs.py"]
-    return {name: sha256_file(LLM / name) for name in names}
+    paths = [
+        "artifacts.py", "anonymize.py", "statistics.py", "prompts.py",
+        "parse_output.py", "validate_sequence.py", "prepare_inputs.py",
+        "harness.py", "providers/base.py", "providers/closed_frontier.py",
+        "providers/open_weight.py", "providers/mock.py",
+    ]
+    return {path: sha256_file(LLM / path) for path in paths}
 
 
 def prepare_inputs() -> dict[str, Any]:

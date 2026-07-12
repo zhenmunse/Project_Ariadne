@@ -19,6 +19,8 @@
         "zero": "gpt56_sol_zero"
       },
       "max_output_tokens": 4096,
+      "api_key_env": "OPENAI_API_KEY",
+      "endpoint": null,
       "model_id_status": "must_be_frozen_before_task17",
       "provider": "closed_frontier",
       "reasoning": "highest_stable_native",
@@ -32,6 +34,8 @@
         "zero": "deepseek_v4_zero"
       },
       "max_output_tokens": 4096,
+      "api_key_env": "DEEPSEEK_API_KEY",
+      "endpoint": null,
       "model_id_status": "must_be_frozen_before_task17",
       "provider": "open_weight",
       "reasoning": "highest_stable_native",
@@ -78,6 +82,7 @@
     "transport_retry": {
       "allowed_before_provider_response": true,
       "logical_run_id_preserved": true,
+      "max_attempts": 3,
       "record_every_attempt": true
     }
   },
