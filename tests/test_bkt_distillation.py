@@ -8,6 +8,7 @@ from pathlib import Path
 
 import pandas as pd
 
+from experiments.common.manifest import load_dag
 from experiments.build_bkt_distillation_data import (
     build_prefix_examples,
     group_prefix_examples,
@@ -43,6 +44,7 @@ class BKTDistillationUnitTests(unittest.TestCase):
             required_nodes=[0],
             dag_nodes=[0],
             ancestors=ancestors,
+            training_observed_nodes=frozenset({0}),
         )
         second = build_prefix_examples(
             incorrect,
@@ -51,6 +53,7 @@ class BKTDistillationUnitTests(unittest.TestCase):
             required_nodes=[0],
             dag_nodes=[0],
             ancestors=ancestors,
+            training_observed_nodes=frozenset({0}),
         )
         pd.testing.assert_frame_equal(first, second, check_exact=True)
 
@@ -93,6 +96,10 @@ class BKTDistillationArtifactTests(unittest.TestCase):
             cls.metadata = json.load(file)
         with (ROOT / "data" / "kt_set" / "student_split.json").open(encoding="utf-8") as file:
             cls.split = json.load(file)
+        cls.sessions = pd.read_parquet(ROOT / "data" / "kt_set" / "concept_sessions.parquet")
+        nodes, edges = load_dag(ROOT / "data" / "ecs32a_dag_required_full_v1.json")
+        cls.dag_nodes = nodes
+        cls.ancestors = ancestor_map(nodes, edges)
 
     def test_raw_and_grouped_counts_and_means_are_consistent(self) -> None:
         for raw, grouped in (
@@ -125,7 +132,36 @@ class BKTDistillationArtifactTests(unittest.TestCase):
             ).reset_index(drop=True)
             pd.testing.assert_frame_equal(grouped, ordered_grouped, check_exact=True)
             for state in raw["mastery_state"].drop_duplicates():
-                self.assertIsInstance(json.loads(state), list)
+                decoded = frozenset(json.loads(state))
+                self.assertTrue(
+                    all(self.ancestors[node].issubset(decoded) for node in decoded)
+                )
+
+    def test_completed_state_diversity_and_diagnostics_are_recorded(self) -> None:
+        expected = {
+            "train": (866, 11, 10, 20113),
+            "validation": (155, 7, 6, 2456),
+        }
+        for split_name, values in expected.items():
+            stats = self.metadata["statistics"][split_name]
+            self.assertEqual(stats["raw_mastery_state_count"], values[0])
+            self.assertEqual(stats["completed_state_count"], values[1])
+            self.assertEqual(stats["non_empty_completed_state_count"], values[2])
+            self.assertEqual(stats["states_changed_by_completion"], values[3])
+            self.assertGreater(stats["completed_state_count"], 1)
+            self.assertIn("per_node_completion_frequency", stats)
+
+    def test_zero_observation_nodes_are_derived_from_train_only(self) -> None:
+        observed = set(
+            self.sessions.loc[
+                self.sessions["split"] == "train", "target_node"
+            ].astype(int)
+        )
+        expected_zero = sorted(set(self.dag_nodes) - observed)
+        self.assertEqual(
+            self.metadata["mastery"]["zero_observation_nodes"], expected_zero
+        )
+        self.assertEqual(len(expected_zero), 27)
 
 
 if __name__ == "__main__":

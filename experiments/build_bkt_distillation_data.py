@@ -31,7 +31,8 @@ from experiments.kt.mastery import (
     ConceptSession,
     ancestor_map,
     canonical_mastery_tuple,
-    mastery_state_before_prefix,
+    mastery_completion_before_prefix,
+    zero_observation_prerequisite_completion,
 )
 from experiments.train_bkt_teacher import required_nodes_from_manifest
 from src.oracle_core.bkt_teacher import BKTTeacher
@@ -66,6 +67,7 @@ def build_prefix_examples(
     required_nodes: list[int],
     dag_nodes: list[int],
     ancestors: dict[int, frozenset[int]],
+    training_observed_nodes: frozenset[int],
 ) -> pd.DataFrame:
     """Query every required target before each real session observation."""
     selected = sessions[sessions["split"] == split_name]
@@ -73,7 +75,9 @@ def build_prefix_examples(
         "student_id": [],
         "prefix_index": [],
         "split": [],
+        "raw_mastery_state": [],
         "mastery_state": [],
+        "completed_ancestors": [],
         "mastery_mask": [],
         "target_node": [],
         "teacher_probability": [],
@@ -86,15 +90,22 @@ def build_prefix_examples(
         ]
         student_teacher = teacher.new_student_state()
         for prefix_index, current in enumerate(student_rows.itertuples(index=False)):
-            state = mastery_state_before_prefix(
+            completion = mastery_completion_before_prefix(
                 concept_sessions,
                 prefix_index,
                 ancestors=ancestors,
+                training_observed_nodes=training_observed_nodes,
                 threshold=MASTERY_THRESHOLD,
                 consecutive=MASTERY_CONSECUTIVE,
             )
-            canonical_state = canonical_mastery_tuple(state)
+            raw_state_string = _mastery_string(
+                canonical_mastery_tuple(completion.raw_mastery)
+            )
+            canonical_state = canonical_mastery_tuple(completion.state)
             state_string = _mastery_string(canonical_state)
+            completed_ancestors_string = _mastery_string(
+                canonical_mastery_tuple(completion.completed_ancestors)
+            )
             state_mask = _mastery_mask(canonical_state, dag_nodes)
             probabilities = [student_teacher.query(node) for node in required_nodes]
             if any(not math.isfinite(value) or not 0.0 <= value <= 1.0 for value in probabilities):
@@ -103,7 +114,11 @@ def build_prefix_examples(
             columns["student_id"].extend([str(student_id)] * count)
             columns["prefix_index"].extend([prefix_index] * count)
             columns["split"].extend([split_name] * count)
+            columns["raw_mastery_state"].extend([raw_state_string] * count)
             columns["mastery_state"].extend([state_string] * count)
+            columns["completed_ancestors"].extend(
+                [completed_ancestors_string] * count
+            )
             columns["mastery_mask"].extend([state_mask] * count)
             columns["target_node"].extend(required_nodes)
             columns["teacher_probability"].extend(probabilities)
@@ -141,6 +156,7 @@ def _validate_examples(
     allowed_students: set[str],
     required_nodes: list[int],
     ancestors: dict[int, frozenset[int]],
+    training_observed_nodes: frozenset[int],
 ) -> None:
     if set(examples["split"]) != {split_name}:
         raise ValueError(f"{split_name} examples contain another split")
@@ -152,12 +168,20 @@ def _validate_examples(
         raise ValueError("teacher probabilities must be finite")
     if not examples["teacher_probability"].between(0.0, 1.0, inclusive="both").all():
         raise ValueError("teacher probabilities must be in [0, 1]")
-    for encoded in examples["mastery_state"].drop_duplicates():
-        state = frozenset(json.loads(encoded))
+    prefix_rows = examples.drop_duplicates(["student_id", "prefix_index"])
+    for row in prefix_rows.itertuples(index=False):
+        raw = frozenset(json.loads(row.raw_mastery_state))
+        state = frozenset(json.loads(row.mastery_state))
+        completed = frozenset(json.loads(row.completed_ancestors))
         if any(node not in ancestors for node in state):
             raise ValueError("mastery state contains an unknown node")
         if any(not ancestors[node].issubset(state) for node in state):
             raise ValueError("mastery state is not prerequisite-closed")
+        expected = zero_observation_prerequisite_completion(
+            raw, ancestors, training_observed_nodes
+        )
+        if state != expected.state or completed != expected.completed_ancestors:
+            raise ValueError("mastery state does not match frozen completion rule")
     if int(grouped["count"].sum()) != len(examples):
         raise ValueError("grouped tuple counts do not sum to raw tuple count")
     recomputed = group_prefix_examples(examples)
@@ -170,16 +194,36 @@ def _split_statistics(
     grouped: pd.DataFrame,
     split_name: str,
     required_nodes: list[int],
+    zero_nodes: frozenset[int],
 ) -> dict[str, Any]:
     selected_sessions = sessions[sessions["split"] == split_name]
     raw_per_target = examples.groupby("target_node").size()
     grouped_per_target = grouped.groupby("target_node").size()
+    prefix_rows = examples.drop_duplicates(["student_id", "prefix_index"])
+    raw_states = prefix_rows["raw_mastery_state"]
+    completed_states = prefix_rows["mastery_state"]
+    completed_node_frequency = {node: 0 for node in sorted(zero_nodes)}
+    for encoded in prefix_rows["completed_ancestors"]:
+        for node in json.loads(encoded):
+            completed_node_frequency[int(node)] += 1
     return {
         "students": int(selected_sessions["student_id"].nunique()),
         "prefixes": int(len(selected_sessions)),
         "included_empty_prefixes": int(selected_sessions["student_id"].nunique()),
         "excluded_empty_prefixes": 0,
-        "unique_mastery_states": int(examples["mastery_state"].nunique()),
+        "raw_mastery_state_count": int(raw_states.nunique()),
+        "completed_state_count": int(completed_states.nunique()),
+        "unique_mastery_states": int(completed_states.nunique()),
+        "non_empty_completed_state_count": int(
+            sum(encoded != "[]" for encoded in completed_states.unique())
+        ),
+        "non_empty_completed_prefix_count": int((completed_states != "[]").sum()),
+        "states_changed_by_completion": int(
+            (raw_states.to_numpy() != completed_states.to_numpy()).sum()
+        ),
+        "per_node_completion_frequency": {
+            str(node): count for node, count in completed_node_frequency.items()
+        },
         "raw_tuple_count": len(examples),
         "grouped_tuple_count": len(grouped),
         "required_target_coverage": [
@@ -222,6 +266,10 @@ def build_bkt_distillation_data(
         ROOT / "data" / "ecs32a_dag_required_full_v1.json"
     )
     ancestors = ancestor_map(dag_nodes, dag_edges)
+    training_observed_nodes = frozenset(
+        sessions.loc[sessions["split"] == "train", "target_node"].astype(int)
+    )
+    zero_nodes = frozenset(dag_nodes) - training_observed_nodes
 
     output_dir.mkdir(parents=True, exist_ok=True)
     artifact_paths: dict[str, Path] = {}
@@ -234,6 +282,7 @@ def build_bkt_distillation_data(
             required_nodes=required_nodes,
             dag_nodes=dag_nodes,
             ancestors=ancestors,
+            training_observed_nodes=training_observed_nodes,
         )
         grouped = group_prefix_examples(examples)
         _validate_examples(
@@ -243,6 +292,7 @@ def build_bkt_distillation_data(
             allowed_students=set(split[split_name]),
             required_nodes=required_nodes,
             ancestors=ancestors,
+            training_observed_nodes=training_observed_nodes,
         )
         raw_path = output_dir / f"{split_name}_prefix_examples.parquet"
         grouped_path = output_dir / f"{split_name}_grouped_tuples.parquet"
@@ -251,7 +301,7 @@ def build_bkt_distillation_data(
         artifact_paths[f"{split_name}_prefix_examples"] = raw_path
         artifact_paths[f"{split_name}_grouped_tuples"] = grouped_path
         statistics[split_name] = _split_statistics(
-            sessions, examples, grouped, split_name, required_nodes
+            sessions, examples, grouped, split_name, required_nodes, zero_nodes
         )
 
     metadata_path = output_dir / "distillation_metadata.json"
@@ -277,7 +327,16 @@ def build_bkt_distillation_data(
             "threshold": MASTERY_THRESHOLD,
             "consecutive": MASTERY_CONSECUTIVE,
             "irreversible": True,
-            "projection": "largest prerequisite-closed subset without adding ancestors",
+            "projection": "zero-observation prerequisite completion",
+            "observation_source": "canonical training split only",
+            "training_observed_nodes": sorted(training_observed_nodes),
+            "training_observed_nodes_hash": hashlib.sha256(
+                canonical_json_bytes(sorted(training_observed_nodes))
+            ).hexdigest(),
+            "zero_observation_nodes": sorted(zero_nodes),
+            "zero_observation_nodes_hash": hashlib.sha256(
+                canonical_json_bytes(sorted(zero_nodes))
+            ).hexdigest(),
             "state_encoding": "compact sorted-node JSON plus 61-bit manifest-order mask",
         },
         "prefix_protocol": {

@@ -9,8 +9,9 @@ from experiments.kt.mastery import (
     ancestor_map,
     canonical_mastery_tuple,
     mastery_state_before_prefix,
-    prerequisite_closed_projection,
     raw_mastery_state_before_prefix,
+    zero_observation_nodes,
+    zero_observation_prerequisite_completion,
 )
 
 
@@ -49,23 +50,68 @@ class MasteryCompressionTests(unittest.TestCase):
         self.assertEqual(raw_mastery_state_before_prefix(history, 2), frozenset())
         self.assertEqual(raw_mastery_state_before_prefix(history, 3), frozenset({0}))
 
-    def test_raw_mastered_node_without_ancestor_is_removed(self) -> None:
-        self.assertEqual(
-            prerequisite_closed_projection({1, 2}, self.ancestors),
-            frozenset(),
+    def test_empty_raw_mastery_remains_empty(self) -> None:
+        result = zero_observation_prerequisite_completion(
+            set(), self.ancestors, {2, 3}
+        )
+        self.assertEqual(result.state, frozenset())
+
+    def test_zero_observation_ancestor_chain_is_completed(self) -> None:
+        result = zero_observation_prerequisite_completion(
+            {2}, self.ancestors, {2, 3}
+        )
+        self.assertEqual(result.retained_mastery, frozenset({2}))
+        self.assertEqual(result.completed_ancestors, frozenset({0, 1}))
+        self.assertEqual(result.state, frozenset({0, 1, 2}))
+
+    def test_missing_observed_ancestor_removes_descendant(self) -> None:
+        result = zero_observation_prerequisite_completion(
+            {2}, self.ancestors, {1, 2, 3}
+        )
+        self.assertEqual(result.state, frozenset())
+
+    def test_observed_ancestors_are_retained_and_zero_gap_is_completed(self) -> None:
+        chain = ancestor_map([0, 1, 2, 3], [(0, 1), (1, 2), (2, 3)])
+        result = zero_observation_prerequisite_completion(
+            {0, 2, 3}, chain, {0, 2, 3}
+        )
+        self.assertEqual(result.completed_ancestors, frozenset({1}))
+        self.assertEqual(result.state, frozenset({0, 1, 2, 3}))
+
+    def test_unrelated_zero_observation_node_is_not_added(self) -> None:
+        graph = ancestor_map([0, 1, 2, 3], [(0, 1), (2, 3)])
+        result = zero_observation_prerequisite_completion({1}, graph, {1, 3})
+        self.assertEqual(result.state, frozenset({0, 1}))
+        self.assertNotIn(2, result.state)
+
+    def test_completed_state_is_always_prerequisite_closed(self) -> None:
+        result = zero_observation_prerequisite_completion(
+            {0, 2}, self.ancestors, {0, 2, 3}
+        )
+        self.assertTrue(
+            all(self.ancestors[node].issubset(result.state) for node in result.state)
         )
 
-    def test_raw_mastered_node_with_all_ancestors_is_retained(self) -> None:
-        state = prerequisite_closed_projection({0, 1, 2}, self.ancestors)
-        self.assertEqual(state, frozenset({0, 1, 2}))
-        self.assertTrue(all(self.ancestors[node].issubset(state) for node in state))
+    def test_zero_observation_set_uses_training_nodes_only(self) -> None:
+        nodes = [0, 1, 2, 3]
+        train_observed = {1, 3}
+        validation_observed = {0, 2}
+        first = zero_observation_nodes(nodes, train_observed)
+        second = zero_observation_nodes(nodes, train_observed)
+        self.assertEqual(first, frozenset({0, 2}))
+        self.assertEqual(first, second)
+        self.assertNotEqual(first, zero_observation_nodes(nodes, validation_observed))
 
     def test_same_prefix_has_same_sorted_serialization(self) -> None:
         history = sessions(
             (3, 1.0), (0, 1.0), (3, 1.0), (0, 1.0), (3, 1.0), (0, 1.0)
         )
-        first = mastery_state_before_prefix(history, 6, ancestors=self.ancestors)
-        second = mastery_state_before_prefix(history, 6, ancestors=self.ancestors)
+        first = mastery_state_before_prefix(
+            history, 6, ancestors=self.ancestors, training_observed_nodes={0, 1, 2, 3}
+        )
+        second = mastery_state_before_prefix(
+            history, 6, ancestors=self.ancestors, training_observed_nodes={0, 1, 2, 3}
+        )
         self.assertEqual(canonical_mastery_tuple(first), (0, 3))
         self.assertEqual(canonical_mastery_tuple(first), canonical_mastery_tuple(second))
 

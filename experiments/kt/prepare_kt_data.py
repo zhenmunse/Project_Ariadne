@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import platform
 import sys
@@ -19,7 +20,12 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from experiments.common.manifest import load_dag
-from experiments.kt.artifacts import protocol_path, sha256_file, write_json
+from experiments.kt.artifacts import (
+    canonical_json_bytes,
+    protocol_path,
+    sha256_file,
+    write_json,
+)
 
 
 DEFAULT_INTERACTIONS = ROOT / "data" / "processed" / "cleaned_interactions.csv"
@@ -198,6 +204,17 @@ def prepare_kt_data(
     sessions["split"] = sessions["student_id"].map(student_to_split)
     sessions = sessions[SESSION_COLUMNS]
     validate_sessions(sessions, split, set(dag_nodes))
+    training_observed_nodes = [
+        int(node)
+        for node in sorted(
+            sessions.loc[sessions["split"] == "train", "target_node"]
+            .astype(int)
+            .unique()
+        )
+    ]
+    training_zero_observation_nodes = sorted(
+        set(dag_nodes) - set(training_observed_nodes)
+    )
 
     output_dir.mkdir(parents=True, exist_ok=True)
     split_path = output_dir / "student_split.json"
@@ -214,7 +231,7 @@ def prepare_kt_data(
         for name in ("train", "validation", "test")
     }
     manifest = {
-        "schema_version": 1,
+        "schema_version": 2,
         "generation_command": "python experiments/kt/prepare_kt_data.py",
         "software": {
             "python": platform.python_version(),
@@ -240,7 +257,16 @@ def prepare_kt_data(
             "threshold": 0.8,
             "consecutive": 3,
             "irreversible": True,
-            "projection": "largest prerequisite-closed subset without adding ancestors",
+            "projection": "zero-observation prerequisite completion",
+            "observation_source": "canonical training split only",
+            "training_observed_nodes": training_observed_nodes,
+            "training_observed_nodes_hash": hashlib.sha256(
+                canonical_json_bytes(training_observed_nodes)
+            ).hexdigest(),
+            "zero_observation_nodes": training_zero_observation_nodes,
+            "zero_observation_nodes_hash": hashlib.sha256(
+                canonical_json_bytes(training_zero_observation_nodes)
+            ).hexdigest(),
         },
         "sources": {
             "cleaned_interactions": {

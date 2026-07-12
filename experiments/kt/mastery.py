@@ -90,16 +90,77 @@ def raw_mastery_state_before_prefix(
     return frozenset(mastered)
 
 
-def prerequisite_closed_projection(
+@dataclass(frozen=True)
+class MasteryCompletion:
+    """Auditable components of zero-observation prerequisite completion."""
+
+    raw_mastery: frozenset[int]
+    retained_mastery: frozenset[int]
+    completed_ancestors: frozenset[int]
+    state: frozenset[int]
+
+
+def zero_observation_nodes(
+    nodes: Iterable[int], training_observed_nodes: Iterable[int]
+) -> frozenset[int]:
+    """Return full-DAG nodes with no canonical training observation."""
+    node_set = frozenset(nodes)
+    observed = frozenset(training_observed_nodes)
+    unknown = sorted(observed - node_set)
+    if unknown:
+        raise ValueError(f"training observations contain unknown nodes: {unknown}")
+    return node_set - observed
+
+
+def zero_observation_prerequisite_completion(
     raw_mastered: Iterable[int],
     ancestors: Mapping[int, frozenset[int]],
-) -> frozenset[int]:
-    """Keep only raw-mastered nodes whose complete ancestry is raw-mastered."""
+    training_observed_nodes: Iterable[int],
+) -> MasteryCompletion:
+    """Complete only globally training-unobserved prerequisites."""
     raw = frozenset(raw_mastered)
-    unknown = sorted(raw - set(ancestors))
-    if unknown:
-        raise ValueError(f"raw mastery contains unknown nodes: {unknown}")
-    return frozenset(node for node in raw if ancestors[node].issubset(raw))
+    nodes = frozenset(ancestors)
+    unknown_raw = sorted(raw - nodes)
+    if unknown_raw:
+        raise ValueError(f"raw mastery contains unknown nodes: {unknown_raw}")
+    observed = frozenset(training_observed_nodes)
+    zero_nodes = zero_observation_nodes(nodes, observed)
+    retained = frozenset(
+        node for node in raw if (ancestors[node] & observed).issubset(raw)
+    )
+    completed = frozenset().union(
+        *(ancestors[node] & zero_nodes for node in retained)
+    ) if retained else frozenset()
+    state = retained | completed
+    if any(not ancestors[node].issubset(state) for node in state):
+        raise AssertionError("completed mastery state is not prerequisite-closed")
+    return MasteryCompletion(
+        raw_mastery=raw,
+        retained_mastery=retained,
+        completed_ancestors=completed - retained,
+        state=state,
+    )
+
+
+def mastery_completion_before_prefix(
+    sessions: Sequence[ConceptSession],
+    prefix_end: int,
+    *,
+    ancestors: Mapping[int, frozenset[int]],
+    training_observed_nodes: Iterable[int],
+    threshold: float = 0.8,
+    consecutive: int = 3,
+) -> MasteryCompletion:
+    """Return raw and completed mastery components before one prefix."""
+    raw = raw_mastery_state_before_prefix(
+        sessions,
+        prefix_end,
+        threshold=threshold,
+        consecutive=consecutive,
+    )
+    return zero_observation_prerequisite_completion(
+        raw, ancestors, training_observed_nodes
+    )
 
 
 def mastery_state_before_prefix(
@@ -107,20 +168,20 @@ def mastery_state_before_prefix(
     prefix_end: int,
     *,
     ancestors: Mapping[int, frozenset[int]],
+    training_observed_nodes: Iterable[int],
     threshold: float = 0.8,
     consecutive: int = 3,
 ) -> frozenset[int]:
     """Return the canonical prerequisite-closed state before one prefix."""
-    raw = raw_mastery_state_before_prefix(
+    completion = mastery_completion_before_prefix(
         sessions,
         prefix_end,
+        ancestors=ancestors,
+        training_observed_nodes=training_observed_nodes,
         threshold=threshold,
         consecutive=consecutive,
     )
-    state = prerequisite_closed_projection(raw, ancestors)
-    if any(not ancestors[node].issubset(state) for node in state):
-        raise AssertionError("mastery projection is not prerequisite-closed")
-    return state
+    return completion.state
 
 
 def canonical_mastery_tuple(state: Iterable[int]) -> tuple[int, ...]:
