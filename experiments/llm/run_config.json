@@ -1,0 +1,86 @@
+{
+  "aggregation": {
+    "cost_conditioning": "valid_runs_only",
+    "order": [
+      "within_target_runs",
+      "equal_weight_across_targets"
+    ],
+    "target_weighting": "equal",
+    "validity_denominator": "all_requested_runs"
+  },
+  "conditions": [
+    "zero",
+    "full"
+  ],
+  "models": {
+    "closed_frontier": {
+      "logical_condition_ids": {
+        "full": "gpt56_sol_full",
+        "zero": "gpt56_sol_zero"
+      },
+      "max_output_tokens": 4096,
+      "model_id_status": "must_be_frozen_before_task17",
+      "provider": "closed_frontier",
+      "reasoning": "highest_stable_native",
+      "requested_model_id": null,
+      "temperature": null,
+      "top_p": null
+    },
+    "open_weight": {
+      "logical_condition_ids": {
+        "full": "deepseek_v4_full",
+        "zero": "deepseek_v4_zero"
+      },
+      "max_output_tokens": 4096,
+      "model_id_status": "must_be_frozen_before_task17",
+      "provider": "open_weight",
+      "reasoning": "highest_stable_native",
+      "requested_model_id": null,
+      "temperature": null,
+      "top_p": null
+    }
+  },
+  "parser_policy": {
+    "allowed_normalizations": [
+      "trim_outer_whitespace",
+      "remove_single_outer_markdown_code_fence"
+    ],
+    "exact_root_fields": [
+      "sequence"
+    ],
+    "repair": false
+  },
+  "provider_response_provenance_required": [
+    "requested_model_id",
+    "response_model_id",
+    "provider_request_id",
+    "created_at_utc",
+    "finish_reason",
+    "input_tokens",
+    "output_tokens",
+    "reasoning_tokens",
+    "latency_seconds",
+    "raw_provider_payload"
+  ],
+  "repetitions": 20,
+  "request_policy": {
+    "automatic_retry_after_valid_response": false,
+    "code_execution": false,
+    "conversation_memory": false,
+    "experimental_retry_after_provider_response": false,
+    "fresh_request": true,
+    "previous_response": false,
+    "repair_invalid_output": false,
+    "retrieval": false,
+    "search": false,
+    "single_turn": true,
+    "tools": false,
+    "transport_retry": {
+      "allowed_before_provider_response": true,
+      "logical_run_id_preserved": true,
+      "record_every_attempt": true
+    }
+  },
+  "schema_version": 1,
+  "targets_from_manifest": true
+}
