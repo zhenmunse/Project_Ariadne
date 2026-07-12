@@ -11,7 +11,7 @@ The runner does not train or modify the surrogate. It hard-requires checkpoint
 SHA-256:
 
 ```text
-b00a8184babd0280f979af41d1403c7c0ea0fe4b4bb70c05c71be3fb5ccff920
+d285d7666e658c8f10637deffc986e408e5a15bbb2d3dcff50856cff7250d4f4
 ```
 
 The checkpoint uses the project's custom deterministic tensor format, not the

@@ -23,7 +23,7 @@
   },
   "coverage": {
     "backoff_rule": "pooled_zero_observation_bkt",
-    "bkt_parameter_artifact_hash": "dce0dd620bace0a0fb682de2d2fc2e55baa4f14f1cb1c1038fc1c029a1e866f7",
+    "bkt_parameter_artifact_hash": "3229ac5692fe940ed42cb4e458b4303c41327ae2ba8b5b53a740e70fbf8c586c",
     "concept_specific_nodes": [
       3,
       4,
@@ -59,7 +59,7 @@
       51
     ],
     "pooled_backoff_nodes_hash": "b46031fda3a690ca5956734dd3f8ee1ccebdd5c8328df5b45b24c3e4f1fc033d",
-    "pooled_parameter_artifact_hash": "528f694875cc7a2ca6575fb6509e197fe78dd0d0c31bdd3a4062b9c64cb5ac89",
+    "pooled_parameter_artifact_hash": "07db0f98b6ce62fca0f04c1515b93042b47f1332a5673693fad6fa693a929023",
     "pooled_parameter_vector_hash": "b91780a500397f5fb457aab4707f7d5769dee5a7da373049bae5fae04c2cd503",
     "required_node_count": 27,
     "required_nodes": [
@@ -213,19 +213,19 @@
   "sources": {
     "adapter_spec": {
       "path": "documents/kt_set_adapter_spec.md",
-      "sha256": "73e6d3818749e67bd3969675ce1e3d90fc811bef976a7b80f0463495546578a0"
+      "sha256": "bd8f7f2ff028f635d390c774965a8368ed31c5a970e0f9732292a9ab9a696af2"
     },
     "bkt_coverage": {
       "path": "artifacts/bkt_set/bkt_coverage.json",
-      "sha256": "bbc241a3522bde8ff6bccd1d1cd57a82c9ebed15192274cd25a02af0436342ac"
+      "sha256": "020ac95acca3bfc22f74ab129aca2107e8c60ae724b47289fe72c908ed7e7792"
     },
     "bkt_parameters": {
       "path": "artifacts/bkt_set/bkt_parameters.json",
-      "sha256": "dce0dd620bace0a0fb682de2d2fc2e55baa4f14f1cb1c1038fc1c029a1e866f7"
+      "sha256": "3229ac5692fe940ed42cb4e458b4303c41327ae2ba8b5b53a740e70fbf8c586c"
     },
     "bkt_teacher_metadata": {
       "path": "artifacts/bkt_set/bkt_teacher_metadata.json",
-      "sha256": "c394ed4fb86957ab9722129eabb44838e4368b5a633e12f0c00fe5bc9af32e62"
+      "sha256": "c9f888526a7d9e7592b2b19d498cd6e070f3243e56bd78489caaef136e6d8f41"
     },
     "concept_sessions": {
       "path": "data/kt_set/concept_sessions.parquet",
@@ -233,11 +233,11 @@
     },
     "pooled_bkt_parameters": {
       "path": "artifacts/bkt_set/pooled_bkt_parameters.json",
-      "sha256": "528f694875cc7a2ca6575fb6509e197fe78dd0d0c31bdd3a4062b9c64cb5ac89"
+      "sha256": "07db0f98b6ce62fca0f04c1515b93042b47f1332a5673693fad6fa693a929023"
     },
     "preprocessing_manifest": {
       "path": "data/kt_set/preprocessing_manifest.json",
-      "sha256": "079189145105ef31c05bd32459888bdb8bd825bb015ea5a86c9ccfdb71dfb1c9"
+      "sha256": "84ce454d7a67a1d63c33c28911ef71f8b13ed39b78824965506b4ffaef174ed0"
     },
     "student_split": {
       "path": "data/kt_set/student_split.json",

@@ -1,0 +1,10 @@
+# Hash-sensitive KT/BKT protocol artifacts use canonical LF bytes on every OS.
+data/kt_set/*.json text eol=lf
+artifacts/bkt_set/*.json text eol=lf
+artifacts/bkt_set/*.pt text eol=lf
+results/bkt_set/*.csv text eol=lf
+results/bkt_set_greedy/*.jsonl text eol=lf
+results/bkt_set_greedy/*.csv text eol=lf
+results/bkt_set_lao/*.jsonl text eol=lf
+results/bkt_set_lao/*.csv text eol=lf
+documents/kt_set_adapter_spec.md text eol=lf
