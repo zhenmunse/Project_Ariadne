@@ -1,0 +1,205 @@
+{
+  "artifacts": {
+    "train_grouped_tuples": {
+      "path": "artifacts/dkt_set/train_grouped_tuples.parquet",
+      "rows": 297,
+      "sha256": "875ee697e4ea833cc74f9bde47302e7642061a763f6cad39e7919ddb96efe2eb"
+    },
+    "train_prefix_examples": {
+      "path": "artifacts/dkt_set/train_prefix_examples.parquet",
+      "rows": 677403,
+      "sha256": "7083a51feb139253a9132df97d5565aca64172026f7ec969da4acf3165ee5eb5"
+    },
+    "validation_grouped_tuples": {
+      "path": "artifacts/dkt_set/validation_grouped_tuples.parquet",
+      "rows": 189,
+      "sha256": "fc6842adb4eee3f8a74a784c060265c3291898329f1fd6f2200238031324ff54"
+    },
+    "validation_prefix_examples": {
+      "path": "artifacts/dkt_set/validation_prefix_examples.parquet",
+      "rows": 83781,
+      "sha256": "bff19ba4ec3c92d975e9bc71fadaed61c4bd29b41d3902475b892822a2ee20cc"
+    }
+  },
+  "condition_name": "DKT-derived Set Oracle",
+  "generation_command": "python experiments/build_dkt_distillation_data.py",
+  "manifest_hash": "f03496e703b4e6a04ad46f24c42e55d92bdc88266d92dbd19d77d2892d3c8cad",
+  "mastery": {
+    "compression_config_hash": "cd6528322c5c9f2c36c5b326532b830e3593a8b3ca8b40199bb6afa0c3f44f5a",
+    "consecutive": 3,
+    "irreversible": true,
+    "projection": "zero-observation prerequisite completion",
+    "threshold": 0.8,
+    "training_observed_nodes_hash": "d2fbd8389ab2901834cc88aa4c11f54807f70808a576b12f65f655939cb76ff0",
+    "zero_observation_nodes_hash": "47ca6d6d085a531a2ce866021b51c4b1bd95f647190e5c676a5c258b33358992"
+  },
+  "prefix_protocol": {
+    "current_session_excluded": true,
+    "empty_prefix_included": true,
+    "hidden_state_advanced_after_query": true,
+    "targets_per_prefix": 27
+  },
+  "required_nodes": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    10,
+    11,
+    12,
+    13,
+    15,
+    17,
+    18,
+    29,
+    32,
+    36,
+    37,
+    39,
+    40,
+    41,
+    42,
+    46,
+    51,
+    52
+  ],
+  "schema_version": 1,
+  "software": {
+    "numpy": "2.3.5",
+    "pandas": "2.3.3",
+    "pyarrow": "21.0.0",
+    "python": "3.13.9"
+  },
+  "sources": {
+    "adapter_spec": {
+      "path": "documents/kt_set_adapter_spec.md",
+      "sha256": "bd8f7f2ff028f635d390c774965a8368ed31c5a970e0f9732292a9ab9a696af2"
+    },
+    "concept_sessions": {
+      "path": "data/kt_set/concept_sessions.parquet",
+      "sha256": "668f16997fb0bd59d16a174188daaec2164412e3b848305d79d4edd75fdbfe07"
+    },
+    "dkt_checkpoint": {
+      "path": "artifacts/dkt_set/dkt_checkpoint.pt",
+      "sha256": "0013f9fac2c491c0690a0c1290a7fc1dd19173e932d960aa25a83e81580821df"
+    },
+    "dkt_config": {
+      "path": "artifacts/dkt_set/dkt_config.json",
+      "sha256": "19def376eeb37bde788564910e9f020841833c8a79db2e9ca51e915a2da72ebe"
+    },
+    "dkt_input_metadata": {
+      "path": "artifacts/dkt_set/dkt_input_metadata.json",
+      "sha256": "66b3f3e5830cd3377952cbd03cba16d4eaece05d82ad2b33d0ebec16d79c2b35"
+    },
+    "dkt_teacher_metadata": {
+      "path": "artifacts/dkt_set/dkt_teacher_metadata.json",
+      "sha256": "00bdabda6997974b52719d235676c25ff6e506e8cb9ab796eb7ccd1959958da5"
+    },
+    "dkt_training_metrics": {
+      "path": "artifacts/dkt_set/dkt_training_metrics.json",
+      "sha256": "23a1de0be32112ad9b1627b54c374df497b40d21c95506d922630bb44a837cc6"
+    },
+    "preprocessing_manifest": {
+      "path": "data/kt_set/preprocessing_manifest.json",
+      "sha256": "95e8515e7fe49910c6b2ca5cae28a7726af20d39d0f759db900938ed0c54ac05"
+    },
+    "student_split": {
+      "path": "data/kt_set/student_split.json",
+      "sha256": "516885f2bc972e20f14939f63d1db14423b2745d3e1fc4c2914161bd0b92d435"
+    }
+  },
+  "statistics": {
+    "train": {
+      "completed_state_count": 11,
+      "grouped_tuple_count": 297,
+      "non_empty_completed_state_count": 10,
+      "prefixes": 25089,
+      "raw_mastery_state_count": 866,
+      "raw_tuple_count": 677403,
+      "required_target_coverage": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        10,
+        11,
+        12,
+        13,
+        15,
+        17,
+        18,
+        29,
+        32,
+        36,
+        37,
+        39,
+        40,
+        41,
+        42,
+        46,
+        51,
+        52
+      ],
+      "states_changed_by_completion": 20113,
+      "students": 236,
+      "targets_per_prefix": 27,
+      "teacher_probability_max": 0.9895406365394592,
+      "teacher_probability_min": 0.0525377057492733
+    },
+    "validation": {
+      "completed_state_count": 7,
+      "grouped_tuple_count": 189,
+      "non_empty_completed_state_count": 6,
+      "prefixes": 3103,
+      "raw_mastery_state_count": 155,
+      "raw_tuple_count": 83781,
+      "required_target_coverage": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        10,
+        11,
+        12,
+        13,
+        15,
+        17,
+        18,
+        29,
+        32,
+        36,
+        37,
+        39,
+        40,
+        41,
+        42,
+        46,
+        51,
+        52
+      ],
+      "states_changed_by_completion": 2456,
+      "students": 29,
+      "targets_per_prefix": 27,
+      "teacher_probability_max": 0.9889017343521118,
+      "teacher_probability_min": 0.08274596929550171
+    }
+  },
+  "teacher": "DKT",
+  "test_students_used": 0,
+  "tuple_collection_hash": "7e03a1c022f9164fd2c5377ce30b6383e5bdab70c1f2767716a3ac45f2a939c8"
+}
