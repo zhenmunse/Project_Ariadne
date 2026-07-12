@@ -110,17 +110,79 @@ observed session scores are all at least `0.8`. Mastery is irreversible: once a
 concept enters the raw mastery set, later evidence cannot remove it. This is
 required because the SSP state is monotone.
 
-Raw observations can violate the prerequisite DAG. They are therefore mapped
-to the largest prerequisite-closed subset without inventing mastery:
+Raw observations can violate the prerequisite DAG. They are mapped to a legal
+planner state using the frozen zero-observation prerequisite completion rule
+below. The same rule is shared by the BKT-derived and DKT-derived adapters.
+
+### Zero-observation prerequisite completion
+
+Let `O` be the set of DAG nodes with at least one canonical **training** concept
+session, and let `Z = V - O`. Validation and test sessions must not affect `O`
+or `Z`. For a historical prefix `h`, let `M(h)` be the irreversible raw mastery
+set produced by the three-consecutive-session rule above.
+
+First retain evidence-supported mastered nodes whose observable ancestors have
+also independently reached raw mastery:
 
 ```text
-s = {v in raw_mastered : every ancestor of v is in raw_mastered}
+R(h) = {
+    v in M(h) : ancestors(v) intersect O is a subset of M(h)
+}
 ```
 
-The adapter must not repair a state by adding unobserved ancestors. The final
-`s` is serialized as a sorted tuple of canonical integer node IDs and encoded
-for the surrogate as a 61-dimensional binary mastery mask in manifest node
-order.
+Then add only the globally zero-training-observation ancestors required by
+those retained descendants:
+
+```text
+s(h) = R(h) union (ancestors(R(h)) intersect Z)
+```
+
+Here `ancestors(R)` is the union of the full-DAG transitive ancestor sets of all
+nodes in `R`. The result must be checked as a full-DAG order ideal:
+
+```text
+for every v in s(h): ancestors(v) is a subset of s(h)
+```
+
+The rule has these frozen consequences:
+
+- empty raw mastery maps to the empty state;
+- only nodes in `Z` may be structurally completed;
+- a node in `O` is never added unless it independently satisfies raw mastery;
+- an evidence-supported descendant is removed whenever any observed ancestor
+  has not reached raw mastery;
+- zero-observation nodes are not mastered at the empty prefix and enter a state
+  only when required by a retained evidence-supported descendant;
+- unrelated zero-observation nodes are never added.
+
+The adapter may add only globally zero-training-observation ancestors required
+by evidence-supported mastered descendants. It must never add an ancestor that
+has canonical training observations but has not independently satisfied the
+mastery rule.
+
+For the frozen canonical training split, the full-DAG observed set contains 34
+nodes and `Z` contains these 27 nodes:
+
+```text
+[0, 1, 2, 5, 9, 11, 21, 22, 24, 25, 26, 28, 30, 31, 32, 34, 37,
+ 45, 48, 49, 50, 51, 53, 54, 58, 59, 60]
+```
+
+The SHA-256 of its canonical compact JSON list is:
+
+```text
+47ca6d6d085a531a2ce866021b51c4b1bd95f647190e5c676a5c258b33358992
+```
+
+The eight required planning nodes `[0, 1, 2, 5, 11, 32, 37, 51]` are the
+intersection of this full-DAG `Z` with the union of the ten manifest closures;
+they remain the distinct BKT pooled-parameter backoff subset. State completion
+and BKT parameter backoff use related evidence audits but are not the same
+operation.
+
+The final `s` is serialized as a sorted tuple of canonical integer node IDs and
+encoded for the surrogate as a 61-dimensional binary mastery mask in manifest
+node order.
 
 ## Teacher-probability extraction
 
@@ -308,7 +370,22 @@ teacher-versus-surrogate MSE computed against the ungrouped examples.
 
 The distilled dataset artifact must store counts and hashes for its raw source,
 mapping, split membership, teacher, DAG, compression configuration, and tuple
-table.
+table. Its metadata must additionally store:
+
+```text
+zero_observation_nodes
+zero_observation_nodes_hash
+raw_mastery_state_count
+completed_state_count
+states_changed_by_completion
+per_node_completion_frequency
+```
+
+`zero_observation_nodes` is the full-DAG training-derived `Z`, not merely the
+eight required BKT pooled-backoff nodes. `states_changed_by_completion` counts
+prefixes for which `s(h)` differs from raw mastery `M(h)`. Completion frequency
+counts how often each node in `Z` is structurally added across prefixes. These
+statistics are reported separately for train and validation.
 
 ## Shared surrogate
 
@@ -394,7 +471,10 @@ identify at least:
 - DAG hash and evaluator hash;
 - cleaned-interaction and question-to-concept mapping hashes;
 - canonical split artifact hash;
-- compression rule (`threshold=0.8`, `n_consecutive=3`) and its config hash;
+- compression rule (`threshold=0.8`, `n_consecutive=3`), the
+  zero-observation prerequisite-completion rule, and their config hashes;
+- full-DAG observed and zero-observation node lists, their hashes, and the
+  training-only source used to derive them;
 - teacher type, checkpoint/parameter hash, configuration, and index mapping;
 - distilled tuple-table hash;
 - surrogate architecture/configuration and checkpoint hash;
@@ -421,6 +501,21 @@ other node can enter the backoff list. It must also prove independent
 `(student,node)` posteriors, cross-node update isolation, legal probabilities
 for all eight pooled nodes, 27/27 coverage, and byte-stable pooled artifacts
 across repeated runs.
+
+The shared state-compression regression suite, reused by BKT and DKT, must also
+prove:
+
+1. empty raw mastery produces the empty state;
+2. a mastered descendant whose complete ancestor chain is in `Z` causes that
+   chain, and only that chain, to be completed;
+3. a descendant is removed if any ancestor in `O` has not reached raw mastery;
+4. when all observed ancestors have reached raw mastery, they are retained and
+   any intervening ancestors in `Z` are completed;
+5. unrelated nodes in `Z` are never added;
+6. every output is prerequisite-closed in the full DAG;
+7. `Z` is computed from training sessions only and cannot change when
+   validation/test sessions are modified; and
+8. repeated state-table construction is byte-identical.
 
 Sequence metadata uses the exact public condition names
 `BKT-derived Set Oracle` and `DKT-derived Set Oracle` in addition to the shared
