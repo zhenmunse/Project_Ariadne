@@ -1,50 +1,173 @@
-"""Run the ECS32A FrequencyOracle + LAO* baseline."""
+"""Run FrequencyOracle + LAO* as a state-independent negative control."""
 
-import json
+from __future__ import annotations
+
 import pickle
 import sys
-import time
 from pathlib import Path
 
 import networkx as nx
 import numpy as np
 import pandas as pd
-import torch
-import yaml
 
 
 ROOT = Path(__file__).resolve().parents[1]
 PROCESSED = ROOT / "data" / "processed"
 OUTPUT = ROOT / "results" / "frequency_lao"
+SEQUENCES_PATH = OUTPUT / "sequences.jsonl"
+METRICS_PATH = OUTPUT / "oracle_valid_metrics.csv"
+GREEDY_SEQUENCES_PATH = ROOT / "results" / "frequency_greedy" / "sequences.jsonl"
+INTERNAL_COST_TOLERANCE = 1e-9
 sys.path.insert(0, str(ROOT))
 
+from experiments.common.manifest import load_manifest, manifest_hash, sha256_file
+from experiments.common.schema import Method, SequenceRecord, read_jsonl, write_jsonl
 from src.planner_engine.baselines import FrequencyOracle
 from src.planner_engine.solver import DAGPlanner
 
 
 def auc_score(labels: np.ndarray, probabilities: np.ndarray) -> float:
     ranks = pd.Series(probabilities).rank(method="average").to_numpy()
-    positives = labels == 1.0
-    n_positive = positives.sum()
+    positive = labels == 1
+    n_positive = int(positive.sum())
     n_negative = len(labels) - n_positive
+    if not n_positive or not n_negative:
+        raise ValueError("AUC requires both binary classes")
     return float(
-        (ranks[positives].sum() - n_positive * (n_positive + 1) / 2)
+        (ranks[positive].sum() - n_positive * (n_positive + 1) / 2)
         / (n_positive * n_negative)
     )
 
 
-def is_valid_path(graph: nx.DiGraph, path: list[int]) -> bool:
-    mastered: set[int] = set()
-    for node in path:
-        if node in mastered or not set(graph.predecessors(node)) <= mastered:
-            return False
-        mastered.add(node)
-    return True
+def frequency_metrics(
+    oracle: FrequencyOracle,
+    valid_samples: list,
+    manifest: dict,
+) -> dict:
+    labels = np.asarray([label for _, _, label in valid_samples], dtype=float)
+    probabilities = np.asarray(
+        [oracle.success_prob(target, frozenset()) for _, target, _ in valid_samples],
+        dtype=float,
+    )
+    binary = np.isin(labels, [0.0, 1.0])
+    binary_labels = labels[binary]
+    binary_probabilities = probabilities[binary]
+    squared_error = (labels - probabilities) ** 2
+    return {
+        "samples": len(labels),
+        "binary_samples": int(binary.sum()),
+        "mse": float(np.mean(squared_error)),
+        "rmse": float(np.sqrt(np.mean(squared_error))),
+        "mae": float(np.mean(np.abs(labels - probabilities))),
+        "auc": auc_score(binary_labels, binary_probabilities),
+        "accuracy": float(
+            np.mean((binary_probabilities >= 0.5) == (binary_labels == 1.0))
+        ),
+        "probability_source": "frequency_train_session_mean",
+        "oracle_state_dependence": False,
+        "global_mean": oracle.global_mean,
+        "manifest_hash": manifest_hash(manifest),
+        "dag_hash": manifest["artifact_hashes"]["dag"],
+        "train_validation_split_hash": manifest["artifact_hashes"][
+            "train_validation_split"
+        ]["combined_hash"],
+        "train_artifact_hash": sha256_file(PROCESSED / "train_sessions.pkl"),
+        "validation_artifact_hash": sha256_file(PROCESSED / "valid_sessions.pkl"),
+        "evaluator_hash": sha256_file(
+            ROOT / "experiments" / "common" / "evaluator.py"
+        ),
+    }
+
+
+def _closure_graph(closure: dict) -> nx.DiGraph:
+    graph = nx.DiGraph()
+    graph.add_nodes_from(closure["nodes"])
+    graph.add_edges_from(tuple(edge) for edge in closure["edges"])
+    return graph
+
+
+def generate_records(
+    manifest: dict,
+    oracle: FrequencyOracle,
+    greedy_internal_costs: dict[int, float],
+) -> list[SequenceRecord]:
+    protocol_hash = manifest_hash(manifest)
+    evaluator_hash = sha256_file(ROOT / "experiments" / "common" / "evaluator.py")
+    train_hash = sha256_file(PROCESSED / "train_sessions.pkl")
+    initial_state = set(manifest["initial_state"])
+    initial_frozen = frozenset(initial_state)
+    config = {
+        "planner": {"base_cost": manifest["base_cost"], "heuristic": "sum"}
+    }
+    records = []
+    for closure in manifest["closures"]:
+        target = closure["target_node"]
+        goal = set(closure["nodes"])
+        planner = DAGPlanner(
+            oracle=oracle,
+            nx_graph=_closure_graph(closure),
+            config=config,
+            edge_index=None,
+            num_nodes=oracle.num_nodes,
+        )
+        result = planner.solve_result(set(initial_state), goal)
+        sequence = DAGPlanner._extract_path(
+            initial_frozen, frozenset(goal), result.policy
+        )
+        internal_cost = float(result.values[initial_frozen])
+        greedy_cost = greedy_internal_costs[target]
+        internal_gap = abs(internal_cost - greedy_cost)
+        if not result.converged:
+            raise AssertionError(f"Frequency LAO* did not converge for target {target}")
+        if internal_gap >= INTERNAL_COST_TOLERANCE:
+            raise AssertionError(
+                f"State-independent internal costs differ for target {target}: "
+                f"LAO*={internal_cost}, Greedy={greedy_cost}, gap={internal_gap}"
+            )
+        if set(sequence) != set(closure["sequence_nodes"]):
+            raise AssertionError(f"Frequency LAO* does not cover target {target}")
+
+        records.append(
+            SequenceRecord(
+                method=Method.FREQUENCY_LAO,
+                target_node=target,
+                run_id=0,
+                sequence=sequence,
+                internal_cost=internal_cost,
+                metadata={
+                    "closure_hash": closure["closure_hash"],
+                    "manifest_hash": protocol_hash,
+                    "evaluator_hash": evaluator_hash,
+                    "frequency_train_artifact_hash": train_hash,
+                    "frequency_global_mean": oracle.global_mean,
+                    "oracle_state_dependence": False,
+                    "negative_control": True,
+                    "greedy_internal_cost": greedy_cost,
+                    "greedy_lao_internal_gap": internal_gap,
+                    "expanded_states": result.expanded_count,
+                    "iterations": result.iterations,
+                    "converged": result.converged,
+                },
+            )
+        )
+    return records
+
+
+def _deterministic_signature(records: list[SequenceRecord]) -> list[tuple]:
+    return [
+        (
+            record.target_node,
+            record.sequence,
+            record.internal_cost,
+            record.metadata["expanded_states"],
+            record.metadata["iterations"],
+        )
+        for record in records
+    ]
 
 
 def main() -> None:
-    with (ROOT / "configs" / "config.yaml").open() as file:
-        config = yaml.safe_load(file)
+    manifest = load_manifest()
     with (PROCESSED / "graph.pkl").open("rb") as file:
         graph = pickle.load(file)
     with (PROCESSED / "train_sessions.pkl").open("rb") as file:
@@ -52,83 +175,41 @@ def main() -> None:
     with (PROCESSED / "valid_sessions.pkl").open("rb") as file:
         valid_samples = pickle.load(file)
 
-    dag: nx.DiGraph = graph["nx_dag"]
-    num_nodes = len(graph["node_ids"])
-    oracle = FrequencyOracle(train_samples, num_nodes, graph["node_id_to_idx"])
+    greedy_records = read_jsonl(GREEDY_SEQUENCES_PATH)
+    greedy_internal_costs = {
+        record.target_node: record.internal_cost for record in greedy_records
+    }
+    if set(greedy_internal_costs) != set(manifest["targets"]) or any(
+        cost is None for cost in greedy_internal_costs.values()
+    ):
+        raise ValueError("Frequency Greedy records do not match the shared manifest")
 
-    labels = np.array([label for _, _, label in valid_samples])
-    probabilities = np.array(
-        [oracle.success_prob(target, frozenset()) for _, target, _ in valid_samples]
+    first_oracle = FrequencyOracle(
+        train_samples,
+        len(graph["node_ids"]),
+        graph["node_id_to_idx"],
+        t_base=manifest["base_cost"],
     )
-    binary = np.isin(labels, [0.0, 1.0])
-    binary_labels = labels[binary]
-    binary_probabilities = probabilities[binary]
-    oracle_metrics = {
-        "samples": len(labels),
-        "binary_samples": int(binary.sum()),
-        "mse": float(np.mean((labels - probabilities) ** 2)),
-        "rmse": float(np.sqrt(np.mean((labels - probabilities) ** 2))),
-        "mae": float(np.mean(np.abs(labels - probabilities))),
-        "auc": auc_score(binary_labels, binary_probabilities),
-        "accuracy": float(np.mean((binary_probabilities >= 0.5) == (binary_labels == 1.0))),
-    }
+    second_oracle = FrequencyOracle(
+        train_samples,
+        len(graph["node_ids"]),
+        graph["node_id_to_idx"],
+        t_base=manifest["base_cost"],
+    )
+    first = generate_records(manifest, first_oracle, greedy_internal_costs)
+    second = generate_records(manifest, second_oracle, greedy_internal_costs)
+    if _deterministic_signature(first) != _deterministic_signature(second):
+        raise AssertionError("Independent Frequency LAO* runs were not deterministic")
 
-    observed_nodes = {target for _, target, _ in train_samples}
-    targets = sorted(node for node in observed_nodes if dag.in_degree(node) > 0)
-    rng = np.random.default_rng(config["seed"])
-    target_count = min(config["experiments"]["num_targets"], len(targets))
-    targets = sorted(rng.choice(targets, size=target_count, replace=False).tolist())
-    planner_config = {"planner": config["planner"], "oracle": config["oracle"]}
-    edge_index = torch.tensor(graph["edge_index"], dtype=torch.long)
-
-    trajectories = []
-    for target in targets:
-        closure = nx.ancestors(dag, target) | {target}
-        closure_graph = dag.subgraph(closure).copy()
-        planner = DAGPlanner(
-            oracle, closure_graph, planner_config, edge_index, num_nodes
-        )
-        started = time.perf_counter()
-        result = planner.solve_result(set(), closure)
-        start = frozenset()
-        path = DAGPlanner._extract_path(start, frozenset(closure), result.policy)
-        cost = result.values[start]
-        elapsed = time.perf_counter() - started
-        valid = is_valid_path(closure_graph, path)
-        assert result.converged and path and path[-1] == target and valid, (target, path)
-        trajectories.append({
-            "target_node": target,
-            "expected_total_cost": cost,
-            "path_length": len(path),
-            "required_nodes": len(closure),
-            "off_target_actions": len(set(path) - closure),
-            "expanded_states": result.expanded_count,
-            "iterations": result.iterations,
-            "planning_seconds": elapsed,
-            "converged": result.converged,
-            "path_is_valid": valid,
-            "path": json.dumps(path),
-        })
-
+    metrics = frequency_metrics(first_oracle, valid_samples, manifest)
     OUTPUT.mkdir(parents=True, exist_ok=True)
-    pd.DataFrame([oracle_metrics]).to_csv(OUTPUT / "oracle_valid_metrics.csv", index=False)
-    pd.DataFrame(trajectories).to_csv(OUTPUT / "planner_trajectories.csv", index=False)
-    summary = {
-        "condition": "FrequencyOracle + LAO*",
-        "targets": targets,
-        "mean_expected_total_cost": float(np.mean([row["expected_total_cost"] for row in trajectories])),
-        "mean_path_length": float(np.mean([row["path_length"] for row in trajectories])),
-        "mean_off_target_actions": float(np.mean([row["off_target_actions"] for row in trajectories])),
-        "total_planning_seconds": float(sum(row["planning_seconds"] for row in trajectories)),
-        "all_paths_valid": all(row["path_is_valid"] for row in trajectories),
-        "all_converged": all(row["converged"] for row in trajectories),
-        "planner_heuristic": config["planner"]["heuristic"],
-    }
-    (OUTPUT / "summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
-
-    print(pd.DataFrame([oracle_metrics]).to_string(index=False))
-    print(pd.DataFrame(trajectories).drop(columns="path").to_string(index=False))
-    print(json.dumps(summary, indent=2))
+    write_jsonl(SEQUENCES_PATH, first)
+    pd.DataFrame([metrics]).to_csv(METRICS_PATH, index=False)
+    print(pd.DataFrame([metrics]).to_string(index=False))
+    print(f"records={len(first)}")
+    print(f"max_greedy_lao_internal_gap={max(r.metadata['greedy_lao_internal_gap'] for r in first)}")
+    print(f"sequences={SEQUENCES_PATH}")
+    print(f"metrics={METRICS_PATH}")
 
 
 if __name__ == "__main__":
