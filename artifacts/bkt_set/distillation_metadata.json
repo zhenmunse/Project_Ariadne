@@ -57,7 +57,7 @@
       51
     ],
     "pooled_backoff_nodes_hash": "b46031fda3a690ca5956734dd3f8ee1ccebdd5c8328df5b45b24c3e4f1fc033d",
-    "pooled_parameter_hash": "3ff31328688fb2eff77e5e1f96d15110e3a7954dbbf86f96f8a0d8dcd26d6811",
+    "pooled_parameter_hash": "efe2e416dfa9562f6535267c10a79f6eee34e30df528f6416831773736fc0455",
     "required_node_count": 27,
     "required_nodes": [
       0,
@@ -142,19 +142,19 @@
   "sources": {
     "adapter_spec": {
       "path": "documents/kt_set_adapter_spec.md",
-      "sha256": "cbfb383717739cf83a3279cd039ee9432ca22a28b9aa2546f6238871ccb05c45"
+      "sha256": "33df723229d8d30c499bbcbb987f680172d1e7a226abbd262c2784ceb6870d7a"
     },
     "bkt_coverage": {
       "path": "artifacts/bkt_set/bkt_coverage.json",
-      "sha256": "b80b6e5e78cf677ee7b7e005897b23a49994a032de5b829c2c4c7bec8163632e"
+      "sha256": "5fd8cee1dfd290f8810cd984deb3bd5cd1d89e4482a187f4b2a5ae12a29083c0"
     },
     "bkt_parameters": {
       "path": "artifacts/bkt_set/bkt_parameters.json",
-      "sha256": "2cdded68aca00d618fc122176dc384809a77173a01968d8432102f65ac851caa"
+      "sha256": "7a63da02727db64185dd04d71e20325ba427c7b0cdcee05e1aa0daea24f607ed"
     },
     "bkt_teacher_metadata": {
       "path": "artifacts/bkt_set/bkt_teacher_metadata.json",
-      "sha256": "f22ac802840e32a5a78e87ce5b326c9fa4f1115cd425a0483af89fd16d079e31"
+      "sha256": "5a051ee957a75f93add507d44c239e7197d3e55cf68b5dc2ae5f890d148fbfdb"
     },
     "concept_sessions": {
       "path": "data/kt_set/concept_sessions.parquet",
@@ -162,11 +162,11 @@
     },
     "pooled_bkt_parameters": {
       "path": "artifacts/bkt_set/pooled_bkt_parameters.json",
-      "sha256": "5b39a12380578cb47957dbf61f98e79a76d03bd36dfac48efe7baa597d1711da"
+      "sha256": "1a749645253069891f33e3b0a9b0bd1f0a431092be8312d86d5f6d089507ffdf"
     },
     "preprocessing_manifest": {
       "path": "data/kt_set/preprocessing_manifest.json",
-      "sha256": "9c4191ded4f036b00eef0dcbcdc47b05c32593bb02f4205976aad011fc50161c"
+      "sha256": "8e0189ac4814d63b617ba03210ec6279c29e84b40be9d35f272187656c2a32f5"
     },
     "student_split": {
       "path": "data/kt_set/student_split.json",
