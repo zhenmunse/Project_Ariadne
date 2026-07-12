@@ -1,184 +1,197 @@
-"""Run the ECS32A BKT + Greedy baseline."""
+"""Run BKT-derived Set Oracle + Greedy under the shared protocol."""
 
+from __future__ import annotations
+
+import csv
 import json
-import pickle
+import struct
 import sys
-import time
 from pathlib import Path
 
 import networkx as nx
-import numpy as np
-import pandas as pd
-import torch
-import yaml
 
 
 ROOT = Path(__file__).resolve().parents[1]
-PROCESSED = ROOT / "data" / "processed"
-PARAMETERS = ROOT / "data" / "baselines" / "pybkt" / "concept_parameters.csv"
-OUTPUT = ROOT / "results" / "bkt_greedy"
+ARTIFACTS = ROOT / "artifacts" / "bkt_set"
+OUTPUT = ROOT / "results" / "bkt_set_greedy"
+SEQUENCES_PATH = OUTPUT / "sequences.jsonl"
+SCORED_PATH = OUTPUT / "scored_sequences.csv"
+CONFIG_PATH = ARTIFACTS / "surrogate_config.json"
+CHECKPOINT_PATH = ARTIFACTS / "surrogate_checkpoint.pt"
+METRICS_PATH = ARTIFACTS / "surrogate_metrics.json"
+EXPECTED_SURROGATE_CHECKPOINT_HASH = (
+    "b00a8184babd0280f979af41d1403c7c0ea0fe4b4bb70c05c71be3fb5ccff920"
+)
 sys.path.insert(0, str(ROOT))
 
+from experiments.common.evaluator import SequenceEvaluator
+from experiments.common.manifest import load_manifest, manifest_hash, sha256_file
+from experiments.common.schema import Method, SequenceRecord, write_jsonl
+from src.oracle_core.bkt_set_oracle import BKTSetOracle
 from src.planner_engine.baselines import GreedyPlanner
 
 
-class BKTOracle:
-    """Planner adapter using BKT's expected attempts until first success."""
-
-    def __init__(self, parameters: pd.DataFrame, fallback: float) -> None:
-        self.parameters = {
-            int(row.concept_id): (
-                float(row.p_init),
-                float(row.p_learn),
-                float(row.p_guess),
-                float(row.p_slip),
-            )
-            for row in parameters.itertuples()
-        }
-        self.fallback = (float(fallback), 0.1, 0.5, 0.1)
-
-    def _parameters(self, node: int) -> tuple[float, float, float, float]:
-        return self.parameters.get(node, self.fallback)
-
-    def success_prob(self, node: int, mastered: frozenset[int]) -> float:
-        p_init, _p_learn, p_guess, p_slip = self._parameters(node)
-        return p_init * (1.0 - p_slip) + (1.0 - p_init) * p_guess
-
-    def action_cost(self, node: int, mastered: frozenset[int]) -> float:
-        p_init, p_learn, p_guess, p_slip = self._parameters(node)
-        belief = p_init
-        survival = 1.0
-        expected_attempts = 0.0
-
-        for _ in range(100_000):
-            expected_attempts += survival
-            p_correct = belief * (1.0 - p_slip) + (1.0 - belief) * p_guess
-            incorrect = 1.0 - p_correct
-            survival *= incorrect
-            if survival < 1e-12:
-                return 60.0 * expected_attempts
-
-            posterior_known = belief * p_slip / max(incorrect, 1e-12)
-            belief = posterior_known + (1.0 - posterior_known) * p_learn
-
-        raise ValueError(f"BKT expected-attempt calculation did not converge for node {node}")
-
-    def base_cost(self, node: int) -> float:
-        return 60.0
+def _closure_graph(closure: dict) -> nx.DiGraph:
+    graph = nx.DiGraph()
+    graph.add_nodes_from(closure["nodes"])
+    graph.add_edges_from(tuple(edge) for edge in closure["edges"])
+    return graph
 
 
-def auc_score(labels: np.ndarray, probabilities: np.ndarray) -> float:
-    ranks = pd.Series(probabilities).rank(method="average").to_numpy()
-    positives = labels == 1.0
-    n_positive = positives.sum()
-    n_negative = len(labels) - n_positive
-    return float(
-        (ranks[positives].sum() - n_positive * (n_positive + 1) / 2)
-        / (n_positive * n_negative)
+def load_frozen_oracle() -> tuple[BKTSetOracle, dict]:
+    """Load, never train, the exact checkpoint approved in Commit 12-3."""
+    actual_hash = sha256_file(CHECKPOINT_PATH)
+    if actual_hash != EXPECTED_SURROGATE_CHECKPOINT_HASH:
+        raise ValueError(
+            "BKT-set Greedy requires the approved surrogate checkpoint; "
+            f"expected {EXPECTED_SURROGATE_CHECKPOINT_HASH}, found {actual_hash}"
+        )
+    with CONFIG_PATH.open("r", encoding="utf-8") as file:
+        config = json.load(file)
+    with METRICS_PATH.open("r", encoding="utf-8") as file:
+        metrics = json.load(file)
+    if not metrics.get("go"):
+        raise ValueError("BKT-derived Set Oracle did not pass its go/no-go gate")
+    oracle = BKTSetOracle.from_artifacts(
+        config_path=CONFIG_PATH,
+        checkpoint_path=CHECKPOINT_PATH,
+        device="cpu",
     )
+    if oracle.checkpoint_hash != EXPECTED_SURROGATE_CHECKPOINT_HASH:
+        raise AssertionError("Loaded Oracle checkpoint identity changed")
+    return oracle, config
 
 
-def is_valid_path(graph: nx.DiGraph, path: list[int]) -> bool:
-    mastered: set[int] = set()
-    for node in path:
-        if node in mastered or not set(graph.predecessors(node)) <= mastered:
-            return False
-        mastered.add(node)
-    return True
+def generate_records(
+    manifest: dict,
+    oracle: BKTSetOracle,
+    surrogate_config: dict,
+) -> list[SequenceRecord]:
+    protocol_hash = manifest_hash(manifest)
+    evaluator_hash = sha256_file(ROOT / "experiments" / "common" / "evaluator.py")
+    initial_state = set(manifest["initial_state"])
+    planner_config = {"planner": {"base_cost": manifest["base_cost"]}}
+    records = []
+    for closure in manifest["closures"]:
+        planner = GreedyPlanner(
+            oracle=oracle,
+            nx_graph=_closure_graph(closure),
+            config=planner_config,
+            edge_index=None,
+            num_nodes=len(oracle.node_order),
+        )
+        internal_cost, sequence = planner.solve(
+            set(initial_state), set(closure["nodes"])
+        )
+        if set(sequence) != set(closure["sequence_nodes"]):
+            raise AssertionError(
+                f"BKT-set Greedy did not cover target {closure['target_node']} closure"
+            )
+        if not sequence or sequence[-1] != closure["target_node"]:
+            raise AssertionError("BKT-set Greedy target must be the final action")
+        records.append(
+            SequenceRecord(
+                method=Method.BKT_SET_GREEDY,
+                target_node=closure["target_node"],
+                run_id=0,
+                sequence=sequence,
+                internal_cost=internal_cost,
+                metadata={
+                    "condition_name": "BKT-derived Set Oracle",
+                    "closure_hash": closure["closure_hash"],
+                    "manifest_hash": protocol_hash,
+                    "evaluator_hash": evaluator_hash,
+                    "split_hash": surrogate_config["split_hash"],
+                    "compression_config_hash": surrogate_config[
+                        "compression_config_hash"
+                    ],
+                    "parameter_values_hash": surrogate_config[
+                        "parameter_values_hash"
+                    ],
+                    "bkt_parameter_artifact_hash": surrogate_config[
+                        "bkt_parameter_artifact_hash"
+                    ],
+                    "pooled_parameter_vector_hash": surrogate_config[
+                        "pooled_parameter_vector_hash"
+                    ],
+                    "pooled_parameter_artifact_hash": surrogate_config[
+                        "pooled_parameter_artifact_hash"
+                    ],
+                    "pooled_backoff_nodes_hash": surrogate_config[
+                        "pooled_backoff_nodes_hash"
+                    ],
+                    "distillation_table_hash": surrogate_config[
+                        "tuple_collection_hash"
+                    ],
+                    "surrogate_config_hash": oracle.config_hash,
+                    "surrogate_checkpoint_hash": oracle.checkpoint_hash,
+                    "oracle_state_dependence": True,
+                    "inference_backend": "cpu",
+                    "path_length": len(sequence),
+                },
+            )
+        )
+    return records
+
+
+def _signature(records: list[SequenceRecord]) -> list[tuple[int, tuple[int, ...], bytes]]:
+    return [
+        (
+            record.target_node,
+            record.sequence,
+            struct.pack("!d", float(record.internal_cost)),
+        )
+        for record in records
+    ]
+
+
+def score_and_write(records: list[SequenceRecord], output_path: Path) -> None:
+    """Run the method output through the independent frozen evaluator."""
+    evaluator = SequenceEvaluator.from_artifacts()
+    scored = evaluator.score_records(records)
+    if not all(result.valid for result in scored):
+        invalid = [result.to_dict() for result in scored if not result.valid]
+        raise AssertionError(f"Public evaluator rejected BKT-set records: {invalid}")
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    fieldnames = [
+        "method",
+        "target_node",
+        "run_id",
+        "valid",
+        "evaluation_cost",
+        "optimal_cost",
+        "normalized_regret",
+        "sequence_hash",
+        "invalid_reason",
+    ]
+    with output_path.open("w", encoding="utf-8", newline="") as file:
+        writer = csv.DictWriter(file, fieldnames=fieldnames, lineterminator="\n")
+        writer.writeheader()
+        writer.writerows(result.to_dict() for result in scored)
 
 
 def main() -> None:
-    with (ROOT / "configs" / "config.yaml").open() as file:
-        config = yaml.safe_load(file)
-    with (PROCESSED / "graph.pkl").open("rb") as file:
-        graph = pickle.load(file)
-    with (PROCESSED / "train_sessions.pkl").open("rb") as file:
-        train_samples = pickle.load(file)
-    with (PROCESSED / "valid_sessions.pkl").open("rb") as file:
-        valid_samples = pickle.load(file)
-
-    parameters = pd.read_csv(PARAMETERS)
-    required = {"concept_id", "p_init", "p_learn", "p_guess", "p_slip"}
-    if not required <= set(parameters.columns):
-        raise ValueError(f"BKT parameter file missing columns: {required - set(parameters.columns)}")
-    fallback = np.mean([label for _, _, label in train_samples])
-    oracle = BKTOracle(parameters, fallback)
-    toy = BKTOracle(
-        pd.DataFrame([{"concept_id": 0, "p_init": 0.0, "p_learn": 0.0, "p_guess": 0.5, "p_slip": 0.0}]),
-        0.0,
-    )
-    assert abs(toy.action_cost(0, frozenset()) - 120.0) < 1e-9
-    dag: nx.DiGraph = graph["nx_dag"]
-    num_nodes = len(graph["node_ids"])
-
-    labels = np.array([label for _, _, label in valid_samples])
-    probabilities = np.array(
-        [oracle.success_prob(target, frozenset()) for _, target, _ in valid_samples]
-    )
-    binary = np.isin(labels, [0.0, 1.0])
-    binary_labels = labels[binary]
-    binary_probabilities = probabilities[binary]
-    oracle_metrics = {
-        "samples": len(labels),
-        "binary_samples": int(binary.sum()),
-        "mse": float(np.mean((labels - probabilities) ** 2)),
-        "rmse": float(np.sqrt(np.mean((labels - probabilities) ** 2))),
-        "mae": float(np.mean(np.abs(labels - probabilities))),
-        "auc": auc_score(binary_labels, binary_probabilities),
-        "accuracy": float(np.mean((binary_probabilities >= 0.5) == (binary_labels == 1.0))),
-        "probability_source": "bkt_initial_correct_probability",
-    }
-
-    observed_nodes = {target for _, target, _ in train_samples}
-    targets = sorted(node for node in observed_nodes if dag.in_degree(node) > 0)
-    rng = np.random.default_rng(config["seed"])
-    target_count = min(config["experiments"]["num_targets"], len(targets))
-    targets = sorted(rng.choice(targets, size=target_count, replace=False).tolist())
-    planner_config = {"planner": config["planner"], "oracle": config["oracle"]}
-    edge_index = torch.tensor(graph["edge_index"], dtype=torch.long)
-
-    trajectories = []
-    for target in targets:
-        closure = nx.ancestors(dag, target) | {target}
-        closure_graph = dag.subgraph(closure).copy()
-        planner = GreedyPlanner(
-            oracle, closure_graph, planner_config, edge_index, num_nodes
+    manifest = load_manifest()
+    first_oracle, first_config = load_frozen_oracle()
+    second_oracle, second_config = load_frozen_oracle()
+    if first_config != second_config:
+        raise AssertionError("Independent Oracle loads returned different configs")
+    first = generate_records(manifest, first_oracle, first_config)
+    second = generate_records(manifest, second_oracle, second_config)
+    if _signature(first) != _signature(second):
+        raise AssertionError(
+            "Independent BKT-derived Set Oracle Greedy runs were not bitwise deterministic"
         )
-        started = time.perf_counter()
-        cost, path = planner.solve(set(), closure)
-        elapsed = time.perf_counter() - started
-        valid = is_valid_path(closure_graph, path)
-        assert path and path[-1] == target and valid, (target, path)
-        trajectories.append({
-            "target_node": target,
-            "expected_total_cost": cost,
-            "path_length": len(path),
-            "required_nodes": len(closure),
-            "off_target_actions": len(set(path) - closure),
-            "planning_seconds": elapsed,
-            "path_is_valid": valid,
-            "path": json.dumps(path),
-        })
 
     OUTPUT.mkdir(parents=True, exist_ok=True)
-    pd.DataFrame([oracle_metrics]).to_csv(OUTPUT / "oracle_valid_metrics.csv", index=False)
-    pd.DataFrame(trajectories).to_csv(OUTPUT / "planner_trajectories.csv", index=False)
-    summary = {
-        "condition": "BKT + Greedy",
-        "targets": targets,
-        "mean_expected_total_cost": float(np.mean([row["expected_total_cost"] for row in trajectories])),
-        "mean_path_length": float(np.mean([row["path_length"] for row in trajectories])),
-        "mean_off_target_actions": float(np.mean([row["off_target_actions"] for row in trajectories])),
-        "total_planning_seconds": float(sum(row["planning_seconds"] for row in trajectories)),
-        "all_paths_valid": all(row["path_is_valid"] for row in trajectories),
-        "probability_source": "bkt_expected_attempt_cost",
-    }
-    (OUTPUT / "summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
-
-    print(pd.DataFrame([oracle_metrics]).to_string(index=False))
-    print(pd.DataFrame(trajectories).drop(columns="path").to_string(index=False))
-    print(json.dumps(summary, indent=2))
+    write_jsonl(SEQUENCES_PATH, first)
+    score_and_write(first, SCORED_PATH)
+    print(f"records={len(first)}")
+    print(f"checkpoint_hash={EXPECTED_SURROGATE_CHECKPOINT_HASH}")
+    print(f"sequences={SEQUENCES_PATH}")
+    print(f"scored={SCORED_PATH}")
 
 
 if __name__ == "__main__":
     main()
+
