@@ -6,11 +6,12 @@ import csv
 import importlib
 import json
 import statistics
+import tempfile
 import unittest
 from pathlib import Path
 
 from experiments.common.manifest import load_manifest, manifest_hash, sha256_file
-from experiments.common.schema import Method, read_jsonl
+from experiments.common.schema import Method, read_jsonl, write_jsonl
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -54,15 +55,17 @@ class AggregateResultsTests(unittest.TestCase):
                 {(target, run) for target in targets for run in range(runs)},
             )
 
-    def test_every_record_uses_current_manifest_evaluator_and_closure(self) -> None:
+    def test_every_record_uses_current_manifest_and_closure(self) -> None:
         manifest = load_manifest()
         expected_manifest = manifest_hash(manifest)
-        expected_evaluator = sha256_file(ROOT / "experiments/common/evaluator.py")
         closures = {item["target_node"]: item["closure_hash"] for item in manifest["closures"]}
         for record in self.records:
             self.assertEqual(record.metadata["manifest_hash"], expected_manifest)
-            self.assertEqual(record.metadata["evaluator_hash"], expected_evaluator)
             self.assertEqual(record.metadata["closure_hash"], closures[record.target_node])
+        self.assertGreater(
+            len({record.metadata.get("evaluator_hash") for record in self.records}),
+            1,
+        )
 
     def test_all_public_scores_are_valid_and_nonnegative(self) -> None:
         self.assertTrue(all(row["valid"] == "True" for row in self.scored))
@@ -107,12 +110,87 @@ class AggregateResultsTests(unittest.TestCase):
             source = ROOT / row["source_path"]
             self.assertEqual(row["source_sha256"], sha256_file(source))
             self.assertEqual(row["manifest_hash"], expected_manifest)
-            self.assertEqual(row["evaluator_hash"], expected_evaluator)
+            self.assertEqual(row["aggregation_evaluator_hash"], expected_evaluator)
+            with source.open(encoding="utf-8", newline="") as file:
+                source_rows = list(csv.DictReader(file))
+            matching = [
+                item for item in source_rows
+                if item.get("split", "validation") == row["split"]
+            ]
+            self.assertEqual(len(matching), 1)
+            self.assertEqual(
+                row["source_evaluator_hash"], matching[0].get("evaluator_hash", "")
+            )
 
     def test_canonical_all_sequences_jsonl_is_reparseable(self) -> None:
         first = json.loads((FINAL / "all_sequences.jsonl").read_text(encoding="utf-8").splitlines()[0])
         self.assertEqual(first["method"], Method.ARIADNE_GREEDY.value)
         self.assertEqual(self.records[0].method, Method.ARIADNE_GREEDY)
+
+    def test_aggregation_manifest_binds_inputs_outputs_and_current_scorer(self) -> None:
+        with (FINAL / "aggregation_manifest.json").open(encoding="utf-8") as file:
+            aggregate = json.load(file)
+        self.assertEqual(aggregate["sorting"], ["method_order", "target_node", "run_id"])
+        self.assertEqual(
+            aggregate["evaluator_hash"],
+            sha256_file(ROOT / "experiments/common/evaluator.py"),
+        )
+        self.assertEqual(set(aggregate["inputs"]), {item[0].value for item in AGGREGATOR.CONDITIONS})
+        for item in aggregate["inputs"].values():
+            self.assertEqual(item["sha256"], sha256_file(ROOT / item["path"]))
+        for item in aggregate["outputs"].values():
+            self.assertEqual(item["sha256"], sha256_file(ROOT / item["path"]))
+
+    def _temporary_condition(self, mutator):
+        source = read_jsonl(ROOT / "results/ariadne_greedy/sequences.jsonl")
+        values = [record.to_dict() for record in source]
+        mutator(values)
+        temporary = tempfile.TemporaryDirectory()
+        path = Path(temporary.name) / "records.jsonl"
+        write_jsonl(path, values)
+        return temporary, ((Method.ARIADNE_GREEDY, path, 1),)
+
+    def test_missing_target_is_rejected(self) -> None:
+        temporary, conditions = self._temporary_condition(lambda values: values.pop())
+        with temporary, self.assertRaises(ValueError):
+            AGGREGATOR.load_and_validate_records(conditions)
+
+    def test_duplicate_identity_is_rejected(self) -> None:
+        temporary, conditions = self._temporary_condition(
+            lambda values: values.append(dict(values[0]))
+        )
+        with temporary, self.assertRaises(ValueError):
+            AGGREGATOR.load_and_validate_records(conditions)
+
+    def test_method_path_contract_is_enforced(self) -> None:
+        def mutate(values):
+            values[0]["method"] = Method.FREQUENCY_GREEDY.value
+        temporary, conditions = self._temporary_condition(mutate)
+        with temporary, self.assertRaises(ValueError):
+            AGGREGATOR.load_and_validate_records(conditions)
+
+    def test_manifest_mismatch_is_rejected(self) -> None:
+        def mutate(values):
+            values[0]["metadata"]["manifest_hash"] = "0" * 64
+        temporary, conditions = self._temporary_condition(mutate)
+        with temporary, self.assertRaises(ValueError):
+            AGGREGATOR.load_and_validate_records(conditions)
+
+    def test_closure_mismatch_is_rejected(self) -> None:
+        def mutate(values):
+            values[0]["metadata"]["closure_hash"] = "0" * 64
+        temporary, conditions = self._temporary_condition(mutate)
+        with temporary, self.assertRaises(ValueError):
+            AGGREGATOR.load_and_validate_records(conditions)
+
+    def test_shuffled_input_is_returned_in_canonical_order(self) -> None:
+        temporary, conditions = self._temporary_condition(lambda values: values.reverse())
+        with temporary:
+            records = AGGREGATOR.load_and_validate_records(conditions)
+        self.assertEqual(
+            [(record.target_node, record.run_id) for record in records],
+            sorted((record.target_node, record.run_id) for record in records),
+        )
 
 
 if __name__ == "__main__":

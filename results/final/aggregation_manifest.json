@@ -1,0 +1,130 @@
+{
+  "evaluator_hash": "855a4f721d12d42e8fc685aa3638dc9d00a2d4f0aef67cae1528ac2261568de7",
+  "generation_command": "python experiments/aggregate_results.py",
+  "inputs": {
+    "ariadne_greedy": {
+      "path": "results/ariadne_greedy/sequences.jsonl",
+      "records": 10,
+      "runs_per_target": 1,
+      "sha256": "0c73c22557d61ac25a62774e4227f1b6da7c691f618b92e13d279d724cd01104",
+      "source_evaluator_hashes": [
+        "b0e749046b8f4437bc92f358fe3a644aba4614fc304a3c49168c9a9d8b77a355"
+      ]
+    },
+    "ariadne_lao": {
+      "path": "results/ariadne_lao/sequences.jsonl",
+      "records": 10,
+      "runs_per_target": 1,
+      "sha256": "28ad3265d4838bf660c9eae74cf9d38909cf97efd6f7fb13d5a684c60e82e385",
+      "source_evaluator_hashes": [
+        "b0e749046b8f4437bc92f358fe3a644aba4614fc304a3c49168c9a9d8b77a355"
+      ]
+    },
+    "bkt_set_greedy": {
+      "path": "results/bkt_set_greedy/sequences.jsonl",
+      "records": 10,
+      "runs_per_target": 1,
+      "sha256": "b5cb5dbcafa233a0072a232b8e88dc79b52ae8790c9abf64132f809e91409fa6",
+      "source_evaluator_hashes": [
+        "855a4f721d12d42e8fc685aa3638dc9d00a2d4f0aef67cae1528ac2261568de7"
+      ]
+    },
+    "bkt_set_lao": {
+      "path": "results/bkt_set_lao/sequences.jsonl",
+      "records": 10,
+      "runs_per_target": 1,
+      "sha256": "aab0f38581271eb721520922f27c594c04f66e3a889a7d9f44ec14d7cc2ed73d",
+      "source_evaluator_hashes": [
+        "855a4f721d12d42e8fc685aa3638dc9d00a2d4f0aef67cae1528ac2261568de7"
+      ]
+    },
+    "dkt_set_greedy": {
+      "path": "results/dkt_set_greedy/sequences.jsonl",
+      "records": 10,
+      "runs_per_target": 1,
+      "sha256": "495f2aa7c3013d35abb83a777d89f05624149906be5b13c59f7c1edde2bbb2f2",
+      "source_evaluator_hashes": [
+        "855a4f721d12d42e8fc685aa3638dc9d00a2d4f0aef67cae1528ac2261568de7"
+      ]
+    },
+    "dkt_set_lao": {
+      "path": "results/dkt_set_lao/sequences.jsonl",
+      "records": 10,
+      "runs_per_target": 1,
+      "sha256": "e889c5df7e7ac2d15492474809489b087569214b3716681e724dc6a9b172087b",
+      "source_evaluator_hashes": [
+        "855a4f721d12d42e8fc685aa3638dc9d00a2d4f0aef67cae1528ac2261568de7"
+      ]
+    },
+    "frequency_greedy": {
+      "path": "results/frequency_greedy/sequences.jsonl",
+      "records": 10,
+      "runs_per_target": 1,
+      "sha256": "b1ae78abc4ea3ab82eb627cf4c98d7d34e72423d2e73badb0f09427ef377fd6e",
+      "source_evaluator_hashes": [
+        "b0e749046b8f4437bc92f358fe3a644aba4614fc304a3c49168c9a9d8b77a355"
+      ]
+    },
+    "frequency_lao": {
+      "path": "results/frequency_lao/sequences.jsonl",
+      "records": 10,
+      "runs_per_target": 1,
+      "sha256": "e18bbaf607e4bae0176da7725f2848ca14945cdd1cbfaae5856455b6b57f38c4",
+      "source_evaluator_hashes": [
+        "b0e749046b8f4437bc92f358fe3a644aba4614fc304a3c49168c9a9d8b77a355"
+      ]
+    },
+    "linear_syllabus": {
+      "path": "results/linear_syllabus_order/sequences.jsonl",
+      "records": 10,
+      "runs_per_target": 1,
+      "sha256": "77d7f7f6c869654f3553a208bdcc12305177031f2836ad07a18f3fa148fc4208",
+      "source_evaluator_hashes": [
+        "b0e749046b8f4437bc92f358fe3a644aba4614fc304a3c49168c9a9d8b77a355"
+      ]
+    },
+    "random_frontier": {
+      "path": "results/random_frontier/sequences.jsonl",
+      "records": 1000,
+      "runs_per_target": 100,
+      "sha256": "ffc62e14de68b712cca5c4da06938ad6e8d63a07b5b351df8cc802383c39fd44",
+      "source_evaluator_hashes": [
+        "b0e749046b8f4437bc92f358fe3a644aba4614fc304a3c49168c9a9d8b77a355"
+      ]
+    }
+  },
+  "manifest_hash": "f03496e703b4e6a04ad46f24c42e55d92bdc88266d92dbd19d77d2892d3c8cad",
+  "outputs": {
+    "all_sequences.jsonl": {
+      "path": "results/final/all_sequences.jsonl",
+      "rows": 1090,
+      "sha256": "ba70cac7cdbd7dac74e9d6653b8599e57ee141203cad82ebacc3a64b0d031cab"
+    },
+    "main_table.csv": {
+      "path": "results/final/main_table.csv",
+      "rows": 10,
+      "sha256": "112afea9654d3b821193dcd17b3f8f58f523ac6ef82ebab8773641bb4e537f38"
+    },
+    "oracle_metrics.csv": {
+      "path": "results/final/oracle_metrics.csv",
+      "rows": 48,
+      "sha256": "9d4637ca5339ae4f741e35632e1d405b23353820fba3e7d3ba72135c4925a889"
+    },
+    "per_target.csv": {
+      "path": "results/final/per_target.csv",
+      "rows": 100,
+      "sha256": "ab433ff6526c6e4a655fe96b94545ca93184358d79100f22e3960452a2bad481"
+    },
+    "scored_sequences.csv": {
+      "path": "results/final/scored_sequences.csv",
+      "rows": 1090,
+      "sha256": "c1128f3bb440c5ee3b68e99ed3add93685908f0cdc6c701be08d867714781204"
+    }
+  },
+  "schema_version": 1,
+  "sorting": [
+    "method_order",
+    "target_node",
+    "run_id"
+  ]
+}

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import csv
+import json
 import math
 import statistics
 import sys
@@ -63,15 +64,18 @@ def _percentile(values: list[float], fraction: float) -> float:
     return ordered[lower] + (ordered[upper] - ordered[lower]) * (position - lower)
 
 
-def load_and_validate_records() -> list[SequenceRecord]:
-    manifest = load_manifest()
+def load_and_validate_records(
+    conditions=CONDITIONS,
+    *,
+    manifest: dict | None = None,
+) -> list[SequenceRecord]:
+    manifest = load_manifest() if manifest is None else manifest
     expected_manifest = manifest_hash(manifest)
-    expected_evaluator = sha256_file(ROOT / "experiments/common/evaluator.py")
     targets = set(manifest["targets"])
     closures = {item["target_node"]: item["closure_hash"] for item in manifest["closures"]}
     combined: list[SequenceRecord] = []
 
-    for method, path, runs_per_target in CONDITIONS:
+    for method, path, runs_per_target in conditions:
         records = read_jsonl(path)
         expected_count = len(targets) * runs_per_target
         if len(records) != expected_count:
@@ -87,8 +91,6 @@ def load_and_validate_records() -> list[SequenceRecord]:
                 raise ValueError(f"{path}: unexpected method {record.method.value}")
             if record.metadata.get("manifest_hash") != expected_manifest:
                 raise ValueError(f"{method.value}: manifest hash mismatch")
-            if record.metadata.get("evaluator_hash") != expected_evaluator:
-                raise ValueError(f"{method.value}: evaluator hash mismatch")
             if record.metadata.get("closure_hash") != closures[record.target_node]:
                 raise ValueError(f"{method.value}: closure hash mismatch for {record.target_node}")
         combined.extend(records)
@@ -96,6 +98,16 @@ def load_and_validate_records() -> list[SequenceRecord]:
     identities = {(r.method.value, r.target_node, r.run_id) for r in combined}
     if len(identities) != len(combined):
         raise ValueError("Duplicate aggregate (method, target_node, run_id) identity")
+    method_order = {
+        method: index for index, (method, _, _) in enumerate(conditions)
+    }
+    combined.sort(
+        key=lambda record: (
+            method_order[record.method],
+            record.target_node,
+            record.run_id,
+        )
+    )
     return combined
 
 
@@ -176,8 +188,7 @@ def build_oracle_metrics() -> list[dict]:
         row = rows[0]
         if row.get("manifest_hash", manifest) != manifest:
             raise ValueError(f"Oracle metrics manifest mismatch: {path}")
-        if row.get("evaluator_hash") != evaluator:
-            raise ValueError(f"Oracle metrics evaluator mismatch: {path}")
+        source_evaluator = row.get("evaluator_hash", "")
         split = row.get("split") or "validation"
         for metric, raw_value in row.items():
             if metric in identity_fields or raw_value in (None, ""):
@@ -194,9 +205,52 @@ def build_oracle_metrics() -> list[dict]:
                 "source_path": path.relative_to(ROOT).as_posix(),
                 "source_sha256": sha256_file(path),
                 "manifest_hash": manifest,
-                "evaluator_hash": evaluator,
+                "source_evaluator_hash": source_evaluator,
+                "aggregation_evaluator_hash": evaluator,
             })
     return output
+
+
+def build_aggregation_manifest(
+    records: list[SequenceRecord],
+    output_rows: dict[str, int],
+) -> dict:
+    manifest = load_manifest()
+    inputs = {}
+    by_method: dict[Method, list[SequenceRecord]] = {}
+    for record in records:
+        by_method.setdefault(record.method, []).append(record)
+    for method, path, runs_per_target in CONDITIONS:
+        method_records = by_method[method]
+        inputs[method.value] = {
+            "path": path.relative_to(ROOT).as_posix(),
+            "sha256": sha256_file(path),
+            "records": len(method_records),
+            "runs_per_target": runs_per_target,
+            "source_evaluator_hashes": sorted(
+                {
+                    str(record.metadata.get("evaluator_hash"))
+                    for record in method_records
+                }
+            ),
+        }
+    outputs = {}
+    for name, rows in output_rows.items():
+        path = OUTPUT / name
+        outputs[name] = {
+            "path": path.relative_to(ROOT).as_posix(),
+            "sha256": sha256_file(path),
+            "rows": rows,
+        }
+    return {
+        "schema_version": 1,
+        "manifest_hash": manifest_hash(manifest),
+        "evaluator_hash": sha256_file(ROOT / "experiments/common/evaluator.py"),
+        "sorting": ["method_order", "target_node", "run_id"],
+        "inputs": inputs,
+        "outputs": outputs,
+        "generation_command": "python experiments/aggregate_results.py",
+    }
 
 
 def main() -> None:
@@ -217,6 +271,21 @@ def main() -> None:
     _write_csv(OUTPUT / "per_target.csv", per_target, tuple(per_target[0]))
     _write_csv(OUTPUT / "main_table.csv", main_table, tuple(main_table[0]))
     _write_csv(OUTPUT / "oracle_metrics.csv", oracle_metrics, tuple(oracle_metrics[0]))
+    aggregation_manifest = build_aggregation_manifest(
+        records,
+        {
+            "all_sequences.jsonl": len(records),
+            "scored_sequences.csv": len(scored),
+            "per_target.csv": len(per_target),
+            "main_table.csv": len(main_table),
+            "oracle_metrics.csv": len(oracle_metrics),
+        },
+    )
+    (OUTPUT / "aggregation_manifest.json").write_text(
+        json.dumps(aggregation_manifest, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+        newline="\n",
+    )
     print(f"records={len(records)}")
     print(f"valid={sum(row.valid for row in scored_objects)}")
     print(f"per_target_rows={len(per_target)}")

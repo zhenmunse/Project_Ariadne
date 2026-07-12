@@ -220,7 +220,7 @@ def main() -> None:
     metrics = frequency_metrics(first_oracle, valid_samples, manifest)
     OUTPUT.mkdir(parents=True, exist_ok=True)
     write_jsonl(SEQUENCES_PATH, first)
-    pd.DataFrame([metrics]).to_csv(METRICS_PATH, index=False, lineterminator="\n")
+    pd.DataFrame([metrics]).to_csv(METRICS_PATH, index=False)
     print(pd.DataFrame([metrics]).to_string(index=False))
     print(f"records={len(first)}")
     print(f"max_greedy_lao_internal_gap={max(r.metadata['greedy_lao_internal_gap'] for r in first)}")
