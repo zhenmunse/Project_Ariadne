@@ -21,7 +21,8 @@ INTERNAL_COST_TOLERANCE = 1e-9
 sys.path.insert(0, str(ROOT))
 
 from experiments.common.manifest import load_manifest, manifest_hash, sha256_file
-from experiments.common.schema import Method, SequenceRecord, read_jsonl, write_jsonl
+from experiments.common.reference import load_single_run_reference
+from experiments.common.schema import Method, SequenceRecord, write_jsonl
 from src.planner_engine.baselines import FrequencyOracle
 from src.planner_engine.solver import DAGPlanner
 
@@ -166,6 +167,28 @@ def _deterministic_signature(records: list[SequenceRecord]) -> list[tuple]:
     ]
 
 
+def load_greedy_internal_costs(manifest: dict) -> dict[int, float]:
+    """Load a strictly provenance-matched Frequency Greedy reference."""
+    expected_train_hash = sha256_file(PROCESSED / "train_sessions.pkl")
+    expected_evaluator_hash = sha256_file(
+        ROOT / "experiments" / "common" / "evaluator.py"
+    )
+    records = load_single_run_reference(
+        GREEDY_SEQUENCES_PATH,
+        expected_method=Method.FREQUENCY_GREEDY,
+        manifest=manifest,
+        expected_metadata={
+            "frequency_train_artifact_hash": expected_train_hash,
+            "evaluator_hash": expected_evaluator_hash,
+        },
+        require_internal_cost=True,
+    )
+    return {
+        target: float(record.internal_cost)
+        for target, record in records.items()
+    }
+
+
 def main() -> None:
     manifest = load_manifest()
     with (PROCESSED / "graph.pkl").open("rb") as file:
@@ -175,14 +198,7 @@ def main() -> None:
     with (PROCESSED / "valid_sessions.pkl").open("rb") as file:
         valid_samples = pickle.load(file)
 
-    greedy_records = read_jsonl(GREEDY_SEQUENCES_PATH)
-    greedy_internal_costs = {
-        record.target_node: record.internal_cost for record in greedy_records
-    }
-    if set(greedy_internal_costs) != set(manifest["targets"]) or any(
-        cost is None for cost in greedy_internal_costs.values()
-    ):
-        raise ValueError("Frequency Greedy records do not match the shared manifest")
+    greedy_internal_costs = load_greedy_internal_costs(manifest)
 
     first_oracle = FrequencyOracle(
         train_samples,
