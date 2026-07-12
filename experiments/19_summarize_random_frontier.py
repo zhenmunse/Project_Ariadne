@@ -57,7 +57,9 @@ def main() -> None:
     )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     with args.output.open("w", encoding="utf-8", newline="") as file:
-        writer = csv.DictWriter(file, fieldnames=list(summaries[0]))
+        writer = csv.DictWriter(
+            file, fieldnames=list(summaries[0]), lineterminator="\n"
+        )
         writer.writeheader()
         writer.writerows(summaries)
     print(f"summary={args.output}")

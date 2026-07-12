@@ -56,7 +56,7 @@ def main() -> None:
         "invalid_reason",
     ]
     with args.output.open("w", encoding="utf-8", newline="") as file:
-        writer = csv.DictWriter(file, fieldnames=fieldnames)
+        writer = csv.DictWriter(file, fieldnames=fieldnames, lineterminator="\n")
         writer.writeheader()
         writer.writerows(rows)
     print(f"scored_records={len(rows)}")

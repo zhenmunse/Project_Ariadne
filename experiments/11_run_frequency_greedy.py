@@ -157,7 +157,7 @@ def main() -> None:
     metrics = frequency_metrics(first_oracle, valid_samples, manifest)
     OUTPUT.mkdir(parents=True, exist_ok=True)
     write_jsonl(SEQUENCES_PATH, first)
-    pd.DataFrame([metrics]).to_csv(METRICS_PATH, index=False)
+    pd.DataFrame([metrics]).to_csv(METRICS_PATH, index=False, lineterminator="\n")
     print(pd.DataFrame([metrics]).to_string(index=False))
     print(f"records={len(first)}")
     print(f"sequences={SEQUENCES_PATH}")
