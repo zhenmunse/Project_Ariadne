@@ -126,11 +126,13 @@ order.
 
 ### BKT teacher
 
-Fit one BKT model per mapped concept using training students only. Binary
-correctness observations are the frozen session-level `correct` values defined
-above and are processed chronologically. For each prefix and target `v`, use
-the student's current posterior mastery probability for `v` and the fitted BKT
-parameters to compute:
+For every required node with at least one canonical training observation, fit
+one concept-specific BKT model using training students only. Required nodes with
+zero canonical training observations use the frozen pooled BKT backoff below.
+Binary correctness observations are the frozen session-level `correct` values
+defined above and are processed chronologically. For each prefix and target
+`v`, use the student's current posterior mastery probability for `v` and the
+assigned BKT parameters to compute:
 
 ```text
 p_teacher(v | prefix)
@@ -141,6 +143,101 @@ p_teacher(v | prefix)
 If the student has not attempted `v`, use the fitted initial mastery
 probability. Querying a target must not mutate the teacher state; the state is
 updated only after the actual next observation is scored.
+
+#### Frozen BKT maximum-likelihood fitting
+
+Concept-specific and pooled models use the same deterministic fitting
+algorithm. Each input sequence begins with latent mastery probability `prior`.
+For an observation `y` and current mastery probability `L`, compute:
+
+```text
+p_correct = L * (1 - slip) + (1 - L) * guess
+posterior = L * P(y | mastered) / P(y)
+next_L    = posterior + (1 - posterior) * learn
+```
+
+where `P(y | mastered)` is `1-slip` for a correct response and `slip` for an
+incorrect response, and the analogous unmastered probabilities are `guess` and
+`1-guess`. The fitted objective is the sum of negative log predictive
+probabilities before each observation. All arithmetic is CPU float64.
+
+Use `scipy.optimize.minimize(method="L-BFGS-B")` with parameter order
+`(prior, learn, guess, slip)`, bounds:
+
+```text
+prior: [1e-6, 1 - 1e-6]
+learn: [1e-6, 1 - 1e-6]
+guess: [1e-6, 0.5 - 1e-6]
+slip:  [1e-6, 0.5 - 1e-6]
+```
+
+and these four deterministic starting points, in order:
+
+```text
+(0.20, 0.10, 0.20, 0.10)
+(0.50, 0.10, 0.20, 0.10)
+(0.20, 0.20, 0.10, 0.10)
+(0.20, 0.10, 0.10, 0.20)
+```
+
+Set `ftol=1e-12`, `gtol=1e-8`, and `maxiter=2000`. Record every restart result;
+discard a restart that does not converge or returns a non-finite parameter or
+objective. Select the remaining restart with the lowest final negative log
+likelihood; objectives within `1e-12` are tied and the earliest listed restart
+wins. Failure of all restarts is a hard error. Sequence and observation ordering
+must be deterministic, and the SciPy version is recorded. No random
+initialization or additional unrecorded restart is allowed.
+
+#### Pooled zero-observation BKT backoff
+
+Fit one pooled BKT model from all canonical training-student concept sessions.
+For parameter estimation only, treat each `(student_id, target_node)` pair as
+an independent sequence with skill name `"**pooled**"`. Sort sequences by
+`(student_id, target_node)` and retain frozen chronological session order within
+each sequence. A student's observations from one concept must never form a
+latent trajectory with observations from another concept.
+
+The exact required nodes with zero canonical training observations are:
+
+```text
+[0, 1, 2, 5, 11, 32, 37, 51]
+```
+
+The 19 required nodes with concept-specific training observations are:
+
+```text
+[3, 4, 6, 7, 8, 10, 12, 13, 15, 17, 18, 29, 36, 39, 40, 41, 42, 46, 52]
+```
+
+This list is frozen for student split hash
+`516885f2bc972e20f14939f63d1db14423b2745d3e1fc4c2914161bd0b92d435`
+and concept-session artifact hash
+`668f16997fb0bd59d16a174188daaec2164412e3b848305d79d4edd75fdbfe07`.
+If either input hash changes, the zero-observation audit must be rerun and this
+protocol amended before fitting.
+
+Each zero-observation node uses the pooled parameter vector
+`(prior, learn, guess, slip)`, but every `(student, node)` retains an independent
+latent mastery posterior initialized from the pooled prior. Updating node `A`
+must not alter node `B`, including when both use pooled parameters. Every
+required node with one or more canonical training observations must use its
+concept-specific parameters and is forbidden from using pooled backoff.
+
+This is the only permitted BKT coverage backoff. Parameters may not be copied
+from a neighboring prerequisite, set manually, obtained by averaging fitted
+parameter vectors, inferred from the DAG, estimated from validation/test data,
+or replaced with FrequencyOracle probabilities. The public condition remains
+**BKT-derived Set Oracle**, with metadata:
+
+```text
+teacher_parameterization = concept_specific_with_pooled_zero_observation_backoff
+```
+
+Define `pooled_parameter_hash` as SHA-256 of canonical sorted-key JSON containing
+the selected `(prior, learn, guess, slip)` values, all frozen optimizer settings,
+the four restart results, the ordered pooled sequence IDs, their observation
+counts, and all training input hashes. The hash field itself is excluded from
+its input.
 
 ### DKT teacher
 
@@ -178,10 +275,18 @@ and extraction convention must be hashed or recorded in the artifact metadata.
 There is no silent target fallback. Each teacher must report the set of DAG
 nodes for which it can produce a probability. A condition is eligible for
 planning only if it covers every `sequence_node` in all ten manifest closures.
-Missing nodes, unknown mappings, and unsupported output coordinates are hard
-errors. If full coverage cannot be achieved by the go/no-go date, use the
-state-independent fallback described below instead of mixing teacher and
-fallback probabilities within one condition.
+
+For BKT, concept-specific parameters are required for every required node with
+at least one canonical training observation. A required node with zero training
+observations must use the frozen pooled zero-observation backoff above. No other
+fallback is permitted. The coverage artifact must distinguish
+`concept_specific_nodes`, `pooled_backoff_nodes`, and `missing_nodes`; the last
+must be empty.
+
+For DKT, unknown mappings and unsupported output coordinates remain hard errors
+unless a separate amendment is approved. If full coverage cannot be achieved by
+the go/no-go date, use the state-independent fallback described below instead
+of silently mixing incompatible probability sources within one condition.
 
 ## Distillation examples
 
@@ -295,6 +400,28 @@ identify at least:
 - surrogate architecture/configuration and checkpoint hash;
 - Python, NumPy, and PyTorch versions and canonical device (`cpu`).
 
+The BKT teacher additionally produces and hashes:
+
+- `bkt_parameters.json`, containing all concept-specific parameters;
+- `pooled_bkt_parameters.json`, containing the pooled parameter vector,
+  optimizer settings, restart outcomes, source sequence counts, and pooled
+  parameter hash;
+- `bkt_coverage.json`, containing all 27 required nodes, the 19
+  concept-specific nodes, the exact eight pooled-backoff nodes, an empty missing
+  list, coverage fraction `1.0`, backoff rule
+  `pooled_zero_observation_bkt`, and the pooled parameter hash.
+
+Every later BKT-derived sequence record stores `bkt_parameter_hash`,
+`pooled_bkt_parameter_hash`, and `pooled_backoff_nodes_hash`.
+
+The BKT regression suite must prove that all observed required nodes use
+concept-specific parameters, exactly the eight frozen zero-observation nodes
+use pooled parameters, pooled fitting contains training students only, and no
+other node can enter the backoff list. It must also prove independent
+`(student,node)` posteriors, cross-node update isolation, legal probabilities
+for all eight pooled nodes, 27/27 coverage, and byte-stable pooled artifacts
+across repeated runs.
+
 Sequence metadata uses the exact public condition names
 `BKT-derived Set Oracle` and `DKT-derived Set Oracle` in addition to the shared
 schema method enum selected by Tasks 12 and 13.
@@ -311,3 +438,28 @@ rule, and return that value for every state. Do not label this fallback as a
 BKT-derived or DKT-derived Set Oracle, and do not combine its probabilities
 with a partially working KT adapter. Its state independence must be stated in
 results metadata and treated as a negative-control condition.
+
+## Evaluation interpretation and paper-language constraints
+
+The public evaluator and Ariadne planning oracle are the same frozen
+`FrozenMonotonicOracle`. Therefore Ariadne + LAO* normalized regret is zero by
+construction, subject only to numerical tolerance: it globally optimizes the
+evaluator's own cost function. The main table answers, "If the frozen simulated
+learner model is true, how far does each sequencing method deviate from its
+optimum?" It does not establish superior outcomes on real students.
+
+The Ariadne + LAO* row must be marked **planner matches evaluator by design**.
+The paper must not present its zero regret as an empirical discovery. The
+comparative result is the regret incurred by oracle mismatch for Frequency,
+BKT-derived, and DKT-derived planners, and by the absence or limitation of
+optimization for Random, Syllabus, and LLM conditions.
+
+After Task 15 freezes uniform `T_v = 60`, Section 3 must state that experiments
+use a uniform per-attempt cost of 60 seconds, so expected cost is proportional
+to expected attempt count. It must not claim that `T_v` is instantiated from
+empirical instructional time. Add this Section 3 correction to the Task 18
+wording checklist alongside Section 4.
+
+Because canonical oracle inference is deterministic, Section 4 must remove or
+rewrite the phrase "even when the underlying predictor uses stochastic
+inference" so it does not imply an inference mode absent from the experiments.
