@@ -63,7 +63,6 @@
     "score": "arithmetic mean of binary interaction correctness",
     "tie_break": [
       "timestamp",
-      "item_id",
       "source_order"
     ],
     "unit": "consecutive same-node interactions per student"

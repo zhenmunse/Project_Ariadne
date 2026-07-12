@@ -13,6 +13,7 @@ from experiments.kt.artifacts import sha256_file
 from experiments.kt.prepare_kt_data import (
     ROOT,
     SESSION_COLUMNS,
+    _canonical_interactions,
     aggregate_concept_sessions,
     canonical_student_split,
     prepare_kt_data,
@@ -66,6 +67,32 @@ class KTPreprocessingTests(unittest.TestCase):
         self.assertEqual(result["source_order"].tolist(), [0, 2])
         self.assertEqual(result["session_score"].tolist(), [0.5, 1.0])
         self.assertEqual(result["correct"].tolist(), [0, 1])
+
+    def test_equal_timestamps_preserve_source_order_not_item_order(self) -> None:
+        with tempfile.TemporaryDirectory(dir=ROOT) as temp_dir:
+            interactions_path = Path(temp_dir) / "interactions.csv"
+            pd.DataFrame(
+                [
+                    {
+                        "user_id": "a",
+                        "item_id": 20,
+                        "is_correct": 1,
+                        "timestamp": "2026-01-01T00:00:00Z",
+                    },
+                    {
+                        "user_id": "a",
+                        "item_id": 10,
+                        "is_correct": 1,
+                        "timestamp": "2026-01-01T00:00:00Z",
+                    },
+                ]
+            ).to_csv(interactions_path, index=False)
+
+            ordered = _canonical_interactions(interactions_path, {20: 2, 10: 1})
+            result = aggregate_concept_sessions(ordered)
+            self.assertEqual(ordered["item_id"].tolist(), [20, 10])
+            self.assertEqual(result["target_node"].tolist(), [2, 1])
+            self.assertEqual(result["source_order"].tolist(), [0, 1])
 
     def test_validation_rejects_non_chronological_sessions(self) -> None:
         sessions = pd.DataFrame(

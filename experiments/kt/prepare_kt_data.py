@@ -65,7 +65,7 @@ def _canonical_interactions(path: Path, item_to_node: dict[int, int]) -> pd.Data
         raise ValueError("interaction correctness must be binary")
     interactions["student_id"] = interactions["user_id"].astype(str)
     return interactions.sort_values(
-        ["student_id", "timestamp", "item_id", "source_order"],
+        ["student_id", "timestamp", "source_order"],
         kind="mergesort",
     ).reset_index(drop=True)
 
@@ -234,7 +234,7 @@ def prepare_kt_data(
             "unit": "consecutive same-node interactions per student",
             "score": "arithmetic mean of binary interaction correctness",
             "correct_rule": "1 iff session_score >= 0.8",
-            "tie_break": ["timestamp", "item_id", "source_order"],
+            "tie_break": ["timestamp", "source_order"],
         },
         "mastery_rule": {
             "threshold": 0.8,
