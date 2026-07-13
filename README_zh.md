@@ -117,6 +117,14 @@ Cost = T_base + (1 - P_succ) * T_penalty + lambda_risk * sigma2
 
 ## 运行流程
 
+### 当前确定性实验协议
+
+下面的旧原型流程仍可用于理解仓库结构。论文使用的确定性 BKT 条件请以
+[BKT-derived Set Oracle 复现文档](documents/bkt_set_oracle_reproduction.md)
+为准。该文档冻结了 student split、按时间顺序运行的 BKT teacher、零观测节点的
+pooled backoff、set-oracle distillation、checkpoint hash、Greedy/LAO* 命令、
+exact-DP 校验以及公共 evaluator 的语义。
+
 先安装依赖：
 
 ```bash

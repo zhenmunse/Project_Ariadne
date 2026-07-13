@@ -1,0 +1,23 @@
+{
+  "condition_name": "BKT-derived Set Oracle",
+  "distillation_hash": "82a940ecaa922f66e9bb104cf3037acc3f6296920b7fc7ebdb3cdf011b8920c8",
+  "generation_command": "python experiments/summarize_bkt_set.py",
+  "greedy_sequences_hash": "b5cb5dbcafa233a0072a232b8e88dc79b52ae8790c9abf64132f809e91409fa6",
+  "greedy_valid_targets": 10,
+  "lao_dp_max_gap": 0.0,
+  "lao_minus_greedy_max_gap": 1.1368683772161603e-13,
+  "lao_sequences_hash": "aab0f38581271eb721520922f27c594c04f66e3a889a7d9f44ec14d7cc2ed73d",
+  "lao_valid_targets": 10,
+  "manifest_hash": "f03496e703b4e6a04ad46f24c42e55d92bdc88266d92dbd19d77d2892d3c8cad",
+  "max_state_effect": 0.29833316802978516,
+  "pooled_teacher_vector_hash": "b91780a500397f5fb457aab4707f7d5769dee5a7da373049bae5fae04c2cd503",
+  "public_evaluator_hash": "855a4f721d12d42e8fc685aa3638dc9d00a2d4f0aef67cae1528ac2261568de7",
+  "schema_version": 1,
+  "split_hash": "516885f2bc972e20f14939f63d1db14423b2745d3e1fc4c2914161bd0b92d435",
+  "state_effect_threshold": 1e-06,
+  "status": "go",
+  "surrogate_checkpoint_hash": "4a4ae471e06dbeeea46bf09f0502f39455576ccdd7f992e0184912cac7b60791",
+  "surrogate_config_hash": "182b079e2f068fb96434f33e909cbf5b46349e1d1290c757f6ae96917d755778",
+  "teacher_artifact_hash": "d3616777af5d48b8f5bc18d37e3ad11eb892b4c98a1ea52f2283baf8f2f5cd98",
+  "teacher_hash": "6a773d04b9ccd12f4d32736c1b5860ccc3cbc8f1ad20eb577ee655d205bf8f3f"
+}
