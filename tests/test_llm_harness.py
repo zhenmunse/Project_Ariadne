@@ -34,9 +34,22 @@ class LLMHarnessTests(unittest.TestCase):
             "gpt56_sol_zero", "gpt56_sol_full",
             "deepseek_v4_zero", "deepseek_v4_full",
         })
-        for model in self.config["models"].values():
-            self.assertIsNone(model["requested_model_id"])
-            self.assertEqual(model["model_id_status"], "must_be_frozen_before_task17")
+        closed = self.config["models"]["closed_frontier"]
+        opened = self.config["models"]["open_weight"]
+        self.assertEqual(closed["requested_model_id"], "gpt-5.6-sol")
+        self.assertEqual(closed["reasoning"], "medium")
+        self.assertFalse(closed["multi_agent"])
+        self.assertEqual(opened["requested_model_id"], "deepseek-v4-pro")
+        self.assertEqual(opened["reasoning"], "medium")
+        self.assertTrue(opened["thinking_enabled"])
+        self.assertEqual(closed["max_output_tokens"], 32768)
+        self.assertEqual(opened["max_output_tokens"], 32768)
+        self.assertEqual(closed["model_id_status"], "smoke_verified")
+        self.assertEqual(opened["model_id_status"], "smoke_verified")
+        self.assertEqual(
+            opened["smoke_verification"]["mode"],
+            "inherited_nonbinding_ceiling_increase",
+        )
         policy = self.config["request_policy"]
         self.assertTrue(policy["single_turn"] and policy["fresh_request"])
         self.assertFalse(policy["tools"] or policy["search"] or policy["retrieval"])
@@ -77,11 +90,12 @@ class LLMHarnessTests(unittest.TestCase):
         self.assertEqual(middle, after)
         self.assertEqual(first["logical_runs"], 800)
 
-    def test_no_formal_response_directories_are_created(self) -> None:
-        results = ROOT / "results/llm"
-        self.assertFalse((results / "raw").exists())
-        self.assertFalse((results / "parsed").exists())
-        self.assertFalse((results / "requests").exists())
+    def test_formal_responses_are_isolated_from_generated_inputs(self) -> None:
+        # Task 17 may populate results/llm. Deterministic input preparation must
+        # never mix provider responses into its generated source-artifact tree.
+        self.assertFalse((GENERATED / "raw").exists())
+        self.assertFalse((GENERATED / "parsed").exists())
+        self.assertFalse((GENERATED / "requests").exists())
 
     def test_provider_provenance_requirements_are_machine_locked(self) -> None:
         required = set(self.config["provider_response_provenance_required"])

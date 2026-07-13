@@ -181,6 +181,11 @@ def execute_run(
                             "attempt": attempt,
                         }
                     continue
+                elif request_artifact.get("status") == "transport_ambiguous_terminal":
+                    return {
+                        "status": "transport_ambiguous_terminal",
+                        "attempt": attempt,
+                    }
                 else:
                     raise AmbiguousRunState(
                         f"Request {run['logical_run_key']} attempt {attempt} may have reached provider"

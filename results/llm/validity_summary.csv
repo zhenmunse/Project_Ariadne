@@ -1,0 +1,5 @@
+model_key,condition,method,planned_runs,provider_responses,valid_runs,model_invalid_runs,transport_ambiguous_runs,model_validity_rate_over_responses,pipeline_yield_over_planned,target_equal_mean_model_validity_rate,target_equal_mean_pipeline_yield
+closed_frontier,zero,gpt56_sol_zero,200,200,200,0,0,1.0,1.0,1.0,1.0
+closed_frontier,full,gpt56_sol_full,200,200,200,0,0,1.0,1.0,1.0,1.0
+open_weight,zero,deepseek_v4_zero,200,200,195,5,0,0.975,0.975,0.975,0.975
+open_weight,full,deepseek_v4_full,200,199,197,2,1,0.9899497487437185,0.985,0.99,0.985

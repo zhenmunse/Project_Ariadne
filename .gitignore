@@ -19,6 +19,7 @@ data/processed/*.parquet
 # Experiment outputs
 experiments/*.pt
 experiments/*.pkl
+results/llm/smoke/
 
 # IDE
 .vscode/

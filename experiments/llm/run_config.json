@@ -18,13 +18,14 @@
         "full": "gpt56_sol_full",
         "zero": "gpt56_sol_zero"
       },
-      "max_output_tokens": 4096,
+      "max_output_tokens": 32768,
       "api_key_env": "OPENAI_API_KEY",
-      "endpoint": null,
-      "model_id_status": "must_be_frozen_before_task17",
+      "endpoint": "https://api.openai.com/v1/responses",
+      "model_id_status": "smoke_verified",
+      "multi_agent": false,
       "provider": "closed_frontier",
-      "reasoning": "highest_stable_native",
-      "requested_model_id": null,
+      "reasoning": "medium",
+      "requested_model_id": "gpt-5.6-sol",
       "temperature": null,
       "top_p": null
     },
@@ -33,15 +34,21 @@
         "full": "deepseek_v4_full",
         "zero": "deepseek_v4_zero"
       },
-      "max_output_tokens": 4096,
+      "max_output_tokens": 32768,
       "api_key_env": "DEEPSEEK_API_KEY",
-      "endpoint": null,
-      "model_id_status": "must_be_frozen_before_task17",
+      "endpoint": "https://api.deepseek.com/chat/completions",
+      "model_id_status": "smoke_verified",
       "provider": "open_weight",
-      "reasoning": "highest_stable_native",
-      "requested_model_id": null,
+      "reasoning": "medium",
+      "requested_model_id": "deepseek-v4-pro",
+      "thinking_enabled": true,
       "temperature": null,
-      "top_p": null
+      "top_p": null,
+      "smoke_verification": {
+        "mode": "inherited_nonbinding_ceiling_increase",
+        "source_max_output_tokens": 16384,
+        "reason": "medium-effort target-6 and target-39 pilots ended naturally with finish_reason=stop; raising only the hard ceiling cannot truncate those completed responses"
+      }
     }
   },
   "parser_policy": {

@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import time
 from pathlib import Path
 from typing import Any
 
@@ -47,4 +48,12 @@ def atomic_write_json(path: str | Path, value: Any) -> None:
         file.write(canonical_json_bytes(value))
         file.flush()
         os.fsync(file.fileno())
-    os.replace(temporary, path)
+    for retry in range(6):
+        try:
+            os.replace(temporary, path)
+            break
+        except PermissionError:
+            if retry == 5:
+                raise
+            # Windows indexing/antivirus can hold the destination briefly.
+            time.sleep(0.05 * (2 ** retry))

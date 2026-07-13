@@ -28,9 +28,33 @@ Before Task 17, each entry must have a provider-verified exact:
 - native `reasoning` setting;
 - supported sampling configuration.
 
-Task 16 intentionally leaves model IDs and endpoints null and marks them
-`must_be_frozen_before_task17`. Both formal adapters fail their capability gate
-while either value is unset. No request can be sent in that state.
+Task 17 preflight freezes OpenAI as `gpt-5.6-sol` at
+`https://api.openai.com/v1/responses` with no multi-agent mode, and DeepSeek as
+`deepseek-v4-pro` at `https://api.deepseek.com/chat/completions` with thinking
+enabled. The original candidate used the highest reasoning setting and 4096
+completion tokens. A preregistered pilot showed that DeepSeek consumed all 4096
+tokens as reasoning and returned an empty final response even on the smallest
+closure. The effective configuration therefore uses `medium` reasoning and
+32,768 completion tokens for both models. This remains within the protocol's
+highest-stable-setting rule: a setting producing budget-exhausted empty outputs
+is not stable. Both omit temperature and top-p. A formal request remains prohibited until the account-level smoke test
+also confirms access and the response metadata contract.
+
+The medium/16,384 DeepSeek curriculum pilots ended naturally with finish reason
+`stop` for both the smallest and largest closures. They remain excluded pilot
+evidence. The hard ceiling was then raised to 32,768 for both providers to
+protect repeated runs from upper-tail truncation without changing the medium
+reasoning setting. Each provider must complete a new configuration-bound smoke
+before formal execution. Smoke requests are marked `smoke_test=true` and
+`excluded_from_analysis=true`. Restricted raw artifacts are ignored by Git;
+`experiments/llm/generated/provider_preflight.json` records their hashes and
+sanitized audit metadata.
+
+DeepSeek's 32,768 ceiling verification is explicitly inherited from its
+medium/16,384 generic smoke and its two naturally completed curriculum pilots.
+No additional API call was made for the ceiling-only increase. The preflight
+records `verification_basis=inherited_nonbinding_ceiling_increase` and the
+verified lower request ceiling, rather than claiming an exact 32,768 smoke.
 
 API secrets are read only from these environment variables:
 
@@ -77,6 +101,12 @@ The run manifest contains exactly:
 
 Running dry-run twice must leave every generated JSON byte-identical.
 
+Input regeneration requires the repository's full data environment, including
+`pandas` and parquet support. The normal execution path loads the frozen JSON
+inputs and does not import those preparation-only dependencies, so `--help`
+and an individual provider or mock run work from any Python installation that
+has the lightweight runtime dependencies installed.
+
 ## Mock execution
 
 Mock mode never accesses the network. Use a temporary or explicitly mock-only
@@ -104,7 +134,9 @@ endpoint pass the capability gate:
 
 ```powershell
 python experiments\llm\run_llm.py `
+  --single-run `
   --provider closed_frontier `
+  --model closed_frontier `
   --condition zero `
   --target 42 `
   --run-id 7
@@ -114,6 +146,47 @@ python experiments\llm\run_llm.py `
   --condition full `
   --target 42
 ```
+
+Use `--single-run` for an individually controlled formal experiment. This
+safety mode requires explicit `--provider`, `--model`, `--condition`,
+`--target`, and `--run-id` values and aborts unless they resolve to exactly one
+entry in the frozen run manifest. For example, the completed DeepSeek smoke-in
+formal-grid invocation is reproducible with:
+
+```powershell
+D:\anaconda3\python.exe experiments\llm\run_llm.py `
+  --single-run `
+  --provider open_weight `
+  --model open_weight `
+  --condition zero `
+  --target 6 `
+  --run-id 0
+```
+
+Omit `--single-run` only when a reviewed batch selection is intentional. Batch
+filters may select multiple targets or repetitions.
+
+## Concurrent batch execution
+
+Batch runs can overlap independent API waits with `--workers`. The default is
+`1`; a conservative initial formal setting is `5`, increased only after
+observing provider rate limits and account quotas. For example, all pending
+DeepSeek Zero runs can be resumed with:
+
+```powershell
+D:\anaconda3\python.exe experiments\llm\run_llm.py `
+  --provider open_weight `
+  --condition zero `
+  --only pending `
+  --workers 5
+```
+
+The scheduler rejects non-positive worker counts and duplicate logical run
+identities. Threads share only the stateless provider adapter; each logical run
+retains a distinct request/raw/parsed path and its existing retry, resume,
+first-success, and invalid-no-retry semantics. Do not launch overlapping shell
+processes over the same run range. Provider HTTP 429 responses remain governed
+by the frozen transport-retry policy.
 
 Filters never change logical identity. A run key remains:
 
@@ -143,7 +216,7 @@ The default maximum transport attempt count is three.
 
 ## Artifact layers
 
-Each attempt uses three append-only paths:
+Each attempt uses three attempt-indexed paths:
 
 ```text
 results/llm/requests/<logical_run_key>/<attempt>.json
@@ -156,6 +229,12 @@ logical identity and source hashes. Raw artifacts contain the verbatim response
 text, response-reported model ID, provider request ID, usage, finish reason,
 latency and complete provider payload. Parsed artifacts bind the raw byte hash
 to parser and structural-validation results.
+
+Within one attempt, the request artifact is atomically updated from
+`request_prepared` to `request_dispatched` and, when applicable, to
+`transport_error`. It is never overwritten across attempt numbers. Raw and
+parsed artifacts are written once per attempt and are the strictly append-only
+response layers.
 
 Only structurally valid parsed runs may later become canonical
 `SequenceRecord` objects. Invalid runs remain parsed all-run records with no
