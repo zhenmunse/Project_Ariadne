@@ -37,7 +37,9 @@ class SyntheticPlanningScaffoldTests(unittest.TestCase):
             transfer_id="h", graph_id="g", policy="mixed_transfer",
             weights=((1, 0, 0.25),), seed=2, metadata={"density": 0.5},
         )
-        oracle = OracleParameterConfig("o", "g", "h", 0.5, {0: 0.1, 1: 0.2})
+        oracle = OracleParameterConfig(
+            "o", "g", "h", 1, graph.artifact_hash, 0.5, {0: 0.1, 1: 0.2}
+        )
         config = SyntheticExperimentConfig(output_root=root / "output")
         paths = {
             "graph": root / "graph.json",
@@ -53,22 +55,35 @@ class SyntheticPlanningScaffoldTests(unittest.TestCase):
         config.write(paths["config"])
         paths["runner_a"].write_text("A = 1\n", encoding="utf-8")
         paths["runner_b"].write_text("B = 2\n", encoding="utf-8")
+        code_artifacts = {
+            "runner": (paths["runner_a"],),
+            "oracle": (paths["runner_b"],),
+            "graph_factory": (paths["runner_a"],),
+            "transfer_factory": (paths["runner_b"],),
+            "planner": (paths["runner_a"],),
+            "solver": (paths["runner_b"],),
+        }
         inputs = RunProvenanceInputs(
             graph_artifact=paths["graph"], transfer_artifact=paths["transfer"],
             oracle_artifact=paths["oracle"], experiment_config=paths["config"],
-            runner_code=(paths["runner_a"], paths["runner_b"]),
+            code_artifacts=code_artifacts,
         )
         return config, inputs
 
     def _record(
         self, config: SyntheticExperimentConfig, inputs: RunProvenanceInputs
     ) -> dict:
-        return build_run_record(
-            run_identity={"family": "test", "seed": 1},
-            result={"cost": 120.0}, config=config,
-            provenance_inputs=inputs, allow_dirty_repository=True,
-            commit_sha="0" * 40,
-        )
+        state = {
+            "repository_commit_sha": "0" * 40,
+            "repository_dirty": False,
+            "git_diff_hash": "1" * 64,
+        }
+        with patch("experiments.synthetic.config.repository_state", return_value=state):
+            return build_run_record(
+                run_identity={"family": "test", "seed": 1},
+                result={"cost": 120.0}, config=config,
+                provenance_inputs=inputs, commit_sha="0" * 40,
+            )
 
     def test_graph_transfer_and_oracle_artifacts_round_trip(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
@@ -96,13 +111,13 @@ class SyntheticPlanningScaffoldTests(unittest.TestCase):
             config, inputs = self._artifacts(Path(temporary_directory))
             missing = RunProvenanceInputs(
                 Path(temporary_directory) / "missing.json", inputs.transfer_artifact,
-                inputs.oracle_artifact, inputs.experiment_config, inputs.runner_code,
+                inputs.oracle_artifact, inputs.experiment_config, inputs.code_artifacts,
             )
             with self.assertRaises(FileNotFoundError):
                 self._record(config, missing)
 
-    def test_empty_runner_code_is_rejected(self) -> None:
-        with self.assertRaisesRegex(ValueError, "runner_code"):
+    def test_missing_code_categories_are_rejected(self) -> None:
+        with self.assertRaisesRegex(ValueError, "required code artifact categories"):
             RunProvenanceInputs(Path("g"), Path("h"), Path("o"), Path("c"), ())
 
     def test_dirty_repository_is_rejected_unless_explicitly_allowed(self) -> None:
@@ -143,6 +158,17 @@ class SyntheticPlanningScaffoldTests(unittest.TestCase):
                     commit_sha="ABC",
                 )
 
+    def test_valid_but_incorrect_manual_commit_sha_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            config, inputs = self._artifacts(Path(temporary_directory))
+            state = {"repository_commit_sha": "0" * 40, "repository_dirty": False, "git_diff_hash": "2" * 64}
+            with patch("experiments.synthetic.config.repository_state", return_value=state):
+                with self.assertRaisesRegex(ValueError, "does not match"):
+                    build_run_record(
+                        run_identity={}, result={}, config=config,
+                        provenance_inputs=inputs, commit_sha="1" * 40,
+                    )
+
     def test_config_and_artifact_reference_tampering_breaks_verification(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
             config, inputs = self._artifacts(Path(temporary_directory))
@@ -175,7 +201,11 @@ class SyntheticPlanningScaffoldTests(unittest.TestCase):
             config, inputs = self._artifacts(Path(temporary_directory))
             reverse = RunProvenanceInputs(
                 inputs.graph_artifact, inputs.transfer_artifact, inputs.oracle_artifact,
-                inputs.experiment_config, tuple(reversed(inputs.runner_code)),
+                inputs.experiment_config,
+                tuple(
+                    (category, tuple(reversed(paths)))
+                    for category, paths in reversed(inputs.code_artifacts)
+                ),
             )
             first = self._record(config, inputs)
             second = self._record(config, reverse)

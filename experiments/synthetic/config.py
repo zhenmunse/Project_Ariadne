@@ -23,6 +23,24 @@ OUTPUT_SUBDIRECTORIES = (
     "final",
 )
 COMMIT_PATTERN = re.compile(r"[0-9a-f]{40}")
+HASH_PATTERN = re.compile(r"[0-9a-f]{64}")
+REQUIRED_CODE_CATEGORIES = frozenset(
+    {"runner", "oracle", "graph_factory", "transfer_factory", "planner", "solver"}
+)
+
+
+@dataclass(frozen=True)
+class FrozenObject:
+    """An immutable JSON object with explicit type identity."""
+
+    items: tuple[tuple[str, Any], ...]
+
+
+@dataclass(frozen=True)
+class FrozenArray:
+    """An immutable JSON array with explicit type identity."""
+
+    items: tuple[Any, ...]
 
 
 def _json_value(value: Any) -> Any:
@@ -54,13 +72,17 @@ def _json_value(value: Any) -> Any:
 
 def _freeze_json(value: Any) -> Any:
     """Defensively copy JSON data into recursively immutable values."""
+    if isinstance(value, (FrozenObject, FrozenArray)):
+        return value
     if isinstance(value, Mapping):
-        return tuple(
-            (str(key), _freeze_json(item))
-            for key, item in sorted(value.items(), key=lambda pair: str(pair[0]))
+        return FrozenObject(
+            tuple(
+                (str(key), _freeze_json(item))
+                for key, item in sorted(value.items(), key=lambda pair: str(pair[0]))
+            )
         )
     if isinstance(value, (list, tuple)):
-        return tuple(_freeze_json(item) for item in value)
+        return FrozenArray(tuple(_freeze_json(item) for item in value))
     if value is None or isinstance(value, (str, bool, int)):
         return value
     if isinstance(value, float):
@@ -72,13 +94,10 @@ def _freeze_json(value: Any) -> Any:
 
 def _thaw_json(value: Any) -> Any:
     """Convert recursively immutable metadata back to ordinary JSON values."""
-    if isinstance(value, tuple):
-        if all(
-            isinstance(item, tuple) and len(item) == 2 and isinstance(item[0], str)
-            for item in value
-        ):
-            return {key: _thaw_json(item) for key, item in value}
-        return [_thaw_json(item) for item in value]
+    if isinstance(value, FrozenObject):
+        return {key: _thaw_json(item) for key, item in value.items}
+    if isinstance(value, FrozenArray):
+        return [_thaw_json(item) for item in value.items]
     return value
 
 
@@ -104,6 +123,38 @@ def _nonnegative_int(value: Any, field_name: str) -> int:
     if value < 0:
         raise ValueError(f"{field_name} must be nonnegative")
     return value
+
+
+def _positive_int(value: Any, field_name: str) -> int:
+    value = _nonnegative_int(value, field_name)
+    if value == 0:
+        raise ValueError(f"{field_name} must be positive")
+    return value
+
+
+def _probability(value: Any, field_name: str) -> float:
+    value = float(value)
+    if not math.isfinite(value) or not 0 < value < 1:
+        raise ValueError(f"{field_name} must be strictly between 0 and 1")
+    return value
+
+
+def _ordered_grid(
+    values: Iterable[Any], field_name: str, *, strictly_positive: bool = False
+) -> tuple[float, ...]:
+    grid = tuple(float(value) for value in values)
+    if not grid:
+        raise ValueError(f"{field_name} must not be empty")
+    if any(
+        not math.isfinite(value)
+        or (value <= 0 if strictly_positive else value < 0)
+        for value in grid
+    ):
+        qualifier = "positive" if strictly_positive else "nonnegative"
+        raise ValueError(f"{field_name} values must be finite and {qualifier}")
+    if tuple(sorted(set(grid))) != grid:
+        raise ValueError(f"{field_name} must be strictly increasing without duplicates")
+    return grid
 
 
 def canonical_json_bytes(value: Any) -> bytes:
@@ -199,7 +250,7 @@ class GraphArtifactConfig(JsonArtifact):
     edges: tuple[tuple[int, int], ...]
     target: int
     seed: int
-    metadata: Any = field(default_factory=tuple)
+    metadata: Any = field(default_factory=dict)
 
     def __post_init__(self) -> None:
         if not self.graph_id or not self.family:
@@ -254,7 +305,7 @@ class TransferArtifactConfig(JsonArtifact):
     policy: str
     weights: tuple[tuple[int, int, float], ...]
     seed: int
-    metadata: Any = field(default_factory=tuple)
+    metadata: Any = field(default_factory=dict)
 
     def __post_init__(self) -> None:
         if not self.transfer_id or not self.graph_id or not self.policy:
@@ -303,14 +354,19 @@ class OracleParameterConfig(JsonArtifact):
     oracle_id: str
     graph_id: str
     transfer_id: str
+    bound_target: int
+    bound_closure_hash: str
     beta: float
     alpha_by_node: Any
     base_cost: float = 60.0
-    metadata: Any = field(default_factory=tuple)
+    metadata: Any = field(default_factory=dict)
 
     def __post_init__(self) -> None:
         if not self.oracle_id or not self.graph_id or not self.transfer_id:
             raise ValueError("oracle_id, graph_id, and transfer_id must be non-empty")
+        object.__setattr__(self, "bound_target", _nonnegative_int(self.bound_target, "bound_target"))
+        if HASH_PATTERN.fullmatch(self.bound_closure_hash) is None:
+            raise ValueError("bound_closure_hash must be 64 lowercase hexadecimal characters")
         beta = float(self.beta)
         if not math.isfinite(beta) or beta < 0:
             raise ValueError("beta must be finite and nonnegative")
@@ -333,20 +389,22 @@ class OracleParameterConfig(JsonArtifact):
     def to_dict(self) -> dict[str, Any]:
         return {
             "schema_version": 1, "oracle_id": self.oracle_id, "graph_id": self.graph_id,
-            "transfer_id": self.transfer_id, "beta": self.beta,
+            "transfer_id": self.transfer_id, "bound_target": self.bound_target,
+            "bound_closure_hash": self.bound_closure_hash, "beta": self.beta,
             "alpha_by_node": [list(item) for item in self.alpha_by_node],
             "base_cost": self.base_cost, "metadata": _thaw_json(self.metadata),
         }
 
     @classmethod
     def from_dict(cls, payload: Mapping[str, Any]) -> "OracleParameterConfig":
-        fields = {"schema_version", "oracle_id", "graph_id", "transfer_id", "beta", "alpha_by_node", "base_cost", "metadata"}
+        fields = {"schema_version", "oracle_id", "graph_id", "transfer_id", "bound_target", "bound_closure_hash", "beta", "alpha_by_node", "base_cost", "metadata"}
         _exact_fields(payload, fields, "Oracle artifact")
         if payload["schema_version"] != 1:
             raise ValueError("Unsupported oracle artifact schema_version")
         return cls(
             oracle_id=payload["oracle_id"], graph_id=payload["graph_id"],
-            transfer_id=payload["transfer_id"], beta=payload["beta"],
+            transfer_id=payload["transfer_id"], bound_target=payload["bound_target"],
+            bound_closure_hash=payload["bound_closure_hash"], beta=payload["beta"],
             alpha_by_node=tuple(tuple(item) for item in payload["alpha_by_node"]),
             base_cost=payload["base_cost"], metadata=payload["metadata"],
         )
@@ -410,6 +468,25 @@ class LayeredGraphFamilyConfig:
     edge_density: float = 0.3
     max_order_ideals: int = 2_000_000
 
+    def __post_init__(self) -> None:
+        sizes = tuple(tuple(size) for size in self.sizes)
+        if not sizes or any(
+            len(size) != 2
+            or any(not isinstance(value, int) or isinstance(value, bool) or value <= 0 for value in size)
+            for size in sizes
+        ):
+            raise ValueError("sizes must contain positive (layer_count, nodes_per_layer) pairs")
+        seeds = tuple(_nonnegative_int(seed, "graph seed") for seed in self.graph_seeds)
+        if not seeds or len(seeds) != len(set(seeds)):
+            raise ValueError("graph_seeds must be non-empty and unique")
+        density = float(self.edge_density)
+        if not math.isfinite(density) or not 0 < density <= 1:
+            raise ValueError("edge_density must be in (0, 1]")
+        object.__setattr__(self, "sizes", sizes)
+        object.__setattr__(self, "graph_seeds", seeds)
+        object.__setattr__(self, "edge_density", density)
+        object.__setattr__(self, "max_order_ideals", _positive_int(self.max_order_ideals, "max_order_ideals"))
+
     def to_dict(self) -> dict[str, Any]:
         return _json_value(asdict(self))
 
@@ -425,6 +502,15 @@ class TransferGenerationConfig:
     densities: tuple[float, ...] = (0.1, 0.2, 0.3)
     max_weight: float = 1.0
 
+    def __post_init__(self) -> None:
+        if self.policy not in {"ancestor_transfer", "sibling_transfer", "cross_branch_transfer", "mixed_transfer"}:
+            raise ValueError("Unsupported transfer policy")
+        densities = _ordered_grid(self.densities, "densities", strictly_positive=True)
+        if any(value > 1 for value in densities):
+            raise ValueError("transfer densities must not exceed 1")
+        object.__setattr__(self, "densities", densities)
+        object.__setattr__(self, "max_weight", _positive_float(self.max_weight, "max_weight"))
+
     def to_dict(self) -> dict[str, Any]: return _json_value(asdict(self))
     @classmethod
     def from_dict(cls, payload: Mapping[str, Any]) -> "TransferGenerationConfig":
@@ -437,6 +523,11 @@ class CalibrationConfig:
     samples: int = 10_000
     absolute_tolerance: float = 1e-10
     maximum_iterations: int = 200
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "samples", _positive_int(self.samples, "calibration samples"))
+        object.__setattr__(self, "absolute_tolerance", _positive_float(self.absolute_tolerance, "calibration absolute_tolerance"))
+        object.__setattr__(self, "maximum_iterations", _positive_int(self.maximum_iterations, "calibration maximum_iterations"))
 
     def to_dict(self) -> dict[str, Any]: return _json_value(asdict(self))
     @classmethod
@@ -454,6 +545,16 @@ class DependenceSweepConfig(JsonConfig):
     calibration: CalibrationConfig = field(default_factory=CalibrationConfig)
     random_frontier_runs: int = 100
     solver_tolerance: float = 1e-9
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.common, SyntheticCommonConfig):
+            raise TypeError("common must be SyntheticCommonConfig")
+        beta_grid = _ordered_grid(self.beta_grid, "beta_grid")
+        if beta_grid[0] != 0.0:
+            raise ValueError("beta_grid must include 0 as its first value")
+        object.__setattr__(self, "beta_grid", beta_grid)
+        object.__setattr__(self, "random_frontier_runs", _positive_int(self.random_frontier_runs, "random_frontier_runs"))
+        object.__setattr__(self, "solver_tolerance", _positive_float(self.solver_tolerance, "solver_tolerance"))
 
     def to_dict(self) -> dict[str, Any]:
         return {"common": self.common.to_dict(), "beta_grid": list(self.beta_grid), "graph": self.graph.to_dict(), "transfer": self.transfer.to_dict(), "calibration": self.calibration.to_dict(), "random_frontier_runs": self.random_frontier_runs, "solver_tolerance": self.solver_tolerance}
@@ -475,6 +576,25 @@ class TrapFamilyConfig(JsonConfig):
     k_values: tuple[int, ...] = (2, 4, 8, 16)
     solver_tolerance: float = 1e-9
 
+    def __post_init__(self) -> None:
+        if not isinstance(self.common, SyntheticCommonConfig):
+            raise TypeError("common must be SyntheticCommonConfig")
+        p_a = _probability(self.p_a, "p_a")
+        q = _probability(self.q, "q")
+        delta_grid = _ordered_grid(self.delta_grid, "delta_grid")
+        if any(p_a - delta <= 0 for delta in delta_grid):
+            raise ValueError("delta_grid must keep p_b = p_a - delta strictly positive")
+        tau_grid = _ordered_grid(self.tau_grid, "tau_grid")
+        k_values = tuple(_positive_int(value, "k value") for value in self.k_values)
+        if not k_values or tuple(sorted(set(k_values))) != k_values:
+            raise ValueError("k_values must be strictly increasing without duplicates")
+        object.__setattr__(self, "p_a", p_a)
+        object.__setattr__(self, "q", q)
+        object.__setattr__(self, "delta_grid", delta_grid)
+        object.__setattr__(self, "tau_grid", tau_grid)
+        object.__setattr__(self, "k_values", k_values)
+        object.__setattr__(self, "solver_tolerance", _positive_float(self.solver_tolerance, "solver_tolerance"))
+
     def to_dict(self) -> dict[str, Any]:
         return {"common": self.common.to_dict(), "p_a": self.p_a, "q": self.q, "delta_grid": list(self.delta_grid), "tau_grid": list(self.tau_grid), "k_values": list(self.k_values), "solver_tolerance": self.solver_tolerance}
 
@@ -490,6 +610,11 @@ class BoundAblationConfig(JsonConfig):
     common: SyntheticCommonConfig = field(default_factory=SyntheticCommonConfig)
     solver_tolerance: float = 1e-9
 
+    def __post_init__(self) -> None:
+        if not isinstance(self.common, SyntheticCommonConfig):
+            raise TypeError("common must be SyntheticCommonConfig")
+        object.__setattr__(self, "solver_tolerance", _positive_float(self.solver_tolerance, "solver_tolerance"))
+
     def to_dict(self) -> dict[str, Any]: return {"common": self.common.to_dict(), "solver_tolerance": self.solver_tolerance}
     @classmethod
     def from_dict(cls, payload: Mapping[str, Any]) -> "BoundAblationConfig":
@@ -503,15 +628,28 @@ class RunProvenanceInputs:
     transfer_artifact: Path
     oracle_artifact: Path
     experiment_config: Path
-    runner_code: tuple[Path, ...]
+    code_artifacts: Any
 
     def __post_init__(self) -> None:
         for name in ("graph_artifact", "transfer_artifact", "oracle_artifact", "experiment_config"):
             object.__setattr__(self, name, Path(getattr(self, name)))
-        runner_code = tuple(Path(path) for path in self.runner_code)
-        if not runner_code:
-            raise ValueError("runner_code must contain at least one code artifact")
-        object.__setattr__(self, "runner_code", runner_code)
+        items = self.code_artifacts.items() if isinstance(self.code_artifacts, Mapping) else self.code_artifacts
+        categories = []
+        for category, paths in items:
+            if not isinstance(category, str) or not category:
+                raise TypeError("Code artifact categories must be non-empty strings")
+            paths = tuple(Path(path) for path in paths)
+            if not paths:
+                raise ValueError(f"Code artifact category {category!r} must not be empty")
+            categories.append((category, paths))
+        categories.sort(key=lambda item: item[0])
+        names = {category for category, _ in categories}
+        if len(names) != len(categories):
+            raise ValueError("Code artifact categories must be unique")
+        missing = sorted(REQUIRED_CODE_CATEGORIES - names)
+        if missing:
+            raise ValueError(f"Missing required code artifact categories: {missing}")
+        object.__setattr__(self, "code_artifacts", tuple(categories))
 
 
 def _validate_commit_sha(commit_sha: str) -> str:
@@ -576,7 +714,9 @@ def build_run_record(
     if state["repository_dirty"] and not allow_dirty_repository:
         raise RuntimeError("Synthetic formal runs require a clean repository")
     if commit_sha is not None:
-        state["repository_commit_sha"] = _validate_commit_sha(commit_sha)
+        supplied = _validate_commit_sha(commit_sha)
+        if supplied != state["repository_commit_sha"]:
+            raise ValueError("commit_sha does not match checked-out HEAD")
 
     config_payload = config.to_dict()
     with provenance_inputs.experiment_config.open("r", encoding="utf-8") as file:
@@ -584,8 +724,10 @@ def build_run_record(
     if value_hash(recorded_config) != value_hash(config_payload):
         raise ValueError("experiment_config artifact does not match the materialized config")
 
-    runner_refs = [_file_reference(path) for path in provenance_inputs.runner_code]
-    runner_refs.sort(key=lambda ref: ref["path"])
+    code_refs = {}
+    for category, paths in provenance_inputs.code_artifacts:
+        refs = [_file_reference(path) for path in paths]
+        code_refs[category] = sorted(refs, key=lambda ref: ref["path"])
     payload = {
         "schema_version": 1,
         **state,
@@ -598,7 +740,7 @@ def build_run_record(
             "transfer": _file_reference(provenance_inputs.transfer_artifact),
             "oracle": _file_reference(provenance_inputs.oracle_artifact),
             "experiment_config": _file_reference(provenance_inputs.experiment_config),
-            "runner_code": runner_refs,
+            "code": code_refs,
         },
     }
     return {**payload, "provenance_hash": value_hash(payload)}
@@ -620,11 +762,16 @@ def verify_run_record(record: Mapping[str, Any], *, verify_artifacts: bool = Tru
         return True
     try:
         artifacts = record["artifacts"]
-        required = {"graph", "transfer", "oracle", "experiment_config", "runner_code"}
-        if set(artifacts) != required or not artifacts["runner_code"]:
+        required = {"graph", "transfer", "oracle", "experiment_config", "code"}
+        if set(artifacts) != required or not isinstance(artifacts["code"], Mapping):
+            return False
+        if not REQUIRED_CODE_CATEGORIES <= set(artifacts["code"]):
             return False
         refs = [artifacts[name] for name in ("graph", "transfer", "oracle", "experiment_config")]
-        refs.extend(artifacts["runner_code"])
+        for category_refs in artifacts["code"].values():
+            if not category_refs:
+                return False
+            refs.extend(category_refs)
         return all(file_hash(_resolve_recorded_path(ref["path"])) == ref["sha256"] for ref in refs)
     except (KeyError, TypeError, FileNotFoundError, OSError):
         return False
