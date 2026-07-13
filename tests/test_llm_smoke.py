@@ -47,6 +47,22 @@ class LLMSmokeTests(unittest.TestCase):
         self.assertNotIn("Prerequisite", artifact["request"]["user_prompt"])
         self.assertIsNone(artifact["sequence_validation"])
 
+    def test_curriculum_smoke_target_and_condition_are_configurable(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            output = run_smoke(
+                "mock",
+                MockProvider(),
+                model_key="open_weight",
+                output_root=Path(directory),
+                timestamp_utc="2000-01-01T00:00:00+00:00",
+                target=39,
+                condition="full",
+            )
+            artifact = load_json(output)
+        self.assertEqual(artifact["target_node"], 39)
+        self.assertEqual(artifact["condition"], "full")
+        self.assertTrue(artifact["sequence_validation"]["valid"])
+
 
 if __name__ == "__main__":
     unittest.main()

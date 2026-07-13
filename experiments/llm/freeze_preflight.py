@@ -22,7 +22,17 @@ def _hash_text(value: str) -> str:
     return hashlib.sha256(value.encode("utf-8")).hexdigest()
 
 
-def _latest_verified(provider: str) -> dict | None:
+def _smoke_config_hash(model: dict) -> str:
+    return value_hash({
+        key: model.get(key)
+        for key in (
+            "endpoint", "requested_model_id", "reasoning", "temperature",
+            "top_p", "max_output_tokens", "thinking_enabled", "multi_agent",
+        )
+    })
+
+
+def _latest_verified(provider: str, model: dict) -> dict | None:
     directory = SMOKE_ROOT / provider
     candidates = sorted(directory.glob("*.json")) if directory.exists() else []
     for path in reversed(candidates):
@@ -32,12 +42,39 @@ def _latest_verified(provider: str) -> dict | None:
             artifact.get("smoke_test") is True
             and artifact.get("excluded_from_analysis") is True
             and artifact.get("prompt_scope") == "generic_provider_preflight"
+            and artifact.get("smoke_config_hash") == _smoke_config_hash(model)
             and response.get("response_model_id")
             and response.get("provider_request_id")
             and response.get("finish_reason")
             and response.get("raw_provider_payload")
         ):
-            return {"path": path, "artifact": artifact}
+            return {"path": path, "artifact": artifact, "basis": "exact_config_smoke"}
+    inheritance = model.get("smoke_verification") or {}
+    if inheritance.get("mode") == "inherited_nonbinding_ceiling_increase":
+        source_limit = int(inheritance["source_max_output_tokens"])
+        if source_limit >= int(model["max_output_tokens"]):
+            return None
+        for path in reversed(candidates):
+            artifact = load_json(path)
+            response = artifact.get("provider_response") or {}
+            request = artifact.get("request") or {}
+            if (
+                artifact.get("smoke_test") is True
+                and artifact.get("excluded_from_analysis") is True
+                and artifact.get("prompt_scope") == "generic_provider_preflight"
+                and request.get("requested_model_id") == model["requested_model_id"]
+                and (request.get("reasoning_config") or {}).get("effort") == model["reasoning"]
+                and int(request.get("max_output_tokens", -1)) == source_limit
+                and response.get("response_model_id") == model["requested_model_id"]
+                and response.get("provider_request_id")
+                and response.get("finish_reason") in {"stop", "completed"}
+                and response.get("raw_provider_payload")
+            ):
+                return {
+                    "path": path,
+                    "artifact": artifact,
+                    "basis": "inherited_nonbinding_ceiling_increase",
+                }
     return None
 
 
@@ -49,7 +86,7 @@ def build_preflight() -> dict:
     providers = {}
     for model_key in ("closed_frontier", "open_weight"):
         model = config["models"][model_key]
-        verified = _latest_verified(model_key)
+        verified = _latest_verified(model_key, model)
         row = {
             "provider": model["provider"],
             "endpoint": model["endpoint"],
@@ -85,7 +122,11 @@ def build_preflight() -> dict:
                 "response_text_hash": _hash_text(response["response_text"]),
                 "parse_valid": artifact["parse_result"]["parse_valid"],
                 "schema_valid": artifact["parse_result"]["schema_valid"],
+                "verification_basis": verified["basis"],
+                "verified_request_max_output_tokens": artifact["request"]["max_output_tokens"],
             }
+            if verified["basis"] == "inherited_nonbinding_ceiling_increase":
+                row["smoke"]["inheritance_reason"] = model["smoke_verification"]["reason"]
         providers[model_key] = row
     return {
         "schema_version": 1,

@@ -8,9 +8,10 @@ import unittest
 from unittest.mock import patch
 
 from experiments.llm.models import ProviderRequest, ProviderResponse
-from experiments.llm.providers.base import ProviderConfigurationError
+from experiments.llm.providers.base import ProviderConfigurationError, TransportError
 from experiments.llm.providers.closed_frontier import ClosedFrontierProvider
 from experiments.llm.providers.open_weight import OpenWeightProvider
+from experiments.llm.providers.http_base import urllib_json_transport
 
 
 def request(model: str = "frozen-model") -> ProviderRequest:
@@ -26,6 +27,23 @@ def request(model: str = "frozen-model") -> ProviderRequest:
 
 
 class LLMProviderContractTests(unittest.TestCase):
+    def test_connection_reset_while_reading_response_is_terminal_transport_error(self) -> None:
+        class ResetResponse:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *args):
+                return False
+
+            def read(self):
+                raise ConnectionResetError(10054, "connection reset")
+
+        with patch("urllib.request.urlopen", return_value=ResetResponse()):
+            with self.assertRaises(TransportError) as raised:
+                urllib_json_transport("https://provider.invalid", {}, {"x": 1})
+        self.assertFalse(raised.exception.retryable)
+        self.assertIn("Ambiguous provider response", str(raised.exception))
+
     def test_empty_formal_response_provenance_is_rejected(self) -> None:
         base = {
             "response_text": "{}",

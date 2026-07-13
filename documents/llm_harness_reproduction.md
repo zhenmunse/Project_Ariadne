@@ -29,22 +29,32 @@ Before Task 17, each entry must have a provider-verified exact:
 - supported sampling configuration.
 
 Task 17 preflight freezes OpenAI as `gpt-5.6-sol` at
-`https://api.openai.com/v1/responses` with `xhigh` reasoning and no multi-agent
-mode. It freezes DeepSeek as `deepseek-v4-pro` at
-`https://api.deepseek.com/chat/completions`, with thinking enabled and reasoning
-effort `max`. Both omit temperature and top-p and use a 4096-token final-output
-budget. A formal request remains prohibited until the account-level smoke test
+`https://api.openai.com/v1/responses` with no multi-agent mode, and DeepSeek as
+`deepseek-v4-pro` at `https://api.deepseek.com/chat/completions` with thinking
+enabled. The original candidate used the highest reasoning setting and 4096
+completion tokens. A preregistered pilot showed that DeepSeek consumed all 4096
+tokens as reasoning and returned an empty final response even on the smallest
+closure. The effective configuration therefore uses `medium` reasoning and
+32,768 completion tokens for both models. This remains within the protocol's
+highest-stable-setting rule: a setting producing budget-exhausted empty outputs
+is not stable. Both omit temperature and top-p. A formal request remains prohibited until the account-level smoke test
 also confirms access and the response metadata contract.
 
-Both generic provider preflights completed successfully on July 12, 2026.
-DeepSeek returned `deepseek-v4-pro` with finish reason `stop`; OpenAI returned
-`gpt-5.6-sol` with finish reason `completed`. Both responses contained a
-nonempty provider request ID, usage metadata and a complete raw payload. Each
-smoke request is marked `smoke_test=true` and `excluded_from_analysis=true`.
-The restricted raw artifacts are ignored by Git;
+The medium/16,384 DeepSeek curriculum pilots ended naturally with finish reason
+`stop` for both the smallest and largest closures. They remain excluded pilot
+evidence. The hard ceiling was then raised to 32,768 for both providers to
+protect repeated runs from upper-tail truncation without changing the medium
+reasoning setting. Each provider must complete a new configuration-bound smoke
+before formal execution. Smoke requests are marked `smoke_test=true` and
+`excluded_from_analysis=true`. Restricted raw artifacts are ignored by Git;
 `experiments/llm/generated/provider_preflight.json` records their hashes and
-sanitized audit metadata. Both model configuration entries are
-`model_id_status=smoke_verified`, and `formal_execution_ready` is true.
+sanitized audit metadata.
+
+DeepSeek's 32,768 ceiling verification is explicitly inherited from its
+medium/16,384 generic smoke and its two naturally completed curriculum pilots.
+No additional API call was made for the ceiling-only increase. The preflight
+records `verification_basis=inherited_nonbinding_ceiling_increase` and the
+verified lower request ceiling, rather than claiming an exact 32,768 smoke.
 
 API secrets are read only from these environment variables:
 

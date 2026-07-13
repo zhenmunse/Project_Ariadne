@@ -37,13 +37,19 @@ class LLMHarnessTests(unittest.TestCase):
         closed = self.config["models"]["closed_frontier"]
         opened = self.config["models"]["open_weight"]
         self.assertEqual(closed["requested_model_id"], "gpt-5.6-sol")
-        self.assertEqual(closed["reasoning"], "xhigh")
+        self.assertEqual(closed["reasoning"], "medium")
         self.assertFalse(closed["multi_agent"])
         self.assertEqual(opened["requested_model_id"], "deepseek-v4-pro")
-        self.assertEqual(opened["reasoning"], "max")
+        self.assertEqual(opened["reasoning"], "medium")
         self.assertTrue(opened["thinking_enabled"])
+        self.assertEqual(closed["max_output_tokens"], 32768)
+        self.assertEqual(opened["max_output_tokens"], 32768)
         self.assertEqual(closed["model_id_status"], "smoke_verified")
         self.assertEqual(opened["model_id_status"], "smoke_verified")
+        self.assertEqual(
+            opened["smoke_verification"]["mode"],
+            "inherited_nonbinding_ceiling_increase",
+        )
         policy = self.config["request_policy"]
         self.assertTrue(policy["single_turn"] and policy["fresh_request"])
         self.assertFalse(policy["tools"] or policy["search"] or policy["retrieval"])

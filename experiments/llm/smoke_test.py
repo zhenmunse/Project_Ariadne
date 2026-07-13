@@ -12,7 +12,7 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
-from experiments.llm.artifacts import atomic_write_json, load_json, sha256_file
+from experiments.llm.artifacts import atomic_write_json, load_json, sha256_file, value_hash
 from experiments.llm.harness import assert_secret_free
 from experiments.llm.models import ProviderRequest
 from experiments.llm.parse_output import parse_output
@@ -32,11 +32,11 @@ def run_smoke(
     output_root: Path,
     timestamp_utc: str | None = None,
     generic_preflight: bool = False,
+    target: int = 6,
+    condition: str = "zero",
 ) -> Path:
     config = load_json(LLM / "run_config.json")
     model = config["models"][model_key]
-    target = 6
-    condition = "zero"
     prompt_path = LLM / "generated" / "prompts" / str(target) / f"{condition}.json"
     prompt = load_json(prompt_path)
     timestamp = timestamp_utc or datetime.now(timezone.utc).isoformat()
@@ -81,6 +81,13 @@ def run_smoke(
         "sequence_validation": validation.to_dict() if validation is not None else None,
         "protocol_hash": sha256_file(LLM / "protocol.json"),
         "run_config_hash": sha256_file(LLM / "run_config.json"),
+        "smoke_config_hash": value_hash({
+            key: model.get(key)
+            for key in (
+                "endpoint", "requested_model_id", "reasoning", "temperature",
+                "top_p", "max_output_tokens", "thinking_enabled", "multi_agent",
+            )
+        }),
         "prompt_hash": prompt["prompt_hash"],
         "mapping_hash": bundle["mapping_hash"],
         "smoke_runner_source_hash": sha256_file(Path(__file__)),
@@ -96,6 +103,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--provider", choices=("closed_frontier", "open_weight"), required=True)
     parser.add_argument("--output-root", type=Path, default=ROOT / "results" / "llm" / "smoke")
     parser.add_argument("--generic-preflight", action="store_true")
+    parser.add_argument("--target", type=int, default=6)
+    parser.add_argument("--condition", choices=("zero", "full"), default="zero")
     return parser.parse_args()
 
 
@@ -109,6 +118,8 @@ def main() -> None:
         model_key=args.provider,
         output_root=args.output_root,
         generic_preflight=args.generic_preflight,
+        target=args.target,
+        condition=args.condition,
     )
     artifact = load_json(output)
     print(json.dumps({

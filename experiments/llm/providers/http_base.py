@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import json
+import http.client
 import os
+import ssl
 import urllib.error
 import urllib.request
 from collections.abc import Callable
@@ -38,6 +40,20 @@ def urllib_json_transport(
         ) from error
     except (urllib.error.URLError, TimeoutError) as error:
         raise TransportError(str(error), retryable=True) from error
+    except (
+        ConnectionResetError,
+        ConnectionAbortedError,
+        BrokenPipeError,
+        http.client.IncompleteRead,
+        ssl.SSLError,
+    ) as error:
+        # The request may have reached the provider and a response may have
+        # started before the connection failed. Retrying could create a second
+        # model response for the same logical run, so fail closed.
+        raise TransportError(
+            f"Ambiguous provider response transport failure: {error}",
+            retryable=False,
+        ) from error
 
 
 def authorization_headers(api_key_env: str) -> dict[str, str]:

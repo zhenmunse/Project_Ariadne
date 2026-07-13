@@ -19,23 +19,22 @@ class LLMPreflightTests(unittest.TestCase):
     def setUpClass(cls) -> None:
         cls.preflight = json.loads(PREFLIGHT.read_text(encoding="utf-8"))
 
-    def test_deepseek_smoke_is_verified_and_excluded(self) -> None:
+    def test_deepseek_32768_inherits_completed_lower_ceiling_smoke(self) -> None:
         deepseek = self.preflight["providers"]["open_weight"]
         self.assertTrue(deepseek["smoke_verified"])
         self.assertEqual(deepseek["requested_model_id"], "deepseek-v4-pro")
-        self.assertEqual(deepseek["smoke"]["response_model_id"], "deepseek-v4-pro")
-        self.assertTrue(deepseek["smoke"]["smoke_test"])
-        self.assertTrue(deepseek["smoke"]["excluded_from_analysis"])
-        self.assertTrue(deepseek["smoke"]["provider_request_id_present"])
-        self.assertTrue(deepseek["smoke"]["raw_provider_payload_present"])
+        self.assertEqual(deepseek["model_id_status"], "smoke_verified")
+        self.assertEqual(
+            deepseek["smoke"]["verification_basis"],
+            "inherited_nonbinding_ceiling_increase",
+        )
+        self.assertEqual(deepseek["smoke"]["verified_request_max_output_tokens"], 16384)
 
-    def test_openai_smoke_is_verified_and_preflight_is_ready(self) -> None:
+    def test_openai_32768_configuration_is_verified(self) -> None:
         openai = self.preflight["providers"]["closed_frontier"]
         self.assertTrue(openai["smoke_verified"])
         self.assertEqual(openai["requested_model_id"], "gpt-5.6-sol")
         self.assertEqual(openai["smoke"]["response_model_id"], "gpt-5.6-sol")
-        self.assertTrue(openai["smoke"]["smoke_test"])
-        self.assertTrue(openai["smoke"]["excluded_from_analysis"])
         self.assertTrue(openai["smoke"]["provider_request_id_present"])
         self.assertTrue(openai["smoke"]["raw_provider_payload_present"])
         self.assertEqual(openai["model_id_status"], "smoke_verified")

@@ -25,6 +25,10 @@ class Method(str, Enum):
     LINEAR_SYLLABUS = "linear_syllabus"
     LLM_ZERO = "llm_zero"
     LLM_FULL = "llm_full"
+    GPT56_SOL_ZERO = "gpt56_sol_zero"
+    GPT56_SOL_FULL = "gpt56_sol_full"
+    DEEPSEEK_V4_ZERO = "deepseek_v4_zero"
+    DEEPSEEK_V4_FULL = "deepseek_v4_full"
     EXACT_DP = "exact_dp"
 
 
