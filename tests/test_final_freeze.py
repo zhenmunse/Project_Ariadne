@@ -5,6 +5,7 @@ from __future__ import annotations
 import csv
 import hashlib
 import json
+import subprocess
 import unittest
 from collections import Counter
 from pathlib import Path
@@ -111,6 +112,24 @@ class FinalFreezeTests(unittest.TestCase):
             self.assertIsNone(model["temperature"])
             self.assertIsNone(model["top_p"])
             self.assertEqual(model["repetitions"], 20)
+
+    def test_source_commit_is_an_ancestor_and_contains_numerical_core(self) -> None:
+        manifest = json.loads((FINAL / "final_freeze_manifest.json").read_text(encoding="utf-8"))
+        recorded = manifest["code_snapshot"]["source_code_commit_sha"]
+        ancestor = subprocess.run(
+            ["git", "merge-base", "--is-ancestor", recorded, "HEAD"],
+            cwd=ROOT,
+            check=False,
+        )
+        self.assertEqual(ancestor.returncode, 0)
+
+        for key in ("aggregator", "public_evaluator"):
+            reference = manifest["code_snapshot"][key]
+            committed = subprocess.check_output(
+                ["git", "show", f"{recorded}:{reference['path']}"],
+                cwd=ROOT,
+            )
+            self.assertEqual(hashlib.sha256(committed).hexdigest(), reference["sha256"])
 
 
 if __name__ == "__main__":

@@ -56,8 +56,15 @@ and Holm-adjusted p-values across the two prespecified comparisons.
 
 ## Commit identity
 
-The manifest records the repository `HEAD` resolved when the finalizer runs as
-`final_code_commit_sha`, together with direct hashes of the finalizer,
-aggregator, and public evaluator. After the final Task 18 code commit is
-created, rerun the command once so the recorded commit identity names that
-frozen source snapshot.
+The freeze uses two commits to avoid an impossible self-reference. The first
+commit contains the complete Task 18 numerical implementation and generated
+tables. The finalizer is run while that commit is `HEAD`, and records it as
+`source_code_commit_sha`. A second provenance-only commit may then contain the
+renamed field, this explanation, its regression test, and the regenerated
+freeze manifest.
+
+`source_code_commit_sha` therefore names the complete source snapshot used to
+generate and score the numerical results; it is not claimed to be the commit
+that contains the manifest itself. The manifest separately hashes the freeze
+generator, aggregator, and public evaluator. Do not rerun the finalizer after
+creating the provenance-only commit unless a new source freeze is intended.

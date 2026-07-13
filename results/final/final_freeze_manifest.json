@@ -274,17 +274,12 @@
       "path": "experiments/aggregate_results.py",
       "sha256": "4f568d6ee33c0b6deec828f3cf232a0a15b487ae03e1dbe3925fd09040ba5e1a"
     },
-    "final_code_commit_sha": "bf78a577e30e36291958c5f8ae4c9f10f3ed3036",
-    "finalizer": {
-      "bytes": 12552,
-      "path": "experiments/finalize_all_results.py",
-      "sha256": "9215682dacab540177f979dc4e512538dffd9aa68ffa9519c77d15a01f1b5697"
-    },
     "public_evaluator": {
       "bytes": 8328,
       "path": "experiments/common/evaluator.py",
       "sha256": "855a4f721d12d42e8fc685aa3638dc9d00a2d4f0aef67cae1528ac2261568de7"
-    }
+    },
+    "source_code_commit_sha": "21d8b0c8d04da30d6f4be931baf6837d2fcec751"
   },
   "dkt_set": {
     "distillation_metadata": {
@@ -464,6 +459,11 @@
         "sha256": "ffe61dfc963f19cdb864befae6d35d2dfc1d51afe31dfd10a61d485e509c5f19"
       }
     ]
+  },
+  "freeze_generator": {
+    "bytes": 12556,
+    "path": "experiments/finalize_all_results.py",
+    "sha256": "52c09e96991f863cc3ba6e6240e8c5acb23157d914f5b1c320f73c00e6963430"
   },
   "generated_table_hashes": {
     "collection_hash": "05d36ae6892cd2aeb06425244c78bc28956d61225cc75e322cbfae262ee5f32f",
@@ -12611,7 +12611,7 @@
       "valid_sequences": 792
     }
   },
-  "manifest_payload_hash": "1e34145aceec64763ae65392ecc595676352925b57d9e89deb4c651445d3b855",
+  "manifest_payload_hash": "f37a17eb148617951a41f149c7e27281443e0afc9ac0fcb40758a48c69bbcb78",
   "mapping_hash_collection": {
     "collection_hash": "6801de7ee5180f2678d00fe8e7693d546e725034b42c0d8b176f0c327af900bf",
     "count": 2,

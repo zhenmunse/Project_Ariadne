@@ -160,11 +160,11 @@ def build_manifest() -> dict[str, Any]:
         "provenance_root": "results/final/final_freeze_manifest.json",
         "generation_command": "python experiments/finalize_all_results.py",
         "code_snapshot": {
-            "final_code_commit_sha": _git_commit(),
-            "finalizer": _file_ref(ROOT / "experiments/finalize_all_results.py"),
+            "source_code_commit_sha": _git_commit(),
             "aggregator": _file_ref(ROOT / "experiments/aggregate_results.py"),
             "public_evaluator": _file_ref(ROOT / "experiments/common/evaluator.py"),
         },
+        "freeze_generator": _file_ref(ROOT / "experiments/finalize_all_results.py"),
         "shared_protocol": {
             "dag": _file_ref(ROOT / "data/ecs32a_dag_required_full_v1.json"),
             "source_manifest": _file_ref(ROOT / "experiments/common/manifest.json"),
