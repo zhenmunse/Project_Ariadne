@@ -33,13 +33,13 @@ class AggregateResultsTests(unittest.TestCase):
         cls.main_table = read_csv("main_table.csv")
         cls.oracle_metrics = read_csv("oracle_metrics.csv")
 
-    def test_all_ten_approved_conditions_and_only_them_are_present(self) -> None:
-        expected = {condition[0] for condition in AGGREGATOR.CONDITIONS}
+    def test_all_fourteen_approved_conditions_and_only_them_are_present(self) -> None:
+        expected = set(AGGREGATOR.ALL_METHODS)
         self.assertEqual({record.method for record in self.records}, expected)
         self.assertNotIn(Method.LLM_ZERO, expected)
         self.assertNotIn(Method.LLM_FULL, expected)
-        self.assertEqual(len(self.records), 1090)
-        self.assertEqual(len(self.scored), 1090)
+        self.assertEqual(len(self.records), 1882)
+        self.assertEqual(len(self.scored), 1882)
 
     def test_identity_grid_is_complete_and_unique(self) -> None:
         targets = set(load_manifest()["targets"])
@@ -54,6 +54,15 @@ class AggregateResultsTests(unittest.TestCase):
                 {(record.target_node, record.run_id) for record in method_records},
                 {(target, run) for target in targets for run in range(runs)},
             )
+        expected_llm_valid = {
+            Method.GPT56_SOL_ZERO: 200,
+            Method.GPT56_SOL_FULL: 200,
+            Method.DEEPSEEK_V4_ZERO: 195,
+            Method.DEEPSEEK_V4_FULL: 197,
+        }
+        for method, expected_count in expected_llm_valid.items():
+            method_records = [record for record in self.records if record.method is method]
+            self.assertEqual(len(method_records), expected_count)
 
     def test_every_record_uses_current_manifest_and_closure(self) -> None:
         manifest = load_manifest()
@@ -73,14 +82,16 @@ class AggregateResultsTests(unittest.TestCase):
         self.assertTrue(all(float(row["normalized_regret"]) >= 0.0 for row in self.scored))
 
     def test_per_target_and_main_table_have_expected_granularity(self) -> None:
-        self.assertEqual(len(self.per_target), 100)
-        self.assertEqual(len(self.main_table), 10)
+        self.assertEqual(len(self.per_target), 140)
+        self.assertEqual(len(self.main_table), 14)
         self.assertTrue(all(int(row["targets"]) == 10 for row in self.main_table))
         by_method = {row["method"]: row for row in self.main_table}
-        self.assertEqual(int(by_method[Method.RANDOM_FRONTIER.value]["records"]), 1000)
+        self.assertEqual(int(by_method[Method.RANDOM_FRONTIER.value]["planned_runs"]), 1000)
         for method, _, _ in AGGREGATOR.CONDITIONS:
             expected = 1000 if method is Method.RANDOM_FRONTIER else 10
-            self.assertEqual(int(by_method[method.value]["valid_records"]), expected)
+            self.assertEqual(int(by_method[method.value]["valid_runs"]), expected)
+        self.assertEqual(int(by_method[Method.GPT56_SOL_ZERO.value]["planned_runs"]), 200)
+        self.assertEqual(int(by_method[Method.DEEPSEEK_V4_FULL.value]["valid_runs"]), 197)
 
     def test_main_table_weights_targets_equally(self) -> None:
         for main in self.main_table:
@@ -91,7 +102,7 @@ class AggregateResultsTests(unittest.TestCase):
             ]
             self.assertEqual(len(values), 10)
             self.assertEqual(
-                float(main["mean_normalized_regret_across_targets"]),
+                float(main["mean_normalized_regret"]),
                 statistics.fmean(values),
             )
 
@@ -135,7 +146,7 @@ class AggregateResultsTests(unittest.TestCase):
             aggregate["evaluator_hash"],
             sha256_file(ROOT / "experiments/common/evaluator.py"),
         )
-        self.assertEqual(set(aggregate["inputs"]), {item[0].value for item in AGGREGATOR.CONDITIONS})
+        self.assertEqual(set(aggregate["inputs"]), {method.value for method in AGGREGATOR.ALL_METHODS})
         for item in aggregate["inputs"].values():
             self.assertEqual(item["sha256"], sha256_file(ROOT / item["path"]))
         for item in aggregate["outputs"].values():

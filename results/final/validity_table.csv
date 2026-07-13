@@ -1,0 +1,15 @@
+method,display_name,planned_runs,provider_responses,valid_runs,model_invalid_runs,transport_ambiguous_runs,model_validity_rate,validity_rate,pipeline_yield,model_validity_denominator,validity_denominator,cost_regret_conditioning
+ariadne_greedy,Ariadne Greedy,10,10,10,0,0,1.0,1.0,1.0,obtained_provider_responses,all_planned_runs,structurally_valid_runs_only
+ariadne_lao,Ariadne LAO*,10,10,10,0,0,1.0,1.0,1.0,obtained_provider_responses,all_planned_runs,structurally_valid_runs_only
+frequency_greedy,Frequency Greedy,10,10,10,0,0,1.0,1.0,1.0,obtained_provider_responses,all_planned_runs,structurally_valid_runs_only
+frequency_lao,Frequency LAO*,10,10,10,0,0,1.0,1.0,1.0,obtained_provider_responses,all_planned_runs,structurally_valid_runs_only
+bkt_set_greedy,BKT-set Greedy,10,10,10,0,0,1.0,1.0,1.0,obtained_provider_responses,all_planned_runs,structurally_valid_runs_only
+bkt_set_lao,BKT-set LAO*,10,10,10,0,0,1.0,1.0,1.0,obtained_provider_responses,all_planned_runs,structurally_valid_runs_only
+dkt_set_greedy,DKT-set Greedy,10,10,10,0,0,1.0,1.0,1.0,obtained_provider_responses,all_planned_runs,structurally_valid_runs_only
+dkt_set_lao,DKT-set LAO*,10,10,10,0,0,1.0,1.0,1.0,obtained_provider_responses,all_planned_runs,structurally_valid_runs_only
+random_frontier,Random Frontier,1000,1000,1000,0,0,1.0,1.0,1.0,obtained_provider_responses,all_planned_runs,structurally_valid_runs_only
+linear_syllabus,Linear Syllabus,10,10,10,0,0,1.0,1.0,1.0,obtained_provider_responses,all_planned_runs,structurally_valid_runs_only
+gpt56_sol_zero,GPT-5.6 SOL Zero,200,200,200,0,0,1.0,1.0,1.0,obtained_provider_responses,all_planned_runs,structurally_valid_runs_only
+gpt56_sol_full,GPT-5.6 SOL Full,200,200,200,0,0,1.0,1.0,1.0,obtained_provider_responses,all_planned_runs,structurally_valid_runs_only
+deepseek_v4_zero,DeepSeek V4 Pro Zero,200,200,195,5,0,0.975,0.975,0.975,obtained_provider_responses,all_planned_runs,structurally_valid_runs_only
+deepseek_v4_full,DeepSeek V4 Pro Full,200,199,197,2,1,0.9899497487437185,0.985,0.985,obtained_provider_responses,all_planned_runs,structurally_valid_runs_only
