@@ -6,13 +6,23 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from experiments.synthetic.config import SeedConfig, SyntheticExperimentConfig, value_hash
+from experiments.synthetic.config import (
+    DependenceSweepConfig,
+    SeedConfig,
+    SyntheticExperimentConfig,
+    TrapFamilyConfig,
+    value_hash,
+)
 
 
 class SyntheticCalibrationScaffoldTests(unittest.TestCase):
     def test_calibration_and_evaluation_seeds_must_differ(self) -> None:
         with self.assertRaisesRegex(ValueError, "different"):
             SeedConfig(calibration=7, evaluation=7)
+
+    def test_all_seed_namespaces_must_be_distinct(self) -> None:
+        with self.assertRaisesRegex(ValueError, "all be different"):
+            SeedConfig(graph=5, transfer=5, calibration=6, evaluation=7)
 
     def test_config_round_trip_preserves_hash(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
@@ -22,6 +32,19 @@ class SyntheticCalibrationScaffoldTests(unittest.TestCase):
             loaded = SyntheticExperimentConfig.load(path)
             self.assertEqual(config.to_dict(), loaded.to_dict())
             self.assertEqual(value_hash(config), value_hash(loaded))
+
+    def test_runner_specific_configs_round_trip_without_shared_field_limit(self) -> None:
+        configs = (
+            DependenceSweepConfig(beta_grid=(0.0, 0.5, 2.0), random_frontier_runs=17),
+            TrapFamilyConfig(delta_grid=(0.01, 0.02), tau_grid=(0.2, 0.4), k_values=(2, 8)),
+        )
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            for index, config in enumerate(configs):
+                path = Path(temporary_directory) / f"config-{index}.json"
+                config.write(path)
+                loaded = type(config).load(path)
+                self.assertEqual(loaded.to_dict(), config.to_dict())
+                self.assertEqual(value_hash(loaded), value_hash(config))
 
 
 if __name__ == "__main__":

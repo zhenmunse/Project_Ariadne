@@ -7,14 +7,14 @@ if __package__ in {None, ""}:
     from pathlib import Path
 
     sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
-    from experiments.synthetic.config import initialize_from_cli, scaffold_cli
+    from experiments.synthetic.config import BoundAblationConfig, initialize_from_cli, scaffold_cli
 else:
-    from .config import initialize_from_cli, scaffold_cli
+    from .config import BoundAblationConfig, initialize_from_cli, scaffold_cli
 
 
 def main() -> None:
     parser = scaffold_cli("Run the synthetic certified-bound ablation")
-    initialize_from_cli(parser.parse_args())
+    initialize_from_cli(parser.parse_args(), config_type=BoundAblationConfig)
 
 
 if __name__ == "__main__":

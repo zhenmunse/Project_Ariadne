@@ -191,6 +191,8 @@ class SyntheticTransferOracle:
 ## Requirements
 
 - deterministic；
+- oracle instances are constructed per target closure; `best_case_success_prob`
+  returns the analytic bound for the bound closure；
 - same \((v,s)\) always returns identical value；
 - monotonicity：
 
@@ -253,15 +255,15 @@ overall success-probability increase
 q_v\in(0,1).
 \]
 
-可选来源：
+来源按 graph family 冻结：
 
 ```text
-fixed synthetic distribution
-FrozenMonotonicOracle marginal probabilities
-ECS32A concept-level empirical prior
+layered synthetic DAG -> fixed synthetic distribution
+ECS32A semi-synthetic closure -> concept-level empirical prior
+                               (FrequencyOracle per-concept success rate)
 ```
 
-主实验需冻结一种来源。
+每个 family 的来源及其参数必须分别写入 manifest，不允许在查看主结果后更换。
 
 ## Reference transfer mass
 
@@ -338,12 +340,6 @@ C^{\mathrm{RF}}_\beta-C_{\mathrm{reference}}
 \le 10^{-6}
 \]
 
-或 relative error：
-
-\[
-\le 10^{-8}.
-\]
-
 ## Deliverables
 
 - `calibration.py`；
@@ -388,7 +384,9 @@ graph_seed
 - unique target sink；
 - closure contains all generated nodes；
 - nontrivial frontier states；
-- DAG width / depth 写入 metadata。
+- 生成后计算 prerequisite order-ideal state count；
+- state count 超过 \(2\times10^6\) 的 instance 必须拒绝并 deterministic 重新生成；
+- DAG width / depth / order-ideal state count 写入 metadata。
 
 ## B. ECS32A semi-synthetic topology
 
@@ -681,6 +679,9 @@ k: {2, 4, 8, 16}
 
 实际范围需避免 probability saturation。
 
+Trap-family oracle parameters are specified directly and do not use the S4
+calibration procedure, which applies only to the dependence sweep.
+
 ## Primary result
 
 Greedy regret landscape：
@@ -698,8 +699,17 @@ Supplementary 报其余 \(k\)。
 标注 Greedy immediate-choice boundary，例如：
 
 \[
-p_b=q.
+p_b=q,
+\qquad
+\delta^*=p_a-q.
 \]
+
+固定 \(p_a\) 和 \(q\) 时，这个 boundary 在 \(\delta\) 方向产生由 Greedy
+binary immediate-choice rule 导致的阶跃：\(\delta<\delta^*\) 时先选 \(b\)，
+regret 为 0；\(\delta>\delta^*\) 时先选 beneficiaries，trap 激活，regret
+主要随 \(\tau\) 和 \(k\) 变化、与 \(\delta\) 基本无关。这一 discontinuity
+是预期机制，不是数值错误。\(\delta\) grid 应以 \(\delta^*\) 为中心，仅在两侧
+保留足够展示 decision boundary 的范围。
 
 图名使用：
 
@@ -767,6 +777,10 @@ p_t^*(v)
 w_{uv}
 \right).
 \]
+
+每个 oracle instance 在构造时绑定一个 target closure \(V_t\)。因此现有
+`best_case_success_prob(v)` 接口不增加 target 参数；它返回该 bound closure
+对应的 \(p_t^*(v)\)。
 
 由于：
 
@@ -852,6 +866,8 @@ Greedy-regret landscape on sibling-transfer trap
 - color: Greedy normalized regret
 - fixed representative \(k\)
 - annotate immediate-choice boundary
+- caption 必须解释 \(\delta^*=p_a-q\) 处的阶跃来自 Greedy binary
+  immediate-choice rule，而不是数值不连续 bug
 
 ### Panel B
 
@@ -910,6 +926,7 @@ config hash
 graph instance hashes
 transfer graph hashes
 oracle parameter hashes
+reference difficulty source and parameters per graph family
 beta grid
 trap parameter grid
 calibration seeds
@@ -927,7 +944,7 @@ UTC generation timestamp
 - 所有 runs deterministic；
 - 所有 LAO* values 与 Exact DP 一致；
 - \(\beta=0\) 时 Greedy regret 为 0；
-- calibration error 达标；
+- dependence-sweep calibration error 达标；
 - analytic bound 无 contract violation；
 - main figure 可由 frozen CSV 自动重建；
 - 不手工修改 figure data；
@@ -1014,12 +1031,15 @@ final two-panel figure
 - [ ] \(H\) contains only nonnegative transfer weights.
 - [ ] Synthetic oracle is monotone in mastery state.
 - [ ] Section 3 formulation is unchanged.
-- [ ] Marginal difficulty is calibrated across \(\beta\).
+- [ ] Marginal difficulty is calibrated across \(\beta\) for the dependence
+  sweep; the directly parameterized trap family is exempt.
 - [ ] Random Frontier reference cost remains fixed within tolerance.
 - [ ] \(\beta=0\) gives zero Greedy and LAO* regret.
 - [ ] No sequence-equality assertion is used at \(\beta=0\).
 - [ ] LAO* matches Exact DP on every synthetic instance.
 - [ ] Trap family produces an interpretable Greedy-regret landscape.
+- [ ] Layered instances exceeding \(2\times10^6\) order-ideal states are rejected,
+  and accepted state counts are recorded in graph metadata.
 - [ ] Dependence sweep shows when planning becomes useful.
 - [ ] ECS32A semi-synthetic topology is included.
 - [ ] Analytic \(p_t^*(v)\) bound is validated.

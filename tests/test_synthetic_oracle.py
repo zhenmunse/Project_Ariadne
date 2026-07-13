@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import unittest
+import tempfile
+from pathlib import Path
 
 from experiments.synthetic.config import OracleParameterConfig, canonical_json_bytes, value_hash
 
@@ -29,6 +31,30 @@ class SyntheticOracleScaffoldTests(unittest.TestCase):
     def test_negative_beta_is_rejected(self) -> None:
         with self.assertRaisesRegex(ValueError, "beta"):
             OracleParameterConfig("oracle", "graph", "transfer", -0.1, {})
+
+    def test_oracle_artifact_round_trip_preserves_schema_and_hash(self) -> None:
+        oracle = OracleParameterConfig(
+            "oracle", "graph", "transfer", 1.0, {2: -0.5, 1: 0.25},
+            metadata={"difficulty_source": "fixed", "samples": [1, 2]},
+        )
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            path = Path(temporary_directory) / "oracle.json"
+            oracle.write(path)
+            loaded = OracleParameterConfig.load(path)
+        self.assertEqual(loaded.to_dict(), oracle.to_dict())
+        self.assertEqual(loaded.artifact_hash, oracle.artifact_hash)
+
+    def test_nested_parameters_are_defensively_frozen(self) -> None:
+        alpha = {1: 0.5}
+        metadata = {"nested": [1, 2]}
+        oracle = OracleParameterConfig(
+            "oracle", "graph", "transfer", 1.0, alpha, metadata=metadata
+        )
+        original_hash = oracle.artifact_hash
+        alpha[1] = 99.0
+        metadata["nested"].append(3)
+        self.assertEqual(oracle.artifact_hash, original_hash)
+        self.assertEqual(oracle.to_dict()["alpha_by_node"], [[1, 0.5]])
 
 
 if __name__ == "__main__":
