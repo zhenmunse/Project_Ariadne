@@ -1,0 +1,657 @@
+{
+  "aggregate": {
+    "ratios": {
+      "expanded_states": {
+        "r_dp": {
+          "max": 1.0,
+          "mean": 1.0,
+          "min": 1.0
+        },
+        "r_lao_astar": {
+          "max": 0.9787234042553191,
+          "mean": 0.9294046878049558,
+          "min": 0.8
+        },
+        "r_prune": {
+          "max": 1.0,
+          "mean": 1.0,
+          "min": 1.0
+        }
+      },
+      "generated_states": {
+        "r_dp": {
+          "max": 1.0,
+          "mean": 1.0,
+          "min": 1.0
+        },
+        "r_lao_astar": {
+          "max": 1.0,
+          "mean": 1.0,
+          "min": 1.0
+        },
+        "r_prune": {
+          "max": 1.0,
+          "mean": 1.0,
+          "min": 1.0
+        }
+      },
+      "oracle_calls": {
+        "r_dp": {
+          "max": 1.0,
+          "mean": 1.0,
+          "min": 1.0
+        },
+        "r_lao_astar": {
+          "max": 1.0,
+          "mean": 1.0,
+          "min": 1.0
+        },
+        "r_prune": {
+          "max": 1.0,
+          "mean": 1.0,
+          "min": 1.0
+        }
+      },
+      "wall_seconds": {
+        "r_dp": {
+          "max": 2.856137126933152,
+          "mean": 1.1597021988766387,
+          "min": 0.8457157114080419
+        },
+        "r_lao_astar": {
+          "max": 1.477091214665003,
+          "mean": 1.1858459392474248,
+          "min": 1.071761826904711
+        },
+        "r_prune": {
+          "max": 1.2203856760416152,
+          "mean": 1.026801457981882,
+          "min": 0.95719134676959
+        }
+      }
+    },
+    "solver_metrics": {
+      "astar": {
+        "edge_cost_evaluations": {
+          "max": 92.0,
+          "mean": 35.7,
+          "min": 4.0
+        },
+        "expanded_states": {
+          "max": 47.0,
+          "mean": 22.9,
+          "min": 5.0
+        },
+        "generated_states": {
+          "max": 92.0,
+          "mean": 35.7,
+          "min": 4.0
+        },
+        "oracle_calls": {
+          "max": 92.0,
+          "mean": 35.7,
+          "min": 4.0
+        },
+        "stored_states": {
+          "max": 47.0,
+          "mean": 22.9,
+          "min": 5.0
+        },
+        "wall_seconds": {
+          "max": 0.024069900002359645,
+          "mean": 0.008956239999315585,
+          "min": 0.001189499998872634
+        }
+      },
+      "dijkstra": {
+        "edge_cost_evaluations": {
+          "max": 92.0,
+          "mean": 35.7,
+          "min": 4.0
+        },
+        "expanded_states": {
+          "max": 47.0,
+          "mean": 22.9,
+          "min": 5.0
+        },
+        "generated_states": {
+          "max": 92.0,
+          "mean": 35.7,
+          "min": 4.0
+        },
+        "oracle_calls": {
+          "max": 92.0,
+          "mean": 35.7,
+          "min": 4.0
+        },
+        "stored_states": {
+          "max": 47.0,
+          "mean": 22.9,
+          "min": 5.0
+        },
+        "wall_seconds": {
+          "max": 0.023039499999867985,
+          "mean": 0.008966940000391332,
+          "min": 0.0012276999987079762
+        }
+      },
+      "full_dp": {
+        "edge_cost_evaluations": {
+          "max": 92.0,
+          "mean": 35.7,
+          "min": 4.0
+        },
+        "expanded_states": {
+          "max": 46.0,
+          "mean": 21.9,
+          "min": 4.0
+        },
+        "generated_states": {
+          "max": 92.0,
+          "mean": 35.7,
+          "min": 4.0
+        },
+        "oracle_calls": {
+          "max": 92.0,
+          "mean": 35.7,
+          "min": 4.0
+        },
+        "stored_states": {
+          "max": 47.0,
+          "mean": 22.9,
+          "min": 5.0
+        },
+        "wall_seconds": {
+          "max": 0.021653299998433795,
+          "mean": 0.008707629999480559,
+          "min": 0.0015053999995870981
+        }
+      },
+      "lao": {
+        "edge_cost_evaluations": {
+          "max": 92.0,
+          "mean": 35.7,
+          "min": 4.0
+        },
+        "expanded_states": {
+          "max": 46.0,
+          "mean": 21.9,
+          "min": 4.0
+        },
+        "generated_states": {
+          "max": 92.0,
+          "mean": 35.7,
+          "min": 4.0
+        },
+        "oracle_calls": {
+          "max": 92.0,
+          "mean": 35.7,
+          "min": 4.0
+        },
+        "stored_states": {
+          "max": 47.0,
+          "mean": 22.9,
+          "min": 5.0
+        },
+        "wall_seconds": {
+          "max": 0.025797199999942677,
+          "mean": 0.010190890000740183,
+          "min": 0.0017569999981787987
+        }
+      }
+    }
+  },
+  "invariants": {
+    "astar_reopens_zero": true,
+    "cost_agreement": true,
+    "deterministic_metrics_match": true,
+    "independent_runs": 2,
+    "sequence_agreement": true,
+    "sequence_validity": true,
+    "targets_checked": 10,
+    "wall_seconds_excluded_from_determinism_check": true
+  },
+  "manifest_hash": "f03496e703b4e6a04ad46f24c42e55d92bdc88266d92dbd19d77d2892d3c8cad",
+  "runner_source_hash": "81548d78e425bac2ab13aefff7f6a87dcacc1f2a56dafa969e673ba4f2308777",
+  "schema_version": 1,
+  "solver_comparison_source_hash": "97c7e69c7cbc2cf7ba10418d05266570a2353343ec2909314b90cf7ced3d18b5",
+  "targets": [
+    {
+      "closure_nodes": 6,
+      "cost_agreement": true,
+      "max_absolute_cost_gap": 0.0,
+      "optimal_cost": 708.9110672643005,
+      "optimal_sequence": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6
+      ],
+      "ratios": {
+        "expanded_states": {
+          "r_dp": 1.0,
+          "r_lao_astar": 0.8571428571428571,
+          "r_prune": 1.0
+        },
+        "generated_states": {
+          "r_dp": 1.0,
+          "r_lao_astar": 1.0,
+          "r_prune": 1.0
+        },
+        "oracle_calls": {
+          "r_dp": 1.0,
+          "r_lao_astar": 1.0,
+          "r_prune": 1.0
+        },
+        "wall_seconds": {
+          "r_dp": 2.856137126933152,
+          "r_lao_astar": 1.2153045610403748,
+          "r_prune": 1.2203856760416152
+        }
+      },
+      "sequence_agreement": true,
+      "target_node": 6
+    },
+    {
+      "closure_nodes": 9,
+      "cost_agreement": true,
+      "max_absolute_cost_gap": 2.2737367544323206e-13,
+      "optimal_cost": 1322.4514196191788,
+      "optimal_sequence": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        11,
+        3,
+        7
+      ],
+      "ratios": {
+        "expanded_states": {
+          "r_dp": 1.0,
+          "r_lao_astar": 0.95,
+          "r_prune": 1.0
+        },
+        "generated_states": {
+          "r_dp": 1.0,
+          "r_lao_astar": 1.0,
+          "r_prune": 1.0
+        },
+        "oracle_calls": {
+          "r_dp": 1.0,
+          "r_lao_astar": 1.0,
+          "r_prune": 1.0
+        },
+        "wall_seconds": {
+          "r_dp": 0.8644451975215491,
+          "r_lao_astar": 1.1244040334733478,
+          "r_prune": 1.0414636689246122
+        }
+      },
+      "sequence_agreement": true,
+      "target_node": 7
+    },
+    {
+      "closure_nodes": 12,
+      "cost_agreement": true,
+      "max_absolute_cost_gap": 0.0,
+      "optimal_cost": 1789.5451791885284,
+      "optimal_sequence": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        11,
+        3,
+        7,
+        8,
+        10,
+        12
+      ],
+      "ratios": {
+        "expanded_states": {
+          "r_dp": 1.0,
+          "r_lao_astar": 0.9565217391304348,
+          "r_prune": 1.0
+        },
+        "generated_states": {
+          "r_dp": 1.0,
+          "r_lao_astar": 1.0,
+          "r_prune": 1.0
+        },
+        "oracle_calls": {
+          "r_dp": 1.0,
+          "r_lao_astar": 1.0,
+          "r_prune": 1.0
+        },
+        "wall_seconds": {
+          "r_dp": 0.9767775698707128,
+          "r_lao_astar": 1.147739112850301,
+          "r_prune": 0.9693223130733539
+        }
+      },
+      "sequence_agreement": true,
+      "target_node": 12
+    },
+    {
+      "closure_nodes": 16,
+      "cost_agreement": true,
+      "max_absolute_cost_gap": 0.0,
+      "optimal_cost": 2499.402241030157,
+      "optimal_sequence": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        11,
+        3,
+        7,
+        8,
+        10,
+        12,
+        15,
+        13,
+        17,
+        18
+      ],
+      "ratios": {
+        "expanded_states": {
+          "r_dp": 1.0,
+          "r_lao_astar": 0.9642857142857143,
+          "r_prune": 1.0
+        },
+        "generated_states": {
+          "r_dp": 1.0,
+          "r_lao_astar": 1.0,
+          "r_prune": 1.0
+        },
+        "oracle_calls": {
+          "r_dp": 1.0,
+          "r_lao_astar": 1.0,
+          "r_prune": 1.0
+        },
+        "wall_seconds": {
+          "r_dp": 1.0102220403493392,
+          "r_lao_astar": 1.2053310140352966,
+          "r_prune": 1.069436201526359
+        }
+      },
+      "sequence_agreement": true,
+      "target_node": 18
+    },
+    {
+      "closure_nodes": 4,
+      "cost_agreement": true,
+      "max_absolute_cost_gap": 0.0,
+      "optimal_cost": 536.5474715636964,
+      "optimal_sequence": [
+        0,
+        1,
+        2,
+        29
+      ],
+      "ratios": {
+        "expanded_states": {
+          "r_dp": 1.0,
+          "r_lao_astar": 0.8,
+          "r_prune": 1.0
+        },
+        "generated_states": {
+          "r_dp": 1.0,
+          "r_lao_astar": 1.0,
+          "r_prune": 1.0
+        },
+        "oracle_calls": {
+          "r_dp": 1.0,
+          "r_lao_astar": 1.0,
+          "r_prune": 1.0
+        },
+        "wall_seconds": {
+          "r_dp": 1.265573771344147,
+          "r_lao_astar": 1.477091214665003,
+          "r_prune": 1.0321143336456888
+        }
+      },
+      "sequence_agreement": true,
+      "target_node": 29
+    },
+    {
+      "closure_nodes": 17,
+      "cost_agreement": true,
+      "max_absolute_cost_gap": 4.547473508864641e-13,
+      "optimal_cost": 2710.7489993360227,
+      "optimal_sequence": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        11,
+        3,
+        7,
+        8,
+        10,
+        12,
+        15,
+        13,
+        17,
+        32,
+        36
+      ],
+      "ratios": {
+        "expanded_states": {
+          "r_dp": 1.0,
+          "r_lao_astar": 0.9655172413793104,
+          "r_prune": 1.0
+        },
+        "generated_states": {
+          "r_dp": 1.0,
+          "r_lao_astar": 1.0,
+          "r_prune": 1.0
+        },
+        "oracle_calls": {
+          "r_dp": 1.0,
+          "r_lao_astar": 1.0,
+          "r_prune": 1.0
+        },
+        "wall_seconds": {
+          "r_dp": 0.8631744983992427,
+          "r_lao_astar": 1.136165217988835,
+          "r_prune": 0.9715986209961152
+        }
+      },
+      "sequence_agreement": true,
+      "target_node": 36
+    },
+    {
+      "closure_nodes": 16,
+      "cost_agreement": true,
+      "max_absolute_cost_gap": 4.547473508864641e-13,
+      "optimal_cost": 2412.3449305605654,
+      "optimal_sequence": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        29,
+        11,
+        3,
+        7,
+        8,
+        10,
+        12,
+        13,
+        37,
+        39
+      ],
+      "ratios": {
+        "expanded_states": {
+          "r_dp": 1.0,
+          "r_lao_astar": 0.9787234042553191,
+          "r_prune": 1.0
+        },
+        "generated_states": {
+          "r_dp": 1.0,
+          "r_lao_astar": 1.0,
+          "r_prune": 1.0
+        },
+        "oracle_calls": {
+          "r_dp": 1.0,
+          "r_lao_astar": 1.0,
+          "r_prune": 1.0
+        },
+        "wall_seconds": {
+          "r_dp": 0.8996007460068823,
+          "r_lao_astar": 1.071761826904711,
+          "r_prune": 0.95719134676959
+        }
+      },
+      "sequence_agreement": true,
+      "target_node": 39
+    },
+    {
+      "closure_nodes": 15,
+      "cost_agreement": true,
+      "max_absolute_cost_gap": 0.0,
+      "optimal_cost": 2373.8902194904344,
+      "optimal_sequence": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        11,
+        3,
+        7,
+        8,
+        10,
+        12,
+        40,
+        41,
+        42
+      ],
+      "ratios": {
+        "expanded_states": {
+          "r_dp": 1.0,
+          "r_lao_astar": 0.9714285714285714,
+          "r_prune": 1.0
+        },
+        "generated_states": {
+          "r_dp": 1.0,
+          "r_lao_astar": 1.0,
+          "r_prune": 1.0
+        },
+        "oracle_calls": {
+          "r_dp": 1.0,
+          "r_lao_astar": 1.0,
+          "r_prune": 1.0
+        },
+        "wall_seconds": {
+          "r_dp": 0.8840284261213148,
+          "r_lao_astar": 1.1626667045643861,
+          "r_prune": 0.9935705984700092
+        }
+      },
+      "sequence_agreement": true,
+      "target_node": 42
+    },
+    {
+      "closure_nodes": 7,
+      "cost_agreement": true,
+      "max_absolute_cost_gap": 0.0,
+      "optimal_cost": 1194.9513235411628,
+      "optimal_sequence": [
+        0,
+        1,
+        2,
+        4,
+        3,
+        40,
+        46
+      ],
+      "ratios": {
+        "expanded_states": {
+          "r_dp": 1.0,
+          "r_lao_astar": 0.8888888888888888,
+          "r_prune": 1.0
+        },
+        "generated_states": {
+          "r_dp": 1.0,
+          "r_lao_astar": 1.0,
+          "r_prune": 1.0
+        },
+        "oracle_calls": {
+          "r_dp": 1.0,
+          "r_lao_astar": 1.0,
+          "r_prune": 1.0
+        },
+        "wall_seconds": {
+          "r_dp": 0.8457157114080419,
+          "r_lao_astar": 1.1819315693387697,
+          "r_prune": 0.957926247958734
+        }
+      },
+      "sequence_agreement": true,
+      "target_node": 46
+    },
+    {
+      "closure_nodes": 15,
+      "cost_agreement": true,
+      "max_absolute_cost_gap": 0.0,
+      "optimal_cost": 2347.887157111571,
+      "optimal_sequence": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        11,
+        3,
+        7,
+        8,
+        10,
+        12,
+        13,
+        51,
+        52
+      ],
+      "ratios": {
+        "expanded_states": {
+          "r_dp": 1.0,
+          "r_lao_astar": 0.9615384615384616,
+          "r_prune": 1.0
+        },
+        "generated_states": {
+          "r_dp": 1.0,
+          "r_lao_astar": 1.0,
+          "r_prune": 1.0
+        },
+        "oracle_calls": {
+          "r_dp": 1.0,
+          "r_lao_astar": 1.0,
+          "r_prune": 1.0
+        },
+        "wall_seconds": {
+          "r_dp": 1.1313469008120056,
+          "r_lao_astar": 1.136064137613221,
+          "r_prune": 1.0550055724127447
+        }
+      },
+      "sequence_agreement": true,
+      "target_node": 52
+    }
+  ]
+}
