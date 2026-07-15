@@ -1,0 +1,288 @@
+{
+  "aggregate": {
+    "am_gm_bound": {
+      "max": 625.0,
+      "mean": 182.85833333333335,
+      "min": 5.0
+    },
+    "chain_ratio": {
+      "max": 1.0,
+      "mean": 0.8583450046685341,
+      "min": 0.7777777777777778
+    },
+    "compression_ratio_amgm": {
+      "max": 1.0,
+      "mean": 0.35066470005615763,
+      "min": 0.0752
+    },
+    "compression_ratio_exp": {
+      "max": 0.3125,
+      "mean": 0.05400924682617188,
+      "min": 0.00022125244140625
+    },
+    "density": {
+      "max": 0.5,
+      "mean": 0.31397504456327985,
+      "min": 0.21323529411764705
+    },
+    "depth": {
+      "max": 14.0,
+      "mean": 9.8,
+      "min": 4.0
+    },
+    "edges": {
+      "max": 29.0,
+      "mean": 18.8,
+      "min": 3.0
+    },
+    "edges_transitive_reduction": {
+      "max": 19.0,
+      "mean": 12.7,
+      "min": 3.0
+    },
+    "max_in_degree": {
+      "max": 3.0,
+      "mean": 2.6,
+      "min": 1.0
+    },
+    "max_out_degree": {
+      "max": 6.0,
+      "mean": 4.3,
+      "min": 1.0
+    },
+    "n": {
+      "max": 17.0,
+      "mean": 11.7,
+      "min": 4.0
+    },
+    "n_sequence": {
+      "max": 17.0,
+      "mean": 11.7,
+      "min": 4.0
+    },
+    "parallel_pairs": {
+      "max": 17.0,
+      "mean": 6.9,
+      "min": 0.0
+    },
+    "reachable_ideals": {
+      "max": 47.0,
+      "mean": 22.9,
+      "min": 5.0
+    },
+    "theoretical_max": {
+      "max": 131072.0,
+      "mean": 33249.6,
+      "min": 16.0
+    },
+    "width": {
+      "max": 4.0,
+      "mean": 2.6,
+      "min": 1.0
+    }
+  },
+  "manifest_hash": "f03496e703b4e6a04ad46f24c42e55d92bdc88266d92dbd19d77d2892d3c8cad",
+  "schema_version": 1,
+  "targets": [
+    {
+      "am_gm_bound": 7.0,
+      "bottleneck_nodes": "[]",
+      "chain_ratio": 1.0,
+      "compression_ratio_amgm": 1.0,
+      "compression_ratio_exp": 0.109375,
+      "density": 0.4666666666666667,
+      "depth": 6,
+      "edges": 7,
+      "edges_transitive_reduction": 5,
+      "max_in_degree": 2,
+      "max_out_degree": 3,
+      "n": 6,
+      "n_sequence": 6,
+      "parallel_pairs": 0,
+      "reachable_ideals": 7,
+      "target_node": 6,
+      "theoretical_max": 64,
+      "width": 1
+    },
+    {
+      "am_gm_bound": 64.0,
+      "bottleneck_nodes": "[7]",
+      "chain_ratio": 0.7777777777777778,
+      "compression_ratio_amgm": 0.3125,
+      "compression_ratio_exp": 0.0390625,
+      "density": 0.3333333333333333,
+      "depth": 7,
+      "edges": 12,
+      "edges_transitive_reduction": 10,
+      "max_in_degree": 3,
+      "max_out_degree": 5,
+      "n": 9,
+      "n_sequence": 9,
+      "parallel_pairs": 7,
+      "reachable_ideals": 20,
+      "target_node": 7,
+      "theoretical_max": 512,
+      "width": 3
+    },
+    {
+      "am_gm_bound": 125.0,
+      "bottleneck_nodes": "[7,8,10,12]",
+      "chain_ratio": 0.8333333333333334,
+      "compression_ratio_amgm": 0.184,
+      "compression_ratio_exp": 0.005615234375,
+      "density": 0.3181818181818182,
+      "depth": 10,
+      "edges": 21,
+      "edges_transitive_reduction": 13,
+      "max_in_degree": 3,
+      "max_out_degree": 5,
+      "n": 12,
+      "n_sequence": 12,
+      "parallel_pairs": 7,
+      "reachable_ideals": 23,
+      "target_node": 12,
+      "theoretical_max": 4096,
+      "width": 3
+    },
+    {
+      "am_gm_bound": 254.037037037037,
+      "bottleneck_nodes": "[7,8,10,12,17]",
+      "chain_ratio": 0.8125,
+      "compression_ratio_amgm": 0.11022014870972446,
+      "compression_ratio_exp": 0.00042724609375,
+      "density": 0.225,
+      "depth": 13,
+      "edges": 27,
+      "edges_transitive_reduction": 18,
+      "max_in_degree": 3,
+      "max_out_degree": 5,
+      "n": 16,
+      "n_sequence": 16,
+      "parallel_pairs": 8,
+      "reachable_ideals": 28,
+      "target_node": 18,
+      "theoretical_max": 65536,
+      "width": 3
+    },
+    {
+      "am_gm_bound": 5.0,
+      "bottleneck_nodes": "[]",
+      "chain_ratio": 1.0,
+      "compression_ratio_amgm": 1.0,
+      "compression_ratio_exp": 0.3125,
+      "density": 0.5,
+      "depth": 4,
+      "edges": 3,
+      "edges_transitive_reduction": 3,
+      "max_in_degree": 1,
+      "max_out_degree": 1,
+      "n": 4,
+      "n_sequence": 4,
+      "parallel_pairs": 0,
+      "reachable_ideals": 5,
+      "target_node": 29,
+      "theoretical_max": 16,
+      "width": 1
+    },
+    {
+      "am_gm_bound": 296.29629629629636,
+      "bottleneck_nodes": "[7,8,10,12,17]",
+      "chain_ratio": 0.8235294117647058,
+      "compression_ratio_amgm": 0.09787499999999998,
+      "compression_ratio_exp": 0.00022125244140625,
+      "density": 0.21323529411764705,
+      "depth": 14,
+      "edges": 29,
+      "edges_transitive_reduction": 19,
+      "max_in_degree": 3,
+      "max_out_degree": 5,
+      "n": 17,
+      "n_sequence": 17,
+      "parallel_pairs": 8,
+      "reachable_ideals": 29,
+      "target_node": 36,
+      "theoretical_max": 131072,
+      "width": 3
+    },
+    {
+      "am_gm_bound": 625.0,
+      "bottleneck_nodes": "[7,8,10,12]",
+      "chain_ratio": 0.8125,
+      "compression_ratio_amgm": 0.0752,
+      "compression_ratio_exp": 0.0007171630859375,
+      "density": 0.21666666666666667,
+      "depth": 13,
+      "edges": 26,
+      "edges_transitive_reduction": 18,
+      "max_in_degree": 3,
+      "max_out_degree": 6,
+      "n": 16,
+      "n_sequence": 16,
+      "parallel_pairs": 17,
+      "reachable_ideals": 47,
+      "target_node": 39,
+      "theoretical_max": 65536,
+      "width": 4
+    },
+    {
+      "am_gm_bound": 216.0,
+      "bottleneck_nodes": "[7,8,10,12,42]",
+      "chain_ratio": 0.8,
+      "compression_ratio_amgm": 0.16203703703703703,
+      "compression_ratio_exp": 0.001068115234375,
+      "density": 0.26666666666666666,
+      "depth": 12,
+      "edges": 28,
+      "edges_transitive_reduction": 18,
+      "max_in_degree": 3,
+      "max_out_degree": 5,
+      "n": 15,
+      "n_sequence": 15,
+      "parallel_pairs": 14,
+      "reachable_ideals": 35,
+      "target_node": 42,
+      "theoretical_max": 32768,
+      "width": 3
+    },
+    {
+      "am_gm_bound": 20.25,
+      "bottleneck_nodes": "[]",
+      "chain_ratio": 0.8571428571428571,
+      "compression_ratio_amgm": 0.4444444444444444,
+      "compression_ratio_exp": 0.0703125,
+      "density": 0.3333333333333333,
+      "depth": 6,
+      "edges": 7,
+      "edges_transitive_reduction": 7,
+      "max_in_degree": 2,
+      "max_out_degree": 2,
+      "n": 7,
+      "n_sequence": 7,
+      "parallel_pairs": 1,
+      "reachable_ideals": 9,
+      "target_node": 46,
+      "theoretical_max": 128,
+      "width": 2
+    },
+    {
+      "am_gm_bound": 216.0,
+      "bottleneck_nodes": "[7,8,10,12,51,52]",
+      "chain_ratio": 0.8666666666666667,
+      "compression_ratio_amgm": 0.12037037037037036,
+      "compression_ratio_exp": 0.00079345703125,
+      "density": 0.26666666666666666,
+      "depth": 13,
+      "edges": 28,
+      "edges_transitive_reduction": 16,
+      "max_in_degree": 3,
+      "max_out_degree": 6,
+      "n": 15,
+      "n_sequence": 15,
+      "parallel_pairs": 7,
+      "reachable_ideals": 26,
+      "target_node": 52,
+      "theoretical_max": 32768,
+      "width": 3
+    }
+  ]
+}
