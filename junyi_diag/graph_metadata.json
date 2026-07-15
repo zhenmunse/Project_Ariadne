@@ -1,0 +1,28 @@
+{
+  "exercise_table": "data\\raw\\junyi\\junyi_Exercise_table.csv",
+  "exercise_columns": [
+    "name",
+    "live",
+    "prerequisites",
+    "h_position",
+    "v_position",
+    "creation_date",
+    "seconds_per_fast_problem",
+    "pretty_display_name",
+    "short_display_name",
+    "topic",
+    "area"
+  ],
+  "original_exercises": 837,
+  "deduplicated_exercises": 835,
+  "duplicate_exercises_removed": 2,
+  "nodes": 835,
+  "edges_raw": 979,
+  "edges_clean": 978,
+  "dangling_prerequisites": 0,
+  "self_loops": 2,
+  "prerequisite_references": 984,
+  "matched_prerequisite_references": 984,
+  "prerequisite_match_rate": 1.0,
+  "removed_cycle_edges": 1
+}

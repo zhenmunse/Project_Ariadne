@@ -1,0 +1,80 @@
+{
+  "problem_log": "data\\raw\\junyi\\junyi_ProblemLog_original.csv",
+  "actual_columns": [
+    "user_id",
+    "exercise",
+    "correct",
+    "time_done"
+  ],
+  "input_rows": 25925992,
+  "retained_relevant_rows": 25925992,
+  "bad_time_rate": 0.0,
+  "time_mode": "numeric",
+  "minimum_bucket_support": 30,
+  "closure_exercises": 835,
+  "first_attempt_rows": 2289789,
+  "missing_rate_exercise_count": 113,
+  "zero_rate_exercise_count": 12,
+  "zero_rate_exercises": [
+    {
+      "exercise": "application_of_linear_equations_2",
+      "first_attempts": 1,
+      "total_attempts": 41
+    },
+    {
+      "exercise": "common_factor_advance",
+      "first_attempts": 3,
+      "total_attempts": 34
+    },
+    {
+      "exercise": "completing_the_square_1_new",
+      "first_attempts": 2,
+      "total_attempts": 7
+    },
+    {
+      "exercise": "distributive_property_with_variables",
+      "first_attempts": 2,
+      "total_attempts": 5
+    },
+    {
+      "exercise": "dividing_decimals_int_to_int_0.5",
+      "first_attempts": 3,
+      "total_attempts": 8
+    },
+    {
+      "exercise": "dividing_decimals_int_to_int_0.7",
+      "first_attempts": 3,
+      "total_attempts": 7
+    },
+    {
+      "exercise": "matrix_app_fruit_oil",
+      "first_attempts": 1,
+      "total_attempts": 3
+    },
+    {
+      "exercise": "matrix_mul_two",
+      "first_attempts": 4,
+      "total_attempts": 8
+    },
+    {
+      "exercise": "multiplying_fractions_and_whole_numbers_word_problems",
+      "first_attempts": 2,
+      "total_attempts": 2
+    },
+    {
+      "exercise": "skip_counting_by_10s",
+      "first_attempts": 1,
+      "total_attempts": 1
+    },
+    {
+      "exercise": "subtraction_within_20",
+      "first_attempts": 1,
+      "total_attempts": 8
+    },
+    {
+      "exercise": "variables_word_problems_2",
+      "first_attempts": 1,
+      "total_attempts": 63
+    }
+  ]
+}
